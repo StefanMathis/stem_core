@@ -1,0 +1,69 @@
+use std::f64::consts::{PI, TAU};
+
+use stem_core::core::ext::skew_factor;
+
+// Manually calculate the normalized torque harmonic for a staggered component
+// and compare it with the skew factor calculation
+#[test]
+fn test_skew_factor() {
+    {
+        // Cogging torque supression of a 12/10 winding with staggered rotor magnets
+        approx::assert_abs_diff_eq!(skew_factor(60, 6.0 / 180.0 * PI, 3), 0.0, epsilon = 0.0001);
+        approx::assert_abs_diff_eq!(
+            skew_factor(30, 6.0 / 180.0 * PI, 3),
+            2.0 / 3.0,
+            epsilon = 0.0001
+        );
+        approx::assert_abs_diff_eq!(skew_factor(30, 12.0 / 180.0 * PI, 3), 0.0, epsilon = 0.0001);
+    }
+    {
+        const NUMBER_POINTS: usize = 50;
+
+        fn angle(idx: usize, offset: f64) -> f64 {
+            return (idx as f64 / NUMBER_POINTS as f64) * TAU + offset;
+        }
+        fn curve(beta: f64, ordinal: usize) -> Vec<f64> {
+            let offset = beta * ordinal as f64;
+            return (0..NUMBER_POINTS)
+                .map(|idx| angle(idx, offset).sin())
+                .collect();
+        }
+        fn amplitude_two_segments(skew_angle: f64, ordinal: usize) -> f64 {
+            // Difference between the segments is beta = segments * skew_angle
+            let first_segment = curve(-0.25 * skew_angle, ordinal);
+            let second_segment = curve(0.25 * skew_angle, ordinal);
+            let amplitude = first_segment
+                .iter()
+                .zip(second_segment.iter())
+                .map(|(x, y)| *x + *y)
+                .reduce(f64::max)
+                .unwrap()
+                / 2.0;
+            return amplitude;
+        }
+
+        let skew_angle = 6.0 / 180.0 * PI;
+        approx::assert_abs_diff_eq!(
+            skew_factor(60, skew_angle, 2),
+            amplitude_two_segments(skew_angle, 60),
+            epsilon = 0.0001
+        );
+        approx::assert_abs_diff_eq!(
+            skew_factor(30, skew_angle, 2),
+            amplitude_two_segments(skew_angle, 30),
+            epsilon = 0.02
+        );
+        approx::assert_abs_diff_eq!(
+            amplitude_two_segments(skew_angle, 60),
+            0.0,
+            epsilon = 0.0001
+        );
+
+        let skew_angle = 3.0 / 180.0 * PI;
+        approx::assert_abs_diff_eq!(
+            skew_factor(60, skew_angle, 2),
+            amplitude_two_segments(skew_angle, 60),
+            epsilon = 0.02
+        );
+    }
+}
