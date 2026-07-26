@@ -397,12 +397,10 @@ impl V2rFluxBarrier {
             .magnet_material
             .as_ref()
             .map(|material| {
-                let width = self.magnet_space_height - 2.0 * self.glue_gap;
-                let thickness = self.magnet_space_width - 2.0 * self.glue_gap;
                 BlockMagnet::new(
                     core.axial_length(),
-                    width,
-                    thickness,
+                    self.magnet_space_height,
+                    self.magnet_space_width,
                     Length::new::<meter>(0.0),
                     material.clone(),
                 )
@@ -568,8 +566,8 @@ impl FluxBarrier for V2rFluxBarrier {
         let angle = FRAC_PI_2 - 0.5 * self.opening_angle;
 
         let gg = self.glue_gap.get::<meter>();
-        let x = 0.5 * (c.pt_magnet_relief_d[0] + c.pt_magnet_center_d[0]) + 2.0 * gg * angle.sin();
-        let y = 0.5 * (c.pt_magnet_relief_d[1] + c.pt_magnet_center_d[1]) - 2.0 * gg * angle.cos();
+        let x = 0.5 * (c.pt_magnet_relief_d[0] + c.pt_magnet_center_d[0]) + gg * angle.sin();
+        let y = 0.5 * (c.pt_magnet_relief_d[1] + c.pt_magnet_center_d[1]) - gg * angle.cos();
         let radius = (x.powi(2) + y.powi(2)).sqrt();
 
         // Correct for the fact that the magnet origin is not at the

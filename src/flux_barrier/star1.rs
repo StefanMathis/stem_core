@@ -278,33 +278,43 @@ impl Star1FluxBarrier {
         )?
         .into();
 
-        let air_gap_leakage_segment: Segment =
-            if let Some(slot_height) = core.slot().map(Slot::height) {
-                let y = (core.air_gap_radius() - slot_height - self.air_gap_leakage_path_width)
-                    .get::<meter>();
-                LineSegment::new(
-                    [0.5 * air_gap_leakage_segment_width, y],
-                    [-0.5 * air_gap_leakage_segment_width, y],
-                )?
-                .into()
-            } else {
-                let ag_sweep_angle =
-                    2.0 * (0.5 * air_gap_leakage_segment_width / air_gap_leakage_radius).asin();
-                ArcSegment::from_center_radius_start_sweep_angle(
-                    [0.0, 0.0],
-                    air_gap_leakage_radius,
-                    FRAC_PI_2 - 0.5 * ag_sweep_angle,
-                    ag_sweep_angle,
-                )?
-                .into()
-            };
+        let air_gap_leakage_segment: Segment = if let Some(slot_height) =
+            core.slot().map(Slot::height)
+        {
+            let y = (core.air_gap_radius() - m * slot_height - m * self.air_gap_leakage_path_width)
+                .get::<meter>();
+            LineSegment::new(
+                [0.5 * air_gap_leakage_segment_width, y],
+                [-0.5 * air_gap_leakage_segment_width, y],
+            )?
+            .into()
+        } else {
+            let ag_sweep_angle =
+                2.0 * (0.5 * air_gap_leakage_segment_width / air_gap_leakage_radius).asin();
+            ArcSegment::from_center_radius_start_sweep_angle(
+                [0.0, 0.0],
+                air_gap_leakage_radius,
+                FRAC_PI_2 - 0.5 * ag_sweep_angle,
+                ag_sweep_angle,
+            )?
+            .into()
+        };
 
         let pt_yoke_leakage = yoke_leakage_segment.stop();
         let pt_air_gap_leakage = air_gap_leakage_segment.start();
 
-        let height_for_flux_barrier =
+        let height_for_flux_barrier = if core.is_outer() {
+            if !has_relief_path && core.slot().is_none() {
+                Length::new::<meter>(pt_yoke_leakage[1] - air_gap_leakage_radius).abs()
+                    - 2.0 * self.glue_gap
+            } else {
+                Length::new::<meter>(pt_yoke_leakage[1] - pt_air_gap_leakage[1]).abs()
+                    - 2.0 * self.glue_gap
+            }
+        } else {
             Length::new::<meter>(pt_air_gap_leakage[1] - yoke_leakage_radius).abs()
-                - 2.0 * self.glue_gap;
+                - 2.0 * self.glue_gap
+        };
         compare_variables!(val zero < height_for_flux_barrier)?;
 
         let [magnet_space_height, relief_path_width] = self
@@ -313,7 +323,7 @@ impl Star1FluxBarrier {
 
         let pt_inner_relief = [
             0.5 * air_gap_leakage_segment_width,
-            air_gap_leakage_segment.stop()[1] - relief_path_width.get::<meter>(),
+            air_gap_leakage_segment.stop()[1] - m * relief_path_width.get::<meter>(),
         ];
         let pt_outer_relief = [pt_yoke_leakage[0], pt_inner_relief[1]];
 
@@ -378,12 +388,10 @@ impl Star1FluxBarrier {
         self.magnet_material
             .as_ref()
             .map(|material| {
-                let width = magnet_space_height - 2.0 * self.glue_gap;
-                let thickness = self.magnet_space_width - 2.0 * self.glue_gap;
                 BlockMagnet::new(
                     axial_length,
-                    width,
-                    thickness,
+                    magnet_space_height,
+                    self.magnet_space_width,
                     Length::new::<meter>(0.0),
                     material.clone(),
                 )
@@ -476,7 +484,7 @@ impl FluxBarrier for Star1FluxBarrier {
                 let shift = [
                     0.5 * magnet.thickness().get::<meter>(),
                     0.5 * magnet.width().get::<meter>()
-                        + 2.0 * self.glue_gap.get::<meter>()
+                        + self.glue_gap.get::<meter>()
                         + c.pt_outer_relief[1],
                 ];
 
@@ -498,11 +506,15 @@ impl FluxBarrier for Star1FluxBarrier {
                 .into();
             }
             CoreRef::Rot(rot_core) => {
-                let x = c.pt_outer_relief[0] - self.glue_gap.get::<meter>();
-                let y = c.pt_outer_relief[1]
-                    - 4.0 * self.glue_gap.get::<meter>()
-                    - 0.5 * magnet.width().get::<meter>();
-                let radius = (x.powi(2) + y.powi(2)).sqrt();
+                let radius = if rot_core.is_outer() {
+                    c.pt_yoke_leakage[1]
+                        - 1.0 * self.glue_gap.get::<meter>()
+                        - 0.5 * magnet.width().get::<meter>()
+                } else {
+                    c.pt_outer_relief[1]
+                        - 1.0 * self.glue_gap.get::<meter>()
+                        - 0.5 * magnet.width().get::<meter>()
+                };
 
                 // Rotate the shapes by 90 degree to bring them into position
                 let angle = PI / rot_core.poles() as f64;
