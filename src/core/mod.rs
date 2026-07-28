@@ -1,3 +1,46 @@
+/*!
+A module providing the the [`LinCore`] and [`RotCore`] structs, the owning and
+borrowing enum wrappers [`Core`] and [`CoreRef`] and the sealed trait
+[`CoreExt`].
+
+Both the stator and the rotor of a radial flux machine are typically built
+around a magnetic core, which serves as a scaffolding for mounting magnets and
+windings and guides the magnetic flux produced by them. Radial flux machines can
+be either _linear_ (meaning that the rotor performs a linear movement relative
+to the stator) or _rotary_ (meaning that the rotor rotates around its center).
+For a linear machine, both stator and rotor are usually cuboids, whereas in the
+latter case, they are annular (hollow) cylinders which share a common rotation
+axis. In stem_core, a linear core is modeled by the [`LinCore`] type, a
+rotary core by the [`RotCore`] type.
+
+The magnetic force moving a motor / powering a generator is created by magnetic
+flux passing through the air gap between stator and rotor. The local
+distribution of that flux is heavily influenced by the shape of the stator /
+rotor contour at the air gap. That contour is defined by the
+[`AirGap`](crate::air_gap::AirGap) implementor used to create the [`LinCore`] /
+[`RotCore`] instance. The following image shows an example for both core types
+where the air gap shape is defined by [`Slot`](stem_slot::slot::Slot)s:
+*/
+#![cfg_attr(feature = "doc-images",
+cfg_attr(all(),
+doc = ::embed_doc_image::embed_image!("lin_and_rot_core.svg", "docs/img/lin_and_rot_core.svg"),
+))]
+#![cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/*!
+In addition to the air gap, the magnetic flux can be further directed by
+introducing [`FluxBarrier`](crate::flux_barrier::FluxBarrier)s (holes) in
+the core. See the trait docstring for more.
+
+Since every core in stem is either a [`LinCore`] or a [`RotCore`], an owning
+([`Core`]) and a borrowing ([`CoreRef`]) wrapper is provided as well. The
+sealed [`CoreExt`] trait provides a common interface for both [`LinCore`] and
+[`RotCore`] and therefore also for the [`Core`] and [`CoreRef`] enums. See its
+docstring for more.
+ */
+
 use std::sync::Arc;
 
 use planar_geo::prelude::Shape;
@@ -163,8 +206,40 @@ impl From<RotCore> for Core {
     }
 }
 
+impl TryFrom<Core> for LinCore {
+    type Error = Core;
+
+    fn try_from(value: Core) -> Result<Self, Self::Error> {
+        match value {
+            Core::Lin(c) => Ok(c),
+            Core::Rot(_) => Err(value),
+        }
+    }
+}
+
+impl TryFrom<Core> for RotCore {
+    type Error = Core;
+
+    fn try_from(value: Core) -> Result<Self, Self::Error> {
+        match value {
+            Core::Lin(_) => Err(value),
+            Core::Rot(c) => Ok(c),
+        }
+    }
+}
+
 // =============================================================================
 
+/**
+TODO
+
+This wrapper is particularily useful for the [`AirGap`](crate::air_gap::AirGap)
+and [`FluxBarrier`](crate::flux_barrier::FluxBarrier) traits, since these are
+meant to be used as trait objects in [`LinCore`] or [`RotCore`] and therefore
+must not have generic methods. Therefore, the trait methods require passing a
+[`CoreRef`] object, which can be created via the [`CoreExt::as_core_ref`]
+method from a [`LinCore`], [`RotCore`] or [`Core`].
+ */
 #[derive(Debug, Clone, Copy)]
 pub enum CoreRef<'a> {
     Lin(&'a LinCore),

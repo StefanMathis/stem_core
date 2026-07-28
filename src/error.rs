@@ -1,8 +1,19 @@
-use crate::planar_geo;
+/*!
+This module contains the [`Error`] enum, which represents the different ways
+building a magnetic core can fail due to invalid input data. The
+[`Error::Other`] variants supports arbitrary errors resulting from user-created
+magnet types. The [`IncompatibleFluxBarrier`] covers failure when trying to
+insert a flux barrier in an existing core.
+*/
+
+use crate::{flux_barrier::FluxBarrier, planar_geo};
 use compare_variables::Comparison;
 use planar_geo::{contour::Contour, error::ShapeConstructorError};
 use stem_magnet::prelude::stem_material::si::Length;
 
+/// An enum representing errors resulting from attempting to build a
+/// [`LinCore`](crate::core::LinCore) or [`RotCore`](crate::core::RotCore) from
+/// invalid inputs.
 #[derive(Debug)]
 pub enum Error {
     /**
@@ -24,11 +35,26 @@ pub enum Error {
     /// [`FluxBarrier`](crate::flux_barrier::FluxBarrier) is not compatible to
     /// a rotary core. The string holds the type name (e.g. "PlainAirGap").
     IncompatibleToRotCore(&'static str),
+    /// Fallback variant for arbitrary other errors (e.g. from custom
+    /// [`AirGap`](crate::air_gap::AirGap) or [`FluxBarrier`] implementations).
+    Other(Box<dyn std::error::Error>),
 }
 
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
+        match self {
+            Error::InvalidLength(comparison_error) => comparison_error.fmt(f),
+            Error::InvalidUsize(comparison_error) => comparison_error.fmt(f),
+            Error::InvalidF64(comparison_error) => comparison_error.fmt(f),
+            Error::GeometryError(err) => err.fmt(f),
+            Error::IncompatibleToLinCore(type_name) => {
+                write!(f, "{} is not compatible to a linear core", type_name)
+            }
+            Error::IncompatibleToRotCore(type_name) => {
+                write!(f, "{} is not compatible to a rotary core", type_name)
+            }
+            Error::Other(err) => err.fmt(f),
+        }
     }
 }
 
@@ -70,9 +96,24 @@ impl From<planar_geo::error::Error> for Error {
     }
 }
 
+/**
+An error representing an incompatibilty between a [`FluxBarrier`] and a core.
+
+The [`Core`](crate::core::Core), [`RotCore`](crate::core::RotCore) and
+[`LinCore`](crate::core::LinCore) types offer a method `set_flux_barrier` to
+change the flux barrier after creation of the core. Should the barrier not be
+compatible with the core, this error is returned, containing both the provided
+flux barrier and the reason why setting a new flux barrier failed. This error
+can only be created if the argument to `set_flux_barrier` was `Some`, since
+removing a flux barrier with `core.set_flux_barrier(None)` cannot fail.
+*/
 #[derive(Debug)]
 pub struct IncompatibleFluxBarrier {
-    pub flux_barrier: Box<dyn crate::flux_barrier::FluxBarrier>,
+    /// The incompatible [`FluxBarrier`] which
+    /// was used as an argument to the set method.
+    pub flux_barrier: Box<dyn FluxBarrier>,
+    /// The underlying root cause why the flux barrier is incompatible to the
+    /// core.
     pub cause: Error,
 }
 
