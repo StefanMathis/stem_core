@@ -30,9 +30,12 @@ doc = ::embed_doc_image::embed_image!("lin_and_rot_core.svg", "docs/img/lin_and_
     doc = "**Doc images not enabled**. Compile docs with `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
 /*!
+The air gap contour also determines if a surface magnet can be mounted on a
+magnetic core, see [`CoreExt::collision_check`].
+
 In addition to the air gap, the magnetic flux can be further directed by
-introducing [`FluxBarrier`](crate::flux_barrier::FluxBarrier)s (holes) in
-the core. See the trait docstring for more.
+introducing [`FluxBarrier`]s (holes) in the core, which can also serve as
+insertion slots for interior magnets. See the trait docstring for more.
 
 Since every core in stem is either a [`LinCore`] or a [`RotCore`], an owning
 ([`Core`]) and a borrowing ([`CoreRef`]) wrapper is provided as well. The
@@ -58,15 +61,40 @@ pub use lin::*;
 pub use rot::*;
 
 use crate::LinOrRot;
+use crate::error::IncompatibleFluxBarrier;
+use crate::flux_barrier::FluxBarrier;
 
+/**
+An owning enum  for a [`LinCore`] or [`RotCore`].
+
+This enum is meant for use cases where a magnetic core is needed but the type
+(linear or rotary) is unknown until runtime. Therefore, this type "behaves like"
+a magnetic core by implementing [`CoreExt`] like the underlying [`LinCore`] /
+[`RotCore`]. Every method implementation looks like this:
+
+```ignore
+fn pole_pairs(&self) -> u16 {
+    match self {
+        Self::Lin(c) => c.pole_pairs(),
+        Self::Rot(c) => c.pole_pairs(),
+    }
+}
+```
+ */
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Core {
+    /// A wrapped [`LinCore`].
     Lin(LinCore),
+    /// A wrapped [`RotCore`].
     Rot(RotCore),
 }
 
 impl Core {
+    /**
+    Returns a reference to the underlying [`LinCore`], if `self` wraps one.
+    If `self` wraps a [`RotCore`], this method returns `None` instead.
+     */
     pub fn lin<'core>(&'core self) -> Option<&'core LinCore> {
         match self {
             Self::Lin(c) => Some(c),
@@ -74,6 +102,10 @@ impl Core {
         }
     }
 
+    /**
+    Returns a reference to the underlying [`RotCore`], if `self` wraps one.
+    If `self` wraps a [`LinCore`], this method returns `None` instead.
+     */
     pub fn rot<'core>(&'core self) -> Option<&'core RotCore> {
         match self {
             Self::Lin(_) => None,
@@ -81,10 +113,25 @@ impl Core {
         }
     }
 
+    /// Fallibly inserts a new [`FluxBarrier`] into `self` or removes an
+    /// existing one.
+    ///
+    /// If `flux_barrier` is `Some`, it is checked whether the wrapped
+    /// [`FluxBarrier`] is compatible to `self` by creating the flux barrier
+    /// contours via the [`FluxBarrier::combine`] method and checking if those
+    /// fit into the shape of `self`. If [`FluxBarrier::combine`] fails or if
+    /// the contours don't fit, the resulting error is wrapped into
+    /// [`IncompatibleFluxBarrier`] and returned together with the given
+    /// [`FluxBarrier`]. Otherwise, the old flux barrier of `self` will be
+    /// replaced with the new one. If `flux_barrier` is `None` and `self` has a
+    /// flux barrier, it will be removed. Otherwise, this is a no-op.
+    ///
+    /// This method forwards to either [`LinCore::set_flux_barrier`] or
+    /// [`RotCore::set_flux_barrier`], see their docstrings for examples.
     pub fn set_flux_barrier(
         &mut self,
-        flux_barrier: Option<Box<dyn crate::prelude::FluxBarrier>>,
-    ) -> Result<(), crate::error::IncompatibleFluxBarrier> {
+        flux_barrier: Option<Box<dyn FluxBarrier>>,
+    ) -> Result<(), IncompatibleFluxBarrier> {
         match self {
             Self::Lin(c) => c.set_flux_barrier(flux_barrier),
             Self::Rot(c) => c.set_flux_barrier(flux_barrier),
@@ -231,22 +278,41 @@ impl TryFrom<Core> for RotCore {
 // =============================================================================
 
 /**
-TODO
+A borrowing enum for a [`LinCore`] or [`RotCore`].
+
+This enum is meant for use cases where a reference to a magnetic core is needed
+but the type (linear or rotary) is unknown until runtime. Therefore, this type
+"behaves like" a magnetic core by implementing [`CoreExt`] like the underlying
+[`LinCore`] / [`RotCore`]. Every method implementation looks like this:
+
+```ignore
+fn pole_pairs(&self) -> u16 {
+    match self {
+        Self::Lin(c) => c.pole_pairs(),
+        Self::Rot(c) => c.pole_pairs(),
+    }
+}
+```
 
 This wrapper is particularily useful for the [`AirGap`](crate::air_gap::AirGap)
-and [`FluxBarrier`](crate::flux_barrier::FluxBarrier) traits, since these are
-meant to be used as trait objects in [`LinCore`] or [`RotCore`] and therefore
-must not have generic methods. Therefore, the trait methods require passing a
-[`CoreRef`] object, which can be created via the [`CoreExt::as_core_ref`]
-method from a [`LinCore`], [`RotCore`] or [`Core`].
+and [`FluxBarrier`] traits, since these are meant to be used for creating trait
+objects and therefore don't have generic methods. Therefore, the trait methods
+require passing a [`CoreRef`] object, which can be created via the
+[`CoreExt::as_core_ref`] method from a [`LinCore`], [`RotCore`] or [`Core`].
  */
 #[derive(Debug, Clone, Copy)]
 pub enum CoreRef<'a> {
+    /// A reference to a [`LinCore`].
     Lin(&'a LinCore),
+    /// A reference to a [`RotCore`].
     Rot(&'a RotCore),
 }
 
 impl<'a> CoreRef<'a> {
+    /**
+    Returns the underlying [`LinCore`] reference, if `self` wraps one.
+    If `self` wraps a [`RotCore`] reference, this method returns `None` instead.
+     */
     pub fn lin<'core>(&'core self) -> Option<&'core LinCore> {
         match self {
             CoreRef::Lin(c) => Some(*c),
@@ -254,6 +320,10 @@ impl<'a> CoreRef<'a> {
         }
     }
 
+    /**
+    Returns the underlying [`RotCore`] reference, if `self` wraps one.
+    If `self` wraps a [`LinCore`] reference, this method returns `None` instead.
+     */
     pub fn rot<'core>(&'core self) -> Option<&'core RotCore> {
         match self {
             CoreRef::Lin(_) => None,

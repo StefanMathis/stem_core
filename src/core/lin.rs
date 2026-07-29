@@ -1,3 +1,9 @@
+/*!
+This module contains the [`LinCore`] type and its builder struct
+[`LinCoreBuilder`]. [`LinCore`] forms the basis for all linear magnetic cores
+used in the stem ecosystem. See its docstring for more.
+ */
+
 use compare_variables::compare_variables;
 use planar_geo::{prelude::BoundingBox, shape::Shape};
 use std::sync::Arc;
@@ -42,26 +48,135 @@ pub struct LinCore {
 }
 
 impl LinCore {
+    /**
+    Builds a new [`LinCore`] from a [`LinCoreBuilder`].
+
+    Building a [`LinCore`] can fail if the provided data is invalid (e.g.
+    negative dimensions). See the field documentation of [`LinCoreBuilder`] for
+    details. In such a case, the resulting error is returned instead.
+
+    This method forwards to the `TryInto<LinCore>` implementation of
+    [`LinCoreBuilder`].
+     */
     pub fn new(builder: LinCoreBuilder) -> Result<Self, crate::error::Error> {
         builder.try_into()
     }
 
+    /// Returns the height (vertical extents) of the core.
+    ///
+    /// This value is equivalent to [`LinCoreBuilder::height`] from the builder
+    /// struct used to create `self`.
     pub fn height(&self) -> Length {
         return self.height;
     }
 
+    /// Returns the width (horizontal extents) of the core.
+    ///
+    /// This value is equivalent to [`LinCoreBuilder::width`] from the builder
+    /// struct used to create `self`.
     pub fn width(&self) -> Length {
         return self.width;
     }
 
+    /// Fallibly inserts a new [`FluxBarrier`] into `self` or removes an
+    /// existing one.
+    ///
+    /// If `flux_barrier` is `Some`, it is checked whether the wrapped
+    /// [`FluxBarrier`] is compatible to `self` by creating the flux barrier
+    /// contours via the [`FluxBarrier::combine`] method and checking if those
+    /// fit into the shape of `self`. If [`FluxBarrier::combine`] fails or if
+    /// the contours don't fit, the resulting error is wrapped into
+    /// [`IncompatibleFluxBarrier`] and returned together with the given
+    /// [`FluxBarrier`]. Otherwise, the old flux barrier of `self` will be
+    /// replaced with the new one. If `flux_barrier` is `None` and `self` has a
+    /// flux barrier, it will be removed. Otherwise, this is a no-op.
+    ///
+    /// # Examples
+    ///
+    /// The following code shows how adding a compatible flux barrier succeeds,
+    /// how it can be removed again and how adding an incompatible flux barrier
+    /// fails.
+    ///
+    /// ```
+    /// use std::sync::Arc;
+    /// use stem_core::prelude::*;
+    ///
+    /// let air_gap = PlainAirGap::new(Length::new::<meter>(0.0), 0.0, 1, 0, true).expect("valid inputs");
+    /// let mut lin_core: LinCore = LinCoreBuilder {
+    ///     height: Length::new::<millimeter>(20.0),
+    ///     width: Length::new::<millimeter>(100.0),
+    ///     axial_length: Length::new::<millimeter>(100.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     skew_angle: 0.0,
+    ///     iron_fill_factor: 1.0,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 2,
+    ///     air_gap: Box::new(air_gap),
+    ///     flux_barrier: None, // No flux barrier at initialization
+    /// }.try_into().expect("valid inputs");
+    /// assert!(lin_core.flux_barrier().is_none());
+    ///
+    /// // A compatible flux barrier
+    /// let fb_comp = Star1FluxBarrier {
+    ///     air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
+    ///     yoke_leakage_path_width: Length::new::<millimeter>(1.0),
+    ///     relief_path_air_gap_width: Length::new::<millimeter>(4.0),
+    ///     magnet_space_width: Length::new::<millimeter>(10.0),
+    ///    magnet_space_height_or_relief_path_width: Star1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(2.0)),
+    ///     glue_gap: Length::new::<millimeter>(0.0),
+    ///     magnet_material: None,
+    ///     cache: None,
+    /// };
+    /// assert!(lin_core.set_flux_barrier(Some(Box::new(fb_comp))).is_ok());
+    /// assert!(lin_core.flux_barrier().is_some());
+    ///
+    /// // Remove the flux barrier
+    /// assert!(lin_core.set_flux_barrier(None).is_ok()); // Cannot fail for None input
+    /// assert!(lin_core.flux_barrier().is_none());
+    ///
+    /// // An incompatible flux barrier
+    /// let mut fb_incomp = Star1FluxBarrier {
+    ///     air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
+    ///     yoke_leakage_path_width: Length::new::<millimeter>(1.0),
+    ///     relief_path_air_gap_width: Length::new::<millimeter>(4.0),
+    ///     magnet_space_width: Length::new::<millimeter>(30.0), // Too wide for the core width
+    ///     magnet_space_height_or_relief_path_width: Star1HeightSplit::ReliefPathWidth(Length::new::<
+    ///         millimeter,
+    ///     >(2.0)),
+    ///     glue_gap: Length::new::<millimeter>(0.0),
+    ///     magnet_material: None,
+    ///     cache: None,
+    /// };
+    /// assert!(lin_core.set_flux_barrier(Some(Box::new(fb_incomp))).is_err());
+    /// assert!(lin_core.flux_barrier().is_none());
+    /// ```
+    ///
+    /// The image below shows a comparison between the flux barrier contours of
+    /// `fb_comp` and `fb_incomp`. It is clear to see that the latter is
+    /// incompatible to `lin_core` since the flux barriers intersect the shape
+    /// contour as well as each other due to the limited width of `lin_core`.
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![Comparison compatible and incompatible flux barrier][lin_core_set_fb]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image("lin_core_set_fb", "docs/img/lin_core_set_fb.svg")
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
     pub fn set_flux_barrier(
         &mut self,
-        flux_barrier: Option<Box<dyn crate::prelude::FluxBarrier>>,
+        flux_barrier: Option<Box<dyn FluxBarrier>>,
     ) -> Result<(), IncompatibleFluxBarrier> {
         let mut air_gap: Box<dyn AirGap> = Box::new(PlainAirGap::default());
         std::mem::swap(&mut air_gap, &mut self.air_gap);
         let mut shape = air_gap.combine(self.as_core_ref()).expect(
-            "air gap - core combination produced a valid shape during construction of self",
+            "air gap - core combination produced a valid shape during construction of self. This is a bug.",
         );
         std::mem::swap(&mut air_gap, &mut self.air_gap);
 
@@ -168,10 +283,17 @@ impl CoreExt for LinCore {
 
 #[cfg_attr(feature = "serde", derive(Deserialize))]
 pub struct LinCoreBuilder {
+    /// Height (vertical extents) of the core. Must be positive (`height >= 0
+    /// m`).
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
-    pub height: Length, // Core height ("y-axis")
+    pub height: Length,
+    /// Width (horizontal extents) of the core. Must be positive (`width >= 0
+    /// m`).
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
-    pub width: Length, // Core width ("x-axis")
+    pub width: Length,
+    /// Axial length of the core. This dimension is invisible when using the
+    /// typical cross-section view of a core because it goes into the image
+    /// plane. Must be positive (`axial_length >= 0 m`).
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub axial_length: Length, // Axial length of the core
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
@@ -179,11 +301,27 @@ pub struct LinCoreBuilder {
     pub axial_coil_overhang: Length,
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_angle"))]
     pub skew_angle: f64,
+    /// Magnetic cores are often build from stacked sheets of ferromagnetic
+    /// lamination, which are connected by glue. The gap between the sheets
+    /// reduces the effective magnetic conductivity, see
+    /// [`CoreExt::iron_length`]. This effect can be modeled by setting this
+    /// factor somewhere between 0 and 1 (`0 <= iron_fill_factor <= 1`). Typical
+    /// values are usually between 0.9 and 1.
     pub iron_fill_factor: f64,
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_arc_link"))]
-    pub material: Arc<Material>, // core material
+    /// Material used for the core.
+    pub material: Arc<Material>,
+    /// Number of pole pairs of the core.
     pub pole_pairs: u16,
+    /// Definition of the air gap shape. See the docstring of [`AirGap`] for
+    /// details.
     pub air_gap: Box<dyn AirGap>,
+    /// Definition of the flux barrier geometry, if the core has any. See the
+    /// docstring of [`FluxBarrier`] for more. Setting this field to `None`
+    /// means that the core has no flux barriers. This field can also be set
+    /// after the creation of a [`LinCore`] with [`LinCore::set_flux_barrier`].
+    /// This field can be omitted when deserializing, in which case it is set to
+    /// `None`.
     #[cfg_attr(feature = "serde", serde(default))]
     pub flux_barrier: Option<Box<dyn FluxBarrier>>,
 }
@@ -193,6 +331,9 @@ impl TryFrom<LinCoreBuilder> for LinCore {
 
     fn try_from(builder: LinCoreBuilder) -> Result<Self, Self::Error> {
         let zero = Length::new::<meter>(0.0);
+        compare_variables!(val zero <= builder.height)?;
+        compare_variables!(val zero <= builder.width)?;
+        compare_variables!(val zero <= builder.axial_length)?;
         compare_variables!(val zero <= builder.axial_coil_overhang)?;
         compare_variables!(0.0 <= builder.iron_fill_factor <= 1.0)?;
 
