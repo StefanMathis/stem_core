@@ -1,10 +1,9 @@
 use std::{path::PathBuf, sync::Arc};
 
 use cairo_viewport::{BoundingBox, SideLength, Viewport};
-use stem_core::planar_geo::draw::Drawable;
+use planar_geo::Transformation;
+use planar_geo::draw::*;
 use stem_core::prelude::*;
-use stem_slot::planar_geo::Transformation;
-use stem_slot::planar_geo::draw::*;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     set_fb_lin_core()?;

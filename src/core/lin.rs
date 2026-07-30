@@ -23,6 +23,118 @@ use crate::{
     flux_barrier::FluxBarrier,
 };
 
+/**
+A magnetic core for a linear electric motor / machine.
+
+Seen from its cross section, a radial flux linear electric motor consists of
+effectively two rectangles (stator and rotor) where the rotor slides against the
+stator. Therefore, the cross section of the stator / rotor core is effectively
+also a rectangle and the extents of it are described by its width, height and
+axial length (which in the cross section view goes into the image plane).
+Furthermore, the core may have geometric features such as a special air gap
+contour or cutouts (flux barriers). The following image shows the cross section
+of a slotted core with simple "star" flux barriers. The slots may hold a
+winding, the flux barriers may contain magnets (not depicted).
+*/
+#[doc = ""]
+#[cfg_attr(feature = "doc-images", doc = "![Linear core][lin_core]")]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image("lin_core", "docs/img/lin_core.svg")
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/**
+
+# Building a `LinCore`
+
+A [`LinCore`] is built from a [`LinCoreBuilder`]. If the field values of the
+[`LinCoreBuilder`] do not result in a valid core (e.g. if negative dimensions
+are given), the conversion fails, as shown in the example below. The field
+docstrings of [`LinCoreBuilder`] state the allowed value range for each
+parameter. Besides the [`LinCore::new`] constructor, [`TryFrom`] / [`TryInto`]
+implementations are also available.
+
+```
+use std::sync::Arc;
+use stem_core::prelude::*;
+
+// Valid parameters
+let air_gap = PlainAirGap::new(Length::new::<meter>(0.0), 0.0, 1, 0, true).expect("valid data");
+let builder = LinCoreBuilder {
+    height: Length::new::<millimeter>(20.0),
+    width: Length::new::<millimeter>(100.0),
+    axial_length: Length::new::<millimeter>(100.0),
+    axial_coil_overhang: Length::new::<millimeter>(0.0),
+    skew_angle: 0.0,
+    iron_fill_factor: 1.0,
+    material: Arc::new(Material::default()),
+    pole_pairs: 2,
+    air_gap: Box::new(air_gap),
+    flux_barrier: None,
+};
+
+let core = LinCore::new(builder).expect("valid inputs");
+assert_eq!(core.width().get::<millimeter>(), 100.0);
+
+// Invalid parameters (negative core width).
+let air_gap = PlainAirGap::new(Length::new::<meter>(0.0), 0.0, 1, 0, true).expect("valid data");
+let builder = LinCoreBuilder {
+    height: Length::new::<millimeter>(20.0),
+    width: Length::new::<millimeter>(-100.0), // Negative width!
+    axial_length: Length::new::<millimeter>(100.0),
+    axial_coil_overhang: Length::new::<millimeter>(0.0),
+    skew_angle: 0.0,
+    iron_fill_factor: 1.0,
+    material: Arc::new(Material::default()),
+    pole_pairs: 2,
+    air_gap: Box::new(air_gap),
+    flux_barrier: None,
+};
+
+// try_from is equivalent to new
+assert!(LinCore::try_from(builder).is_err());
+```
+
+# Serialization and deserialization
+
+The serialized representation of a [`LinCore`] is equivalent to that of
+[`LinCoreBuilder`]. When deserializing a [`LinCore`], the serialized
+representation is first deserialized into a [`LinCoreBuilder`] which is then
+converted via [`TryFrom`].
+
+```
+use approx;
+use stem_core::prelude::*;
+use serde_yaml;
+
+let str = indoc::indoc! {"
+height: 20 mm
+width: 100 mm
+axial_length: 100 mm
+axial_coil_overhang: 0 mm
+skew_angle: 0
+iron_fill_factor: 1
+material:
+    name: lamination
+    relative_permeability: 6000
+pole_pairs: 2
+air_gap:
+    PlainAirGap:
+        air_gap_winding_height: 0 mm
+        winding_coverage: 0
+        number_segments: 1
+        starts_in_slot_middle: true
+        slots: 0
+"};
+
+let core: LinCore = serde_yaml::from_str(&str).expect("valid dimensions");
+assert_eq!(core.width().get::<millimeter>(), 100.0);
+```
+ */
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(try_from = "LinCoreBuilder"))]
@@ -39,7 +151,7 @@ pub struct LinCore {
     skew_angle: f64,
     iron_fill_factor: f64,
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_arc_link",))]
-    material: Arc<Material>, // core material
+    material: Arc<Material>,
     pole_pairs: u16,
     air_gap: Box<dyn AirGap>,
     flux_barrier: Option<Box<dyn FluxBarrier>>,
@@ -281,6 +393,20 @@ impl CoreExt for LinCore {
     }
 }
 
+/**
+Builder struct for [`LinCore`].
+
+This struct can be (fallibly) converted into a[`LinCore`] via its [`TryFrom`] /
+[`TryInto`] implementation or via [`LinCore::new`]. The conversion fails if one
+of the field values is not inside the value range given on the individual field
+docstrings.
+
+The serialized representation of a [`LinCore`] is equivalent to that of this
+struct. When deserializing a [`LinCore`], the serialized representation is first
+deserialized into a [`LinCoreBuilder`] which is then converted via [`TryFrom`].
+
+See the docstring of [`LinCore`] for examples.
+ */
 #[cfg_attr(feature = "serde", derive(Deserialize))]
 pub struct LinCoreBuilder {
     /// Height (vertical extents) of the core. Must be positive (`height >= 0
@@ -295,10 +421,14 @@ pub struct LinCoreBuilder {
     /// typical cross-section view of a core because it goes into the image
     /// plane. Must be positive (`axial_length >= 0 m`).
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
-    pub axial_length: Length, // Axial length of the core
+    pub axial_length: Length,
+    /// If the core holds a winding, this specifies the axial overhang of both
+    /// sides. See [`CoreExt::axial_coil_overhang`] for details. Must be
+    /// positive (`axial_coil_overhang >= 0 m`).
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(default))]
     pub axial_coil_overhang: Length,
+    /// Skew angle of the core. See [`CoreExt::skew_angle`] for details.
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_angle"))]
     pub skew_angle: f64,
     /// Magnetic cores are often build from stacked sheets of ferromagnetic

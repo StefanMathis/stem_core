@@ -19,7 +19,125 @@ use super::CoreExt;
 use crate::{LinOrRot, air_gap::AirGap, error::IncompatibleFluxBarrier, flux_barrier::FluxBarrier};
 
 /**
-TODO: Explain inner and outer core concept
+A magnetic core for a rotary electric motor / machine.
+
+Seen from its cross section, a radial flux rotary electric motor consists of two
+coaxial hollow cylinders / tubes, where one of them (the rotor) rotates around
+the other (the stator). Therefore, the cross section of the stator / rotor core
+is effectively also a hollow cylinder described by the inner radius, outer
+radius and axial length (which in the cross section view goes into the image
+plane). The space between the two cylinders is called the air gap. The outer
+radius of the inner cylinder / core is called the
+[`air_gap_radius`](RotCore::air_gap_radius) and its inner radius
+is called the [`yoke_radius`](RotCore::yoke_radius). For the outer cylinder /
+core, it is the other way around: The outer radius is the yoke radius, the inner
+one the air gap radius. Hence, a core is called an _inner_ core, if
+`core.air_gap_radius() > core.yoke_radius()`, otherwise it is called an _outer_
+core.
+
+Both inner and outer cores may have geometric features such as a special air gap
+contour or cutouts (flux barriers). The following image shows an inner core with
+a simple "star" flux barrier and 6 poles and an outer core with slots for a
+winding (not depicted).
+ */
+#[doc = ""]
+#[cfg_attr(feature = "doc-images", doc = "![Rotary core][rot_core]")]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image("rot_core", "docs/img/rot_core.svg")
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/**
+ *
+# Building a `RotCore`
+
+A [`RotCore`] is built from a [`RotCoreBuilder`]. If the field values of the
+[`RotCoreBuilder`] do not result in a valid core (e.g. if negative dimensions
+are given), the conversion fails, as shown in the example below. The field
+docstrings of [`RotCoreBuilder`] state the allowed value range for each
+parameter. Besides the [`RotCore::new`] constructor, [`TryFrom`] / [`TryInto`]
+implementations are also available.
+
+```
+use std::sync::Arc;
+use stem_core::prelude::*;
+
+// Valid parameters (resulting in an outer core, since air_gap_radius < yoke_radius)
+let air_gap = PlainAirGap::new(Length::new::<meter>(0.0), 0.0, 1, 0, true).expect("valid data");
+let builder = RotCoreBuilder {
+    air_gap_radius: Length::new::<millimeter>(55.0),
+    yoke_radius: Length::new::<millimeter>(90.0),
+    axial_length: Length::new::<millimeter>(165.0),
+    axial_coil_overhang: Length::new::<millimeter>(0.0),
+    iron_fill_factor: 1.0,
+    material: Arc::new(Material::default()),
+    pole_pairs: 2,
+    skew_angle: 0.0,
+    air_gap: Box::new(air_gap),
+    flux_barrier: None,
+};
+
+let core = RotCore::new(builder).expect("valid inputs");
+assert_eq!(core.air_gap_radius().get::<millimeter>(), 55.0);
+
+// Invalid parameters (negative air_gap_radius).
+let air_gap = PlainAirGap::new(Length::new::<meter>(0.0), 0.0, 1, 0, true).expect("valid data");
+let builder = RotCoreBuilder {
+    air_gap_radius: Length::new::<millimeter>(-55.0),
+    yoke_radius: Length::new::<millimeter>(90.0),
+    axial_length: Length::new::<millimeter>(165.0),
+    axial_coil_overhang: Length::new::<millimeter>(0.0),
+    iron_fill_factor: 1.0,
+    material: Arc::new(Material::default()),
+    pole_pairs: 2,
+    skew_angle: 0.0,
+    air_gap: Box::new(air_gap),
+    flux_barrier: None,
+};
+
+// try_from is equivalent to new
+assert!(RotCore::try_from(builder).is_err());
+```
+
+# Serialization and deserialization
+
+The serialized representation of a [`LinCore`] is equivalent to that of
+[`LinCoreBuilder`]. When deserializing a [`LinCore`], the serialized
+representation is first deserialized into a [`LinCoreBuilder`] which is then
+converted via [`TryFrom`].
+
+```
+use approx;
+use stem_core::prelude::*;
+use serde_yaml;
+
+let str = indoc::indoc! {"
+air_gap_radius: 55 mm
+yoke_radius: 90 mm
+axial_length: 100 mm
+axial_coil_overhang: 0 mm
+skew_angle: 0
+iron_fill_factor: 1
+material:
+    name: lamination
+    relative_permeability: 6000
+pole_pairs: 2
+air_gap:
+    PlainAirGap:
+        air_gap_winding_height: 0 mm
+        winding_coverage: 0
+        number_segments: 1
+        starts_in_slot_middle: true
+        slots: 0
+"};
+
+let core: RotCore = serde_yaml::from_str(&str).expect("valid dimensions");
+assert_eq!(core.air_gap_radius().get::<millimeter>(), 55.0);
+```
  */
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -35,7 +153,7 @@ pub struct RotCore {
     axial_coil_overhang: Length,
     iron_fill_factor: f64,
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_arc_link",))]
-    material: Arc<Material>, // core material
+    material: Arc<Material>,
     pole_pairs: u16,
     skew_angle: f64,
     air_gap: Box<dyn AirGap>,
@@ -90,6 +208,7 @@ impl RotCore {
     }
 
     /**
+    TODO
     Return the radius of the yoke middle. For a non-slotted core, this is the mean radius of yoke and air gap radius.
     For a slotted core, this is the mean radius between the circle enclosing the tooth feet in the yoke and the yoke radius.
      */
@@ -102,6 +221,7 @@ impl RotCore {
                 + self.yoke_radius());
     }
 
+    /// TODO
     /// Returns the offset between the coordinate system origin of the core and
     /// that of its slots, if it has any.
     ///
@@ -139,7 +259,6 @@ impl RotCore {
     /// # Examples
     ///
     /// ```
-    /// TODO
     /// ```
     pub fn origin_offset_core_to_slot(&self) -> Length {
         use uom::typenum::P2;
@@ -364,6 +483,20 @@ impl CoreExt for RotCore {
     }
 }
 
+/**
+Builder struct for [`RotCore`].
+
+This struct can be (fallibly) converted into a[`RotCore`] via its [`TryFrom`] /
+[`TryInto`] implementation or via [`RotCore::new`]. The conversion fails if one
+of the field values is not inside the value range given on the individual field
+docstrings.
+
+The serialized representation of a [`RotCore`] is equivalent to that of this
+struct. When deserializing a [`RotCore`], the serialized representation is first
+deserialized into a [`RotCoreBuilder`] which is then converted via [`TryFrom`].
+
+See the docstring of [`RotCore`] for examples.
+ */
 #[cfg_attr(feature = "serde", derive(Deserialize))]
 pub struct RotCoreBuilder {
     /// Air gap radius of the core. Must be positive and not equal to
@@ -381,9 +514,13 @@ pub struct RotCoreBuilder {
     /// plane. Must be positive (`axial_length >= 0 m`).
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub axial_length: Length,
+    /// If the core holds a winding, this specifies the axial overhang of both
+    /// sides. See [`CoreExt::axial_coil_overhang`] for details. Must be
+    /// positive (`axial_coil_overhang >= 0 m`).
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(default))]
     pub axial_coil_overhang: Length,
+    /// Skew angle of the core. See [`CoreExt::skew_angle`] for details.
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_angle"))]
     pub skew_angle: f64,
     /// Magnetic cores are often build from stacked sheets of ferromagnetic

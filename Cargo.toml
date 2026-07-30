@@ -12,10 +12,8 @@ repository = "https://github.com/StefanMathis/stem_core.git"
 [dependencies]
 approx = { package = "approxim", version = "0.6" }
 compare_variables = { version = "0.3.0", features = ["proc_macro"] }
-# stem_magnet = { version = "0.5" }
-stem_magnet = { path = "../stem_magnet"}
-# stem_slot = { version = "0.3.1" }
-stem_slot = { path = "../stem_slot"}
+stem_magnet = { version = "0.2.9" }
+stem_slot = { version = "0.3.2" }
 num = {version = "0.4"}
 rayon = "1.5"
 serde_mosaic = { version = "0.2", optional = true }

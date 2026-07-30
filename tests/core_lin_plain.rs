@@ -443,3 +443,25 @@ fn test_plot_air_gap_surface_magnets() {
         assert!(compare_or_create(path, &callback, 0.99).is_ok());
     }
 }
+
+#[test]
+fn serialize_and_deserialize() {
+    let air_gap = PlainAirGap::new(Length::new::<meter>(0.0), 0.0, 1, 0, true).expect("valid data");
+    let builder = LinCoreBuilder {
+        height: Length::new::<millimeter>(20.0),
+        width: Length::new::<millimeter>(100.0),
+        axial_length: Length::new::<millimeter>(100.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        skew_angle: 0.0,
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 2,
+        air_gap: Box::new(air_gap),
+        flux_barrier: None,
+    };
+
+    let core = LinCore::new(builder).expect("valid inputs");
+    let serialized = serde_yaml::to_string(&core).expect("can be serialized");
+    let de_core: LinCore = serde_yaml::from_str(&serialized).expect("can be deserialized");
+    assert_eq!(core.width(), de_core.width());
+}
