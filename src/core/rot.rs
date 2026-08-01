@@ -207,18 +207,89 @@ impl RotCore {
         self.air_gap_radius() < self.yoke_radius()
     }
 
-    /**
-    TODO
-    Return the radius of the yoke middle. For a non-slotted core, this is the mean radius of yoke and air gap radius.
-    For a slotted core, this is the mean radius between the circle enclosing the tooth feet in the yoke and the yoke radius.
-     */
+    /// Returns the radius at the yoke middle.
+    ///
+    /// If [`RotCore::is_outer`] is true, this is [`RotCore::yoke_radius`] minus
+    /// half the [`CoreExt::yoke_height`]. Otherwise, it is the yoke radius plus
+    /// half the yoke height.
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![Yoke middle radius][cad_yoke_middle_radius]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image(
+            "cad_yoke_middle_radius",
+            "docs/img/cad_yoke_middle_radius.svg"
+        )
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    /// # Examples
+    ///
+    /// ```
+    /// use std::sync::Arc;
+    /// use stem_core::prelude::*;
+    /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
+    ///
+    /// let air_gap = PlainAirGap::default();
+    /// let plain_core: RotCore = RotCoreBuilder {
+    ///     air_gap_radius: Length::new::<millimeter>(40.0),
+    ///     yoke_radius: Length::new::<millimeter>(20.0),
+    ///     axial_length: Length::new::<millimeter>(100.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     skew_angle: 0.0,
+    ///     iron_fill_factor: 1.0,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 3,
+    ///     air_gap: Box::new(air_gap),
+    ///     flux_barrier: None,
+    /// }.try_into().expect("valid inputs");
+    ///
+    /// assert_eq!(plain_core.yoke_middle_radius().get::<millimeter>(), 30.0);
+    ///
+    /// let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
+    ///     bottom_width: Length::new::<millimeter>(4.0),
+    ///     opening_width: Length::new::<millimeter>(2.0),
+    ///     height: Length::new::<millimeter>(8.0),
+    ///     opening_height: Length::new::<millimeter>(1.0),
+    ///     slot_angle: 0.0,
+    ///     bottom_radius: Length::new::<millimeter>(0.0),
+    ///     top_radius: Length::new::<millimeter>(0.0),
+    ///     opening_radius: Length::new::<millimeter>(0.0),
+    ///     consider_tooth_tip_leakage: true,
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    /// let air_gap = SlottedAirGap::new(
+    ///     12,
+    ///     true,
+    ///     CarterFactorModel::Bin12,
+    ///     Box::new(slot),
+    /// );
+    /// let slotted_core: RotCore = RotCoreBuilder {
+    ///     air_gap_radius: Length::new::<millimeter>(40.0),
+    ///     yoke_radius: Length::new::<millimeter>(20.0),
+    ///     axial_length: Length::new::<millimeter>(100.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     skew_angle: 0.0,
+    ///     iron_fill_factor: 1.0,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 3,
+    ///     air_gap: Box::new(air_gap),
+    ///     flux_barrier: None,
+    /// }.try_into().expect("valid inputs");
+    ///
+    /// assert_eq!(slotted_core.yoke_middle_radius().get::<millimeter>(), 25.0);
+    /// ```
     pub fn yoke_middle_radius(&self) -> Length {
         let outer = self.is_outer();
         let sign = outer as i32 as f64 - (!outer) as i32 as f64;
-        return 0.5
-            * (self.air_gap_radius()
-                + sign * self.air_gap().tooth_height(self.into())
-                + self.yoke_radius());
+        return self.yoke_radius() - 0.5 * sign * self.yoke_height();
     }
 
     /// TODO
