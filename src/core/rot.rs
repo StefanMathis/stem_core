@@ -292,7 +292,6 @@ impl RotCore {
         return self.yoke_radius() - 0.5 * sign * self.yoke_height();
     }
 
-    /// TODO
     /// Returns the offset between the coordinate system origin of the core and
     /// that of its slots, if it has any.
     ///
@@ -330,6 +329,59 @@ impl RotCore {
     /// # Examples
     ///
     /// ```
+    /// use std::sync::Arc;
+    /// use approx::assert_abs_diff_eq;
+    /// use stem_core::prelude::*;
+    /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
+    ///
+    /// let air_gap = PlainAirGap::default();
+    /// let plain_core: RotCore = RotCoreBuilder {
+    ///     air_gap_radius: Length::new::<millimeter>(40.0),
+    ///     yoke_radius: Length::new::<millimeter>(20.0),
+    ///     axial_length: Length::new::<millimeter>(100.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     skew_angle: 0.0,
+    ///     iron_fill_factor: 1.0,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 3,
+    ///     air_gap: Box::new(air_gap),
+    ///     flux_barrier: None,
+    /// }.try_into().expect("valid inputs");
+    /// assert_eq!(plain_core.origin_offset_core_to_slot().get::<millimeter>(), 0.0);
+    ///
+    /// let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
+    ///     bottom_width: Length::new::<millimeter>(4.0),
+    ///     opening_width: Length::new::<millimeter>(2.0),
+    ///     height: Length::new::<millimeter>(8.0),
+    ///     opening_height: Length::new::<millimeter>(1.0),
+    ///     slot_angle: 0.0,
+    ///     bottom_radius: Length::new::<millimeter>(0.0),
+    ///     top_radius: Length::new::<millimeter>(0.0),
+    ///     opening_radius: Length::new::<millimeter>(0.0),
+    ///     consider_tooth_tip_leakage: true,
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    /// let air_gap = SlottedAirGap::new(
+    ///     12,
+    ///     true,
+    ///     CarterFactorModel::Bin12,
+    ///     Box::new(slot),
+    /// );
+    /// let slotted_core: RotCore = RotCoreBuilder {
+    ///     air_gap_radius: Length::new::<millimeter>(40.0),
+    ///     yoke_radius: Length::new::<millimeter>(20.0),
+    ///     axial_length: Length::new::<millimeter>(100.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     skew_angle: 0.0,
+    ///     iron_fill_factor: 1.0,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 3,
+    ///     air_gap: Box::new(air_gap),
+    ///     flux_barrier: None,
+    /// }.try_into().expect("valid inputs");
+    ///
+    /// assert_abs_diff_eq!(slotted_core.origin_offset_core_to_slot().get::<millimeter>(), 39.987, epsilon = 1e-3);
     /// ```
     pub fn origin_offset_core_to_slot(&self) -> Length {
         use uom::typenum::P2;
