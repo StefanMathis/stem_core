@@ -63,7 +63,7 @@ use std::sync::Arc;
 use stem_core::prelude::*;
 
 // Valid parameters
-let air_gap = PlainAirGap::new(Length::new::<meter>(0.0), 0.0, 1, 0, true).expect("valid data");
+let air_gap = PlainAirGap::default();
 let builder = LinCoreBuilder {
     height: Length::new::<millimeter>(20.0),
     width: Length::new::<millimeter>(100.0),
@@ -81,7 +81,7 @@ let core = LinCore::new(builder).expect("valid inputs");
 assert_eq!(core.width().get::<millimeter>(), 100.0);
 
 // Invalid parameters (negative core width).
-let air_gap = PlainAirGap::new(Length::new::<meter>(0.0), 0.0, 1, 0, true).expect("valid data");
+let air_gap = PlainAirGap::default();
 let builder = LinCoreBuilder {
     height: Length::new::<millimeter>(20.0),
     width: Length::new::<millimeter>(-100.0), // Negative width!
@@ -126,7 +126,7 @@ air_gap:
     PlainAirGap:
         air_gap_winding_height: 0 mm
         winding_coverage: 0
-        number_segments: 1
+        num_segments: 1
         starts_in_slot_middle: true
         slots: 0
 "};
@@ -213,7 +213,7 @@ impl LinCore {
     /// use std::sync::Arc;
     /// use stem_core::prelude::*;
     ///
-    /// let air_gap = PlainAirGap::new(Length::new::<meter>(0.0), 0.0, 1, 0, true).expect("valid inputs");
+    /// let air_gap = PlainAirGap::default();
     /// let mut lin_core: LinCore = LinCoreBuilder {
     ///     height: Length::new::<millimeter>(20.0),
     ///     width: Length::new::<millimeter>(100.0),

@@ -12,7 +12,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn set_fb_lin_core() -> Result<(), Box<dyn std::error::Error>> {
-    let air_gap = PlainAirGap::new(Length::new::<meter>(0.0), 0.0, 1, 0, true)?;
+    let air_gap = PlainAirGap::default();
     let lin_core: LinCore = LinCoreBuilder {
         height: Length::new::<millimeter>(20.0),
         width: Length::new::<millimeter>(100.0),
@@ -131,7 +131,7 @@ fn set_fb_lin_core() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn set_fb_rot_core() -> Result<(), Box<dyn std::error::Error>> {
-    let air_gap = PlainAirGap::new(Length::new::<meter>(0.0), 0.0, 1, 0, true)?;
+    let air_gap = PlainAirGap::default();
     let rot_core: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(40.0),
         yoke_radius: Length::new::<millimeter>(15.0),

@@ -1,4 +1,4 @@
-use std::f64::consts::PI;
+use std::{f64::consts::PI, num::NonZero};
 
 use crate::planar_geo;
 use compare_variables::compare_variables;
@@ -19,12 +19,16 @@ use crate::{
 };
 
 /// Used as default constructor for field
-/// [`CoreRotPlain::air_gap_winding_height`]
+/// [`PlainAirGap::air_gap_winding_height`]
 fn zero_length() -> Length {
     return Length::new::<meter>(0.0);
 }
 
-#[derive(Debug, Clone, Default)]
+/**
+If you don't care about adding a winding, but care about core segmentation -> PlainAirGap::with_num_segments
+If you don't care about adding a winding and core segmentation -> PlainAirGap::default
+ */
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct PlainAirGap {
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
@@ -34,7 +38,7 @@ pub struct PlainAirGap {
     )]
     air_gap_winding_height: Length,
     winding_coverage: f64,
-    number_segments: usize,
+    num_segments: usize,
     starts_in_slot_middle: bool,
     slots: u16,
 }
@@ -43,21 +47,30 @@ impl PlainAirGap {
     pub fn new(
         air_gap_winding_height: Length,
         winding_coverage: f64,
-        number_segments: usize,
+        num_segments: NonZero<usize>,
         slots: u16,
         starts_in_slot_middle: bool,
     ) -> Result<Self, Error> {
-        let zero_length = Length::new::<millimeter>(0.0);
+        let zero_length = Length::new::<meter>(0.0);
         compare_variables!(air_gap_winding_height >= zero_length)?;
-        compare_variables!(number_segments > 0)?;
         let winding_coverage = winding_coverage.clamp(0.0, 1.0);
         return Ok(Self {
             air_gap_winding_height,
             winding_coverage,
-            number_segments,
+            num_segments: num_segments.into(),
             slots,
             starts_in_slot_middle,
         });
+    }
+
+    pub fn with_num_segments(num_segments: NonZero<usize>) -> Self {
+        Self {
+            air_gap_winding_height: Length::new::<meter>(0.0),
+            winding_coverage: 0.0,
+            num_segments: num_segments.into(),
+            slots: 0,
+            starts_in_slot_middle: true,
+        }
     }
 
     pub fn air_gap_winding_height(&self) -> Length {
@@ -68,8 +81,8 @@ impl PlainAirGap {
         return self.winding_coverage;
     }
 
-    pub fn number_segments(&self) -> usize {
-        return self.number_segments;
+    pub fn num_segments(&self) -> usize {
+        return self.num_segments;
     }
 
     pub fn starts_in_slot_middle(&self) -> bool {
@@ -77,10 +90,22 @@ impl PlainAirGap {
     }
 }
 
+impl Default for PlainAirGap {
+    fn default() -> Self {
+        Self {
+            air_gap_winding_height: Length::new::<meter>(0.0),
+            winding_coverage: 0.0,
+            num_segments: 1,
+            slots: 0,
+            starts_in_slot_middle: true,
+        }
+    }
+}
+
 #[cfg_attr(feature = "serde", typetag::serde)]
 impl AirGap for PlainAirGap {
-    fn number_segments(&self, _: CoreRef<'_>) -> usize {
-        return self.number_segments;
+    fn num_segments(&self, _: CoreRef<'_>) -> usize {
+        return self.num_segments;
     }
 
     fn winding_zones(&self, core: CoreRef<'_>, coil_layout: &CoilLayout) -> WindingZones {

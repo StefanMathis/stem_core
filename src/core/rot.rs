@@ -52,7 +52,7 @@ winding (not depicted).
     `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
 /**
- *
+
 # Building a `RotCore`
 
 A [`RotCore`] is built from a [`RotCoreBuilder`]. If the field values of the
@@ -67,7 +67,7 @@ use std::sync::Arc;
 use stem_core::prelude::*;
 
 // Valid parameters (resulting in an outer core, since air_gap_radius < yoke_radius)
-let air_gap = PlainAirGap::new(Length::new::<meter>(0.0), 0.0, 1, 0, true).expect("valid data");
+let air_gap = PlainAirGap::default();
 let builder = RotCoreBuilder {
     air_gap_radius: Length::new::<millimeter>(55.0),
     yoke_radius: Length::new::<millimeter>(90.0),
@@ -85,7 +85,7 @@ let core = RotCore::new(builder).expect("valid inputs");
 assert_eq!(core.air_gap_radius().get::<millimeter>(), 55.0);
 
 // Invalid parameters (negative air_gap_radius).
-let air_gap = PlainAirGap::new(Length::new::<meter>(0.0), 0.0, 1, 0, true).expect("valid data");
+let air_gap = PlainAirGap::default();
 let builder = RotCoreBuilder {
     air_gap_radius: Length::new::<millimeter>(-55.0),
     yoke_radius: Length::new::<millimeter>(90.0),
@@ -130,7 +130,7 @@ air_gap:
     PlainAirGap:
         air_gap_winding_height: 0 mm
         winding_coverage: 0
-        number_segments: 1
+        num_segments: 1
         starts_in_slot_middle: true
         slots: 0
 "};
@@ -294,7 +294,7 @@ impl RotCore {
     /// use std::sync::Arc;
     /// use stem_core::prelude::*;
     ///
-    /// let air_gap = PlainAirGap::new(Length::new::<meter>(0.0), 0.0, 1, 0, true).expect("valid inputs");
+    /// let air_gap = PlainAirGap::default();
     /// let mut rot_core: RotCore = RotCoreBuilder {
     ///     air_gap_radius: Length::new::<millimeter>(40.0),
     ///     yoke_radius: Length::new::<millimeter>(15.0),
@@ -437,8 +437,8 @@ impl CoreExt for RotCore {
         return self.pole_pairs;
     }
 
-    fn number_segments(&self) -> usize {
-        return self.air_gap.number_segments(self.into());
+    fn num_segments(&self) -> usize {
+        return self.air_gap.num_segments(self.into());
     }
 
     fn skew_angle(&self) -> f64 {

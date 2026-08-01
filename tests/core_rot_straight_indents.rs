@@ -9,7 +9,7 @@ fn test_radii_calc() {
     let air_gap_radius = Length::new::<millimeter>(60.0);
     {
         let air_gap = StraightIndentsAirGap::new(
-            1,
+            1.try_into().unwrap(),
             Length::new::<millimeter>(20.0),
             Length::new::<millimeter>(0.0),
             3.try_into().unwrap(),
@@ -67,7 +67,7 @@ fn test_radii_calc() {
     let air_gap_radius = Length::new::<millimeter>(60.0);
     {
         let air_gap = StraightIndentsAirGap::new(
-            1,
+            1.try_into().unwrap(),
             Length::new::<millimeter>(20.0),
             Length::new::<millimeter>(5.0),
             3.try_into().unwrap(),
@@ -105,7 +105,7 @@ fn test_radii_calc() {
     }
     {
         let air_gap = StraightIndentsAirGap::new(
-            1,
+            1.try_into().unwrap(),
             Length::new::<millimeter>(20.0),
             Length::new::<millimeter>(-5.0),
             3.try_into().unwrap(),
@@ -160,7 +160,7 @@ fn create_core(
         pole_pairs: 2,
         skew_angle: 0.0,
         air_gap: Box::new(StraightIndentsAirGap::new(
-            1,
+            1.try_into().unwrap(),
             Length::new::<millimeter>(indent_width),
             Length::new::<millimeter>(indent_depth),
             indents_per_pole.try_into().expect("must not be zero"),

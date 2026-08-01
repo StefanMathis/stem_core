@@ -7,7 +7,14 @@ use stem_slot::planar_geo::draw::Drawable;
 
 #[test]
 fn test_plot() {
-    let air_gap = PlainAirGap::new(Length::new::<millimeter>(10.0), 1.0, 1, 12, false).unwrap();
+    let air_gap = PlainAirGap::new(
+        Length::new::<millimeter>(10.0),
+        1.0,
+        1.try_into().unwrap(),
+        12,
+        false,
+    )
+    .unwrap();
     let core = RotCore::try_from(RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(55.0),
         yoke_radius: Length::new::<millimeter>(85.0),
@@ -38,7 +45,14 @@ fn test_plot() {
 
 #[test]
 fn test_read_core_properties() {
-    let air_gap = PlainAirGap::new(Length::new::<millimeter>(10.0), 1.0, 1, 12, false).unwrap();
+    let air_gap = PlainAirGap::new(
+        Length::new::<millimeter>(10.0),
+        1.0,
+        1.try_into().unwrap(),
+        12,
+        false,
+    )
+    .unwrap();
     let core = RotCore::try_from(RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(55.0),
         yoke_radius: Length::new::<millimeter>(85.0),
@@ -64,7 +78,14 @@ fn test_read_core_properties() {
 
 #[test]
 fn test_pole_coverage() {
-    let air_gap = PlainAirGap::new(Length::new::<millimeter>(10.0), 0.0, 1, 12, true).unwrap();
+    let air_gap = PlainAirGap::new(
+        Length::new::<millimeter>(10.0),
+        0.0,
+        1.try_into().unwrap(),
+        12,
+        true,
+    )
+    .unwrap();
 
     let core = RotCore::try_from(RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(85.0),
@@ -101,7 +122,14 @@ fn test_pole_coverage() {
 
 #[test]
 fn test_create_core() {
-    let air_gap = PlainAirGap::new(Length::new::<millimeter>(10.0), 1.0, 1, 12, false).unwrap();
+    let air_gap = PlainAirGap::new(
+        Length::new::<millimeter>(10.0),
+        1.0,
+        1.try_into().unwrap(),
+        12,
+        false,
+    )
+    .unwrap();
 
     assert!(
         RotCore::try_from(RotCoreBuilder {
@@ -138,7 +166,14 @@ fn test_create_core() {
 
 #[test]
 fn test_plot_air_gap_winding() {
-    let air_gap = PlainAirGap::new(Length::new::<millimeter>(10.0), 1.0, 1, 12, false).unwrap();
+    let air_gap = PlainAirGap::new(
+        Length::new::<millimeter>(10.0),
+        1.0,
+        1.try_into().unwrap(),
+        12,
+        false,
+    )
+    .unwrap();
     let core = RotCore::try_from(RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(55.0),
         yoke_radius: Length::new::<millimeter>(85.0),
@@ -222,7 +257,14 @@ fn test_plot_air_gap_winding() {
 
 #[test]
 fn test_plot_air_gap_winding_slot_middle() {
-    let air_gap = PlainAirGap::new(Length::new::<millimeter>(10.0), 0.9, 1, 12, true).unwrap();
+    let air_gap = PlainAirGap::new(
+        Length::new::<millimeter>(10.0),
+        0.9,
+        1.try_into().unwrap(),
+        12,
+        true,
+    )
+    .unwrap();
 
     let core = RotCore::try_from(RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(85.0),
@@ -293,7 +335,14 @@ fn test_plot_air_gap_winding_slot_middle() {
 
 #[test]
 fn test_plot_air_gap_winding_zero_coverage() {
-    let air_gap = PlainAirGap::new(Length::new::<millimeter>(10.0), 0.0, 1, 12, true).unwrap();
+    let air_gap = PlainAirGap::new(
+        Length::new::<millimeter>(10.0),
+        0.0,
+        1.try_into().unwrap(),
+        12,
+        true,
+    )
+    .unwrap();
 
     let core = RotCore::try_from(RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(55.0),
@@ -339,7 +388,14 @@ fn test_plot_air_gap_winding_zero_coverage() {
 
 #[test]
 fn test_plot_inner_air_gap_arc_parallel_magnet() {
-    let air_gap = PlainAirGap::new(Length::new::<millimeter>(10.0), 0.0, 1, 12, true).unwrap();
+    let air_gap = PlainAirGap::new(
+        Length::new::<millimeter>(10.0),
+        0.0,
+        1.try_into().unwrap(),
+        12,
+        true,
+    )
+    .unwrap();
 
     let core = RotCore::try_from(RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(85.0),
@@ -420,7 +476,14 @@ fn test_plot_inner_air_gap_arc_parallel_magnet() {
 
 #[test]
 fn test_plot_outer_air_gap_arc_parallel_magnet() {
-    let air_gap = PlainAirGap::new(Length::new::<millimeter>(10.0), 0.0, 1, 12, true).unwrap();
+    let air_gap = PlainAirGap::new(
+        Length::new::<millimeter>(10.0),
+        0.0,
+        1.try_into().unwrap(),
+        12,
+        true,
+    )
+    .unwrap();
 
     let core = RotCore::try_from(RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(55.0),
@@ -527,7 +590,7 @@ fn test_plot_outer_air_gap_arc_parallel_magnet() {
 
 #[test]
 fn serialize_and_deserialize() {
-    let air_gap = PlainAirGap::new(Length::new::<meter>(0.0), 0.0, 1, 0, true).expect("valid data");
+    let air_gap = PlainAirGap::default();
     let builder = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(55.0),
         yoke_radius: Length::new::<millimeter>(85.0),

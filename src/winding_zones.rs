@@ -8,30 +8,94 @@ use stem_slot::planar_geo::draw::Drawable;
 use stem_slot::prelude::*;
 use stem_slot::{coil_layout::CoilLayout, slot::Slot};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+/**
+A "zone" is a position in the zone plan defined by `slot` and `layer`
+ */
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct Zone {
+    pub slot: u16,
+    pub layer: u16,
+}
+
+impl Zone {
+    pub fn new(slot: u16, layer: u16) -> Self {
+        return Self { slot, layer };
+    }
+}
+
+impl From<Zone> for [u16; 2] {
+    fn from(zone: Zone) -> Self {
+        return [zone.slot, zone.layer];
+    }
+}
+
+impl From<(u16, u16)> for Zone {
+    fn from(value: (u16, u16)) -> Self {
+        return Zone::new(value.0, value.1);
+    }
+}
+
+impl From<[u16; 2]> for Zone {
+    fn from(value: [u16; 2]) -> Self {
+        return Zone::new(value[0], value[1]);
+    }
+}
+
+impl PartialOrd for Zone {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        return Some(self.cmp(other));
+    }
+}
+
+impl Ord for Zone {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match self.slot.cmp(&other.slot) {
+            core::cmp::Ordering::Equal => return self.layer.cmp(&other.layer),
+            ord => return ord,
+        }
+    }
+}
+
+impl std::fmt::Display for Zone {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "zone: slot {}, layer {} ", self.slot, self.layer)
+    }
+}
+
 #[derive(Debug, Clone)]
-pub struct PositionedZoneContour(pub Contour);
+pub struct PositionedZoneContour {
+    pub contour: Contour,
+    pub zone: Zone,
+}
 
 impl PositionedZoneContour {
     #[cfg(feature = "cairo")]
     pub fn into_drawable(self) -> Drawable {
-        Drawable::new(self.0, stem_slot::SLOT_STYLE)
+        Drawable::new(self.contour, stem_slot::SLOT_STYLE)
     }
 
     #[cfg(feature = "cairo")]
     pub fn into_drawable_with_style(self, style: planar_geo::draw::Style) -> Drawable {
-        Drawable::new(self.0, style)
+        Drawable::new(self.contour, style)
     }
 }
 
 impl From<PositionedZoneContour> for Contour {
     fn from(value: PositionedZoneContour) -> Self {
-        value.0
+        value.contour
     }
 }
 
-impl From<Contour> for PositionedZoneContour {
-    fn from(value: Contour) -> Self {
-        PositionedZoneContour(value)
+impl From<(Contour, Zone)> for PositionedZoneContour {
+    fn from(value: (Contour, Zone)) -> Self {
+        Self {
+            contour: value.0,
+            zone: value.1,
+        }
     }
 }
 
@@ -44,25 +108,25 @@ impl From<PositionedZoneContour> for Drawable {
 
 impl Transformation for PositionedZoneContour {
     fn translate(&mut self, shift: [f64; 2]) {
-        self.0.translate(shift);
+        self.contour.translate(shift);
     }
 
     fn rotate(&mut self, center: [f64; 2], angle: f64) {
-        self.0.rotate(center, angle);
+        self.contour.rotate(center, angle);
     }
 
     fn scale(&mut self, factor: f64) {
-        self.0.scale(factor);
+        self.contour.scale(factor);
     }
 
     fn line_reflection(&mut self, start: [f64; 2], stop: [f64; 2]) -> () {
-        self.0.line_reflection(start, stop);
+        self.contour.line_reflection(start, stop);
     }
 }
 
 impl ToBoundingBox for PositionedZoneContour {
     fn bounding_box(&self) -> planar_geo::prelude::BoundingBox {
-        self.0.bounding_box()
+        self.contour.bounding_box()
     }
 }
 
@@ -107,6 +171,56 @@ impl<T: Transformation + Clone, const LIN: bool> WindingZonesEqSpaced<T, LIN> {
 
     pub fn layers(&self) -> usize {
         return self.zones.len();
+    }
+}
+
+impl<T: Transformation + Clone + ToBoundingBox, const LIN: bool> WindingZonesEqSpaced<T, LIN> {
+    fn next_priv(&mut self) -> Option<(T, Zone)> {
+        let layers = self.layers();
+
+        // Check for iterator exhaustion (also covers the case of the contour
+        // vector being empty)
+        if self.index >= (self.slots as usize) * layers {
+            return None;
+        }
+
+        let current_layer = self.index.rem_euclid(layers);
+        let current_slot = (self.index / layers) as f64;
+        self.index = self.index + 1;
+
+        // Cannot panic, because the index is the remainder of a division by the
+        // total number of layers and therefore is always in bounds
+        let mut contour = self.zones[current_layer].clone();
+
+        if LIN {
+            // If all vertices of the contour are negative, shift it to the
+            // end of the core. This can only happen for the first slot in
+            // case the slot starts in the tooth middle
+            let factor = if current_slot == 0.0
+                && self.starts_in_slot_middle
+                && contour.bounding_box().xmax() <= DEFAULT_EPSILON.sqrt()
+            {
+                1.0
+            } else {
+                1.0 / f64::from(self.slots)
+                    * (current_slot + 0.5 * (!self.starts_in_slot_middle) as u32 as f64)
+            };
+            contour.translate([self.air_gap_length.get::<meter>() * factor, 0.0]);
+        } else {
+            contour.translate([0.0, self.air_gap_length.get::<meter>() / TAU]);
+            let angle = -TAU
+                * (current_slot + 0.5 * (!self.starts_in_slot_middle) as u32 as f64) as f64
+                / self.slots as f64
+                + FRAC_PI_2;
+            contour.rotate([0.0, 0.0], angle);
+        }
+        return Some((
+            contour,
+            Zone {
+                slot: current_slot as u16,
+                layer: current_layer as u16,
+            },
+        ));
     }
 }
 
@@ -512,51 +626,19 @@ impl<const LIN: bool> WindingZonesEqSpaced<Contour, LIN> {
     }
 }
 
-impl<T: Transformation + Clone + ToBoundingBox, const LIN: bool> Iterator
-    for WindingZonesEqSpaced<T, LIN>
-{
-    type Item = T;
+impl<const LIN: bool> Iterator for WindingZonesEqSpaced<Polysegment, LIN> {
+    type Item = Polysegment;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let layers = self.layers();
+        self.next_priv().map(|t| t.0)
+    }
+}
 
-        // Check for iterator exhaustion (also covers the case of the contour
-        // vector being empty)
-        if self.index >= (self.slots as usize) * layers {
-            return None;
-        }
+impl<const LIN: bool> Iterator for WindingZonesEqSpaced<Contour, LIN> {
+    type Item = PositionedZoneContour;
 
-        let current_layer = self.index.rem_euclid(layers);
-        let current_slot = (self.index / layers) as f64;
-        self.index = self.index + 1;
-
-        // Cannot panic, because the index is the remainder of a division by the
-        // total number of layers and therefore is always in bounds
-        let mut contour = self.zones[current_layer].clone();
-
-        if LIN {
-            // If all vertices of the contour are negative, shift it to the
-            // end of the core. This can only happen for the first slot in
-            // case the slot starts in the tooth middle
-            let factor = if current_slot == 0.0
-                && self.starts_in_slot_middle
-                && contour.bounding_box().xmax() <= DEFAULT_EPSILON.sqrt()
-            {
-                1.0
-            } else {
-                1.0 / f64::from(self.slots)
-                    * (current_slot + 0.5 * (!self.starts_in_slot_middle) as u32 as f64)
-            };
-            contour.translate([self.air_gap_length.get::<meter>() * factor, 0.0]);
-        } else {
-            contour.translate([0.0, self.air_gap_length.get::<meter>() / TAU]);
-            let angle = -TAU
-                * (current_slot + 0.5 * (!self.starts_in_slot_middle) as u32 as f64) as f64
-                / self.slots as f64
-                + FRAC_PI_2;
-            contour.rotate([0.0, 0.0], angle);
-        }
-        return Some(contour);
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next_priv().map(From::from)
     }
 }
 
@@ -571,8 +653,8 @@ impl Iterator for WindingZones {
 
     fn next(&mut self) -> Option<Self::Item> {
         match self {
-            WindingZones::WindingZonesEqSpacedLin(i) => i.next().map(From::from),
-            WindingZones::WindingZonesEqSpacedRot(i) => i.next().map(From::from),
+            WindingZones::WindingZonesEqSpacedLin(i) => i.next(),
+            WindingZones::WindingZonesEqSpacedRot(i) => i.next(),
             WindingZones::Other(i) => i.next(),
         }
     }

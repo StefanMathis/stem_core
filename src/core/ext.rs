@@ -1,3 +1,8 @@
+/*!
+CoreExt trait -> Shared functionality between LinCore, RotCore and the Core and CoreRef enums
+Trait is sealed, because it is not meant to be implemented for foreign types
+*/
+
 use std::sync::Arc;
 
 use planar_geo::prelude::*;
@@ -281,6 +286,9 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         self.air_gap_width() / self.slots() as f64
     }
 
+    /**
+    Method forwards to [`AirGap::carter_factor`] converting self into [`CoreRef`] -> See its docstring.
+     */
     fn carter_factor(&self, air_gap_width: Length) -> f64 {
         self.air_gap()
             .carter_factor(self.as_core_ref(), air_gap_width)
@@ -288,8 +296,8 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
 
     /// Returns the number of segments. If this value is 0, the component is
     /// continuously skewed.
-    fn number_segments(&self) -> usize {
-        return self.air_gap().number_segments(self.as_core_ref());
+    fn num_segments(&self) -> usize {
+        return self.air_gap().num_segments(self.as_core_ref());
     }
 
     fn winding_zones(&self, coil_layout: &CoilLayout) -> WindingZones {
@@ -442,7 +450,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     }
 
     fn skew_factor(&self, ordinal: usize) -> f64 {
-        return skew_factor(ordinal, self.skew_angle(), self.number_segments());
+        return skew_factor(ordinal, self.skew_angle(), self.num_segments());
     }
 
     /**
@@ -486,8 +494,8 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
 }
 
 /**
-Calculate the skew factor for a given ordinal for either a continuously skewed (`number_segments` = 0) or discretly staggered (`number_segments` > 0) electrical machine component.
-In case of discrete staggering, each segment is twisted by `skew_angle / number_segments` against its neighboring segments. For an infinite number of segments,
+Calculate the skew factor for a given ordinal for either a continuously skewed (`num_segments` = 0) or discretly staggered (`num_segments` > 0) electrical machine component.
+In case of discrete staggering, each segment is twisted by `skew_angle / num_segments` against its neighboring segments. For an infinite number of segments,
 this results in the same skew factor as a continuous skewing. The formulae are taken from [Hut95]. For additional explanation, see also [Bin12], p. 629.
 
 The skew factor represents the normalized superposition of multiple (in case of discrete staggering) or infinitely many (in case of continuous skew) sinusoidals
@@ -501,7 +509,7 @@ In this formula, the mechanical ordinal is used.
 # Arguments
 - ordinal: Mechanical ordinal of the harmonic
 - skew_angle: Skew angle in rad
-- number_segments: Inner of component segments. If set to 0, the component is continuously skewed.
+- num_segments: Inner of component segments. If set to 0, the component is continuously skewed.
 
 The calculation formula for a continuously skewed component is taken from [Hut18].
 
@@ -539,16 +547,16 @@ assert_abs_diff_eq!(skew_factor(60, angle, 4), 0.0, epsilon = 0.0001);
 assert_abs_diff_eq!(skew_factor(5, 12.0 / 180.0 * PI, 30), skew_factor(5, 12.0 / 180.0 * PI, 0), epsilon = 0.0001);
 ```
  */
-pub fn skew_factor(ordinal: usize, skew_angle: f64, number_segments: usize) -> f64 {
+pub fn skew_factor(ordinal: usize, skew_angle: f64, num_segments: usize) -> f64 {
     if skew_angle == 0.0 {
         return 1.0;
     } else {
-        if number_segments == 0 {
+        if num_segments == 0 {
             let arg = ordinal as f64 * skew_angle / 2.0;
             return arg.sin() / arg;
         } else {
             let arg = ordinal as f64 * skew_angle / 2.0;
-            return arg.sin() / (number_segments as f64 * (arg / number_segments as f64).sin());
+            return arg.sin() / (num_segments as f64 * (arg / num_segments as f64).sin());
         }
     }
 }

@@ -277,7 +277,7 @@ impl SlottedAirGap {
 
 #[cfg_attr(feature = "serde", typetag::serde)]
 impl AirGap for SlottedAirGap {
-    fn number_segments(&self, _: CoreRef<'_>) -> usize {
+    fn num_segments(&self, _: CoreRef<'_>) -> usize {
         return 0;
     }
 

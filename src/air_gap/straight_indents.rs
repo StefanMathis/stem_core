@@ -25,7 +25,7 @@ use crate::{
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub struct StraightIndentsAirGap {
-    pub number_segments: usize,
+    pub num_segments: usize,
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub indent_width: Length,
@@ -37,13 +37,13 @@ pub struct StraightIndentsAirGap {
 
 impl StraightIndentsAirGap {
     pub fn new(
-        number_segments: usize,
+        num_segments: NonZero<usize>,
         indent_width: Length,
         indent_depth: Length,
         indents_per_pole: NonZero<usize>,
     ) -> Self {
         return Self {
-            number_segments,
+            num_segments: num_segments.into(),
             indent_width,
             indent_depth,
             indents_per_pole: indents_per_pole.into(),
@@ -292,8 +292,8 @@ impl StraightIndentsAirGap {
 
 #[cfg_attr(feature = "serde", typetag::serde)]
 impl AirGap for StraightIndentsAirGap {
-    fn number_segments(&self, _core: CoreRef<'_>) -> usize {
-        self.number_segments
+    fn num_segments(&self, _core: CoreRef<'_>) -> usize {
+        self.num_segments
     }
 
     fn surface_magnets(
@@ -305,7 +305,7 @@ impl AirGap for StraightIndentsAirGap {
         let magnet_width = magnet_assembly.magnet().width();
         let gap_between_partial_magnets = self.indent_width - magnet_width;
         let num_tangential = magnet_assembly.num_tangential();
-        let mut magnet_shapes = if split {
+        let mut magnet_shapes: Vec<PositionedMagnetShape> = if split {
             magnet_assembly
                 .magnet()
                 .north_south_shapes()
@@ -396,7 +396,7 @@ impl AirGap for StraightIndentsAirGap {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub struct AirGapPolygonBuilder {
-    pub number_segments: usize,
+    pub num_segments: usize,
     pub indents_per_pole: usize,
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub indent_depth: Length, // Depth of the indent. A negative depth leads to an extrusion
@@ -409,7 +409,7 @@ impl AirGapPolygonBuilder {
         let indent_width = 2.0 * core.air_gap_radius() * (std::f64::consts::PI / n_sides).sin();
 
         return StraightIndentsAirGap {
-            number_segments: self.number_segments,
+            num_segments: self.num_segments,
             indent_width: indent_width,
             indent_depth: self.indent_depth,
             indents_per_pole: self.indents_per_pole,

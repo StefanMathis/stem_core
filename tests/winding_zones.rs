@@ -2,14 +2,14 @@ use std::f64::consts::TAU;
 
 use cairo_viewport::{SideLength, Viewport, compare_or_create};
 use planar_geo::{contour::Contour, draw::Style};
-use stem_core::winding_zones::WindingZonesEqSpaced;
+use stem_core::{prelude::PositionedZoneContour, winding_zones::WindingZonesEqSpaced};
 use stem_slot::{
     planar_geo::{draw::*, prelude::Composite},
     prelude::*,
 };
 
 fn compare_to_reference<P: AsRef<std::path::Path>>(
-    contours: Vec<Contour>,
+    contours: Vec<PositionedZoneContour>,
     path: P,
     view: Option<Viewport>,
 ) {
@@ -23,7 +23,7 @@ fn compare_to_reference<P: AsRef<std::path::Path>>(
         return view.write_to_file(path, move |cr| {
             cr.set_source_rgb(1.0, 1.0, 1.0);
             cr.paint()?;
-            for (idx, contour) in contours.iter().enumerate() {
+            for (idx, contour) in contours.iter().map(|c| &c.contour).enumerate() {
                 contour.draw(&style, cr)?;
                 let text = Text {
                     text: idx.to_string(),
@@ -126,7 +126,7 @@ fn from_slot_rot_outer() {
         )
         .next()
         .unwrap();
-        let slot_opening_pt = slot_contour.points().next().unwrap();
+        let slot_opening_pt = slot_contour.contour.points().next().unwrap();
         approx::assert_abs_diff_eq!(
             (slot_opening_pt[0].powi(2) + slot_opening_pt[1].powi(2)).sqrt(),
             radius.get::<meter>()
@@ -157,7 +157,7 @@ fn from_slot_rot_inner() {
         )
         .next()
         .unwrap();
-        let slot_opening_pt = slot_contour.points().next().unwrap();
+        let slot_opening_pt = slot_contour.contour.points().next().unwrap();
         approx::assert_abs_diff_eq!(
             (slot_opening_pt[0].powi(2) + slot_opening_pt[1].powi(2)).sqrt(),
             radius.get::<meter>()
@@ -355,16 +355,17 @@ fn from_air_gap_winding_lin_outer() {
         None,
     );
 
-    let mut contours: Vec<Contour> = WindingZonesEqSpaced::<Contour, true>::from_air_gap_winding(
-        width,
-        12,
-        air_gap_winding_height,
-        winding_coverage,
-        &CoilLayout::Quadruple,
-        false,
-        true,
-    )
-    .collect();
+    let mut contours: Vec<PositionedZoneContour> =
+        WindingZonesEqSpaced::<Contour, true>::from_air_gap_winding(
+            width,
+            12,
+            air_gap_winding_height,
+            winding_coverage,
+            &CoilLayout::Quadruple,
+            false,
+            true,
+        )
+        .collect();
     contours.append(
         &mut WindingZonesEqSpaced::<Contour, true>::from_air_gap_winding(
             width,
@@ -436,16 +437,17 @@ fn from_air_gap_winding_rot_outer() {
         None,
     );
 
-    let mut contours: Vec<Contour> = WindingZonesEqSpaced::<Contour, false>::from_air_gap_winding(
-        width,
-        12,
-        air_gap_winding_height,
-        winding_coverage,
-        &CoilLayout::DoubleVertical,
-        true,
-        false,
-    )
-    .collect();
+    let mut contours: Vec<PositionedZoneContour> =
+        WindingZonesEqSpaced::<Contour, false>::from_air_gap_winding(
+            width,
+            12,
+            air_gap_winding_height,
+            winding_coverage,
+            &CoilLayout::DoubleVertical,
+            true,
+            false,
+        )
+        .collect();
     contours.append(
         &mut WindingZonesEqSpaced::<Contour, false>::from_air_gap_winding(
             width,
@@ -465,16 +467,17 @@ fn from_air_gap_winding_rot_outer() {
         None,
     );
 
-    let mut contours: Vec<Contour> = WindingZonesEqSpaced::<Contour, false>::from_air_gap_winding(
-        width,
-        12,
-        air_gap_winding_height,
-        winding_coverage,
-        &CoilLayout::Quadruple,
-        true,
-        false,
-    )
-    .collect();
+    let mut contours: Vec<PositionedZoneContour> =
+        WindingZonesEqSpaced::<Contour, false>::from_air_gap_winding(
+            width,
+            12,
+            air_gap_winding_height,
+            winding_coverage,
+            &CoilLayout::Quadruple,
+            true,
+            false,
+        )
+        .collect();
     contours.append(
         &mut WindingZonesEqSpaced::<Contour, false>::from_air_gap_winding(
             width,
@@ -494,16 +497,17 @@ fn from_air_gap_winding_rot_outer() {
         None,
     );
 
-    let mut contours: Vec<Contour> = WindingZonesEqSpaced::<Contour, false>::from_air_gap_winding(
-        width,
-        12,
-        air_gap_winding_height,
-        winding_coverage,
-        &CoilLayout::MultiVertical(3),
-        true,
-        false,
-    )
-    .collect();
+    let mut contours: Vec<PositionedZoneContour> =
+        WindingZonesEqSpaced::<Contour, false>::from_air_gap_winding(
+            width,
+            12,
+            air_gap_winding_height,
+            winding_coverage,
+            &CoilLayout::MultiVertical(3),
+            true,
+            false,
+        )
+        .collect();
     contours.append(
         &mut WindingZonesEqSpaced::<Contour, false>::from_air_gap_winding(
             width,

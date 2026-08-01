@@ -3,6 +3,8 @@ A module providing the the [`LinCore`] and [`RotCore`] structs, the owning and
 borrowing enum wrappers [`Core`] and [`CoreRef`] and the sealed trait
 [`CoreExt`].
 
+# Overview
+
 Both the stator and the rotor of a radial flux machine are typically built
 around a magnetic core, which serves as a scaffolding for mounting magnets and
 windings and guides the magnetic flux produced by them. Radial flux machines can
@@ -16,11 +18,16 @@ rotary core by the [`RotCore`] type.
 The magnetic force moving a motor / powering a generator is created by magnetic
 flux passing through the air gap between stator and rotor. The local
 distribution of that flux is heavily influenced by the shape of the stator /
-rotor contour at the air gap. That contour is defined by the
-[`AirGap`](crate::air_gap::AirGap) implementor used to create the [`LinCore`] /
+rotor contour at the air gap. That contour is defined by an
+[`AirGap`](crate::air_gap::AirGap) trait object used to create the [`LinCore`] /
 [`RotCore`] instance. The following image shows an example for both core types
 where the air gap shape is defined by [`Slot`](stem_slot::slot::Slot)s:
 */
+#![cfg_attr(feature = "doc-images", doc = "")]
+#![cfg_attr(
+    feature = "doc-images",
+    doc = "![Linear and rotary core][lin_and_rot_core.svg]"
+)]
 #![cfg_attr(feature = "doc-images",
 cfg_attr(all(),
 doc = ::embed_doc_image::embed_image!("lin_and_rot_core.svg", "docs/img/lin_and_rot_core.svg"),
@@ -30,19 +37,104 @@ doc = ::embed_doc_image::embed_image!("lin_and_rot_core.svg", "docs/img/lin_and_
     doc = "**Doc images not enabled**. Compile docs with `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
 /*!
-The air gap contour also determines if a surface magnet can be mounted on a
-magnetic core, see [`CoreExt::collision_check`].
 
-In addition to the air gap, the magnetic flux can be further directed by
-introducing [`FluxBarrier`]s (holes) in the core, which can also serve as
-insertion slots for interior magnets. See the trait docstring for more.
+The core shape can be further customized by optionally inserting a
+[`FluxBarrier`](crate::flux_barrier::FluxBarrier) into the core, which can both
+be used to direct the magnetic flux and to provide space for interior magnets.
+The latter aspect is discussed in depth further below.
 
 Since every core in stem is either a [`LinCore`] or a [`RotCore`], an owning
 ([`Core`]) and a borrowing ([`CoreRef`]) wrapper is provided as well. The
 sealed [`CoreExt`] trait provides a common interface for both [`LinCore`] and
-[`RotCore`] and therefore also for the [`Core`] and [`CoreRef`] enums. See its
-docstring for more.
- */
+[`RotCore`] and therefore also for the [`Core`] and [`CoreRef`] enums.
+
+# Windable cores
+
+A core is called _windable_ if its [`AirGap`](crate::air_gap::AirGap) contour
+allows for a winding to be mounted (see [`CoreExt::windable`]). The following
+image shows two different examples: One with a
+[`PlainAirGap`](crate::air_gap::PlainAirGap), where the winding is mounted
+directly on the core / in the air gap, and one with a
+[`SlottedAirGap`](crate::air_gap::SlottedAirGap), where the winding is mounted
+inside the slots along the air gap contour.
+
+*/
+#![cfg_attr(feature = "doc-images", doc = "")]
+#![cfg_attr(
+    feature = "doc-images",
+    doc = "![Winding in core][lin_core_air_gap_and_slotted_winding.svg]"
+)]
+#![cfg_attr(feature = "doc-images",
+cfg_attr(all(),
+doc = ::embed_doc_image::embed_image!("lin_core_air_gap_and_slotted_winding.svg", "docs/img/lin_core_air_gap_and_slotted_winding.svg"),
+))]
+#![cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/*!
+
+It is evident that the space available for the individual winding zones is
+determined by the specific [`AirGap`](crate::air_gap::AirGap) trait object.
+The [`CoreExt::winding_zones`] returns an iterator over the winding zone
+contours together with the respective [`Zone`](crate::winding_zones::Zone)
+index. This iterator can be used for e.g. creating a visualization of the
+winding itself (as shown in the previous image) or to determine the available
+area for the winding and hence its resistance and current carrying capacity.
+
+# Surface magnets
+
+Some [`AirGap`](crate::air_gap::AirGap)s allow for mounting magnets directly on
+the core surface / in the core air gap. Similar to [`CoreExt::winding_zones`],
+the [`CoreExt::surface_magnets`] method returns an iterator over the
+[`PositionedMagnetShape`](crate::magnets::PositionedMagnetShape)s for a provided
+[`MagnetAssembly`]. The [`CoreExt::collision_check`] method can be used to
+check if the mounting results in collisions and therefore if the provided
+[`MagnetAssembly`] is compatible with the core. The image below shows an example
+for a linear core with an assembly consisting of [`BreadLoafMagnet`]s and for a
+rotary core with an assembly consisting of [`ArcParallelMagnet`]s.
+
+*/
+#![cfg_attr(feature = "doc-images", doc = "")]
+#![cfg_attr(
+    feature = "doc-images",
+    doc = "![Surface magnets on cores][lin_and_rot_core_surface_magnets.svg]"
+)]
+#![cfg_attr(feature = "doc-images",
+cfg_attr(all(),
+doc = ::embed_doc_image::embed_image!("lin_and_rot_core_surface_magnets.svg", "docs/img/lin_and_rot_core_surface_magnets.svg"),
+))]
+#![cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/*!
+
+# Interior magnets
+
+Some [`FluxBarrier`](crate::flux_barrier::FluxBarrier)s provide space for
+interior magnets. Similar to [`CoreExt::surface_magnets`], the
+[`CoreExt::interior_magnets`] method returns an iterator over the
+[`PositionedMagnetShape`](crate::magnets::PositionedMagnetShape)s of the
+interior magnets. The type of those magnets is determined by the
+[`FluxBarrier`](crate::flux_barrier::FluxBarrier), hence it is not necessary to
+specifiy the [`MagnetAssembly`] for the interior magnets. In the image below,
+a linear and a rotary core with the
+[`Star1FluxBarrier`](crate::flux_barrier::Star1FluxBarrier) are shown.
+*/
+#![cfg_attr(feature = "doc-images", doc = "")]
+#![cfg_attr(
+    feature = "doc-images",
+    doc = "![Interior magnets in cores][lin_and_rot_core_interior_magnets.svg]"
+)]
+#![cfg_attr(feature = "doc-images",
+cfg_attr(all(),
+doc = ::embed_doc_image::embed_image!("lin_and_rot_core_interior_magnets.svg", "docs/img/lin_and_rot_core_interior_magnets.svg"),
+))]
+#![cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
 
 use std::sync::Arc;
 

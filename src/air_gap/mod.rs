@@ -23,7 +23,7 @@ pub use straight_indents::{AirGapPolygonBuilder, StraightIndentsAirGap};
 #[cfg_attr(feature = "serde", typetag::serde)]
 pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// Axial segments of the core
-    fn number_segments(&self, core: CoreRef<'_>) -> usize;
+    fn num_segments(&self, core: CoreRef<'_>) -> usize;
 
     fn surface_magnets(
         &self,

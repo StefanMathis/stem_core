@@ -293,8 +293,7 @@ fn test_plain_core_180deg() {
     };
 
     {
-        let air_gap =
-            PlainAirGap::new(Length::new::<meter>(0.0), 1.0, 1, 28, true).expect("valid data");
+        let air_gap = PlainAirGap::default();
         let core: RotCore = RotCoreBuilder {
             air_gap_radius: Length::new::<millimeter>(54.4),
             yoke_radius: Length::new::<millimeter>(19.0),
@@ -337,8 +336,7 @@ fn test_plain_core_180deg() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let air_gap =
-            PlainAirGap::new(Length::new::<meter>(0.0), 1.0, 1, 28, true).expect("valid data");
+        let air_gap = PlainAirGap::default();
         let core: RotCore = RotCoreBuilder {
             air_gap_radius: Length::new::<millimeter>(54.4),
             yoke_radius: Length::new::<millimeter>(19.0),
@@ -419,8 +417,7 @@ fn test_plain_core_90deg() {
     };
 
     {
-        let air_gap =
-            PlainAirGap::new(Length::new::<meter>(0.0), 1.0, 1, 28, true).expect("valid data");
+        let air_gap = PlainAirGap::default();
         let core: RotCore = RotCoreBuilder {
             air_gap_radius: Length::new::<millimeter>(54.4),
             yoke_radius: Length::new::<millimeter>(19.0),
@@ -463,8 +460,7 @@ fn test_plain_core_90deg() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let air_gap =
-            PlainAirGap::new(Length::new::<meter>(0.0), 1.0, 1, 28, true).expect("valid data");
+        let air_gap = PlainAirGap::default();
         let core: RotCore = RotCoreBuilder {
             air_gap_radius: Length::new::<millimeter>(54.4),
             yoke_radius: Length::new::<millimeter>(19.0),
@@ -545,8 +541,7 @@ fn test_plain_core_90deg_no_relief() {
     };
 
     {
-        let air_gap =
-            PlainAirGap::new(Length::new::<meter>(0.0), 1.0, 1, 28, true).expect("valid data");
+        let air_gap = PlainAirGap::default();
         let core: RotCore = RotCoreBuilder {
             air_gap_radius: Length::new::<millimeter>(54.4),
             yoke_radius: Length::new::<millimeter>(19.0),
@@ -589,8 +584,7 @@ fn test_plain_core_90deg_no_relief() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let air_gap =
-            PlainAirGap::new(Length::new::<meter>(0.0), 1.0, 1, 28, true).expect("valid data");
+        let air_gap = PlainAirGap::default();
         let core: RotCore = RotCoreBuilder {
             air_gap_radius: Length::new::<millimeter>(54.4),
             yoke_radius: Length::new::<millimeter>(19.0),

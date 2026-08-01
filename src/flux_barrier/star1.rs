@@ -54,10 +54,10 @@ impl Star1HeightSplit {
 
 /// TODO
 #[doc = ""]
-#[cfg_attr(feature = "doc-images", doc = "![Star1 drawing][cad_star]")]
+#[cfg_attr(feature = "doc-images", doc = "![Star1 drawing][cad_star1]")]
 #[cfg_attr(
     feature = "doc-images",
-    embed_doc_image::embed_doc_image("cad_star", "docs/img/cad_star.svg")
+    embed_doc_image::embed_doc_image("cad_star1", "docs/img/cad_star1.svg")
 )]
 #[cfg_attr(
     not(feature = "doc-images"),
