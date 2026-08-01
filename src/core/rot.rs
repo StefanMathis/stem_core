@@ -308,6 +308,8 @@ impl RotCore {
     /// shift by `delta` to compensate. For an open slot, `offset` is therefore:
     ///
     /// `offset = sqrt(RotCore::air_gap_radius² - (Slot::opening_width/2)²)`
+    ///
+    /// If the core has no slots, this method returns `0 m`.
     #[doc = ""]
     #[cfg_attr(
         feature = "doc-images",
