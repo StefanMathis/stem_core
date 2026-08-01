@@ -6,6 +6,8 @@ magnet types. The [`IncompatibleFluxBarrier`] covers failure when trying to
 insert a flux barrier in an existing core.
 */
 
+use std::num::TryFromIntError;
+
 use crate::{flux_barrier::FluxBarrier, planar_geo};
 use compare_variables::Comparison;
 use planar_geo::{contour::Contour, error::ShapeConstructorError};
@@ -26,6 +28,9 @@ pub enum Error {
     InvalidUsize(Comparison<usize>),
     /// A given [`f64`] is not within its allowed value range.
     InvalidF64(Comparison<f64>),
+    /// A given unsized integer such as [`usize`] is zero, but shouldn't be.
+    ZeroUInt,
+    /// Failed to create a core geometry due to the contained error.
     GeometryError(planar_geo::error::Error),
     /// A [`AirGap`](crate::air_gap::AirGap) or
     /// [`FluxBarrier`](crate::flux_barrier::FluxBarrier) is not compatible to
@@ -46,6 +51,7 @@ impl std::fmt::Display for Error {
             Error::InvalidLength(comparison_error) => comparison_error.fmt(f),
             Error::InvalidUsize(comparison_error) => comparison_error.fmt(f),
             Error::InvalidF64(comparison_error) => comparison_error.fmt(f),
+            Error::ZeroUInt => write!(f, "value is zero, but shouldn't be"),
             Error::GeometryError(err) => err.fmt(f),
             Error::IncompatibleToLinCore(type_name) => {
                 write!(f, "{} is not compatible to a linear core", type_name)
@@ -93,6 +99,12 @@ impl From<ShapeConstructorError<Contour>> for Error {
 impl From<planar_geo::error::Error> for Error {
     fn from(value: planar_geo::error::Error) -> Self {
         return Error::GeometryError(value);
+    }
+}
+
+impl From<TryFromIntError> for Error {
+    fn from(_: TryFromIntError) -> Self {
+        return Error::ZeroUInt;
     }
 }
 
