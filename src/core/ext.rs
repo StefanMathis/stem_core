@@ -767,8 +767,9 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     }
 
     /**
-    This function returns the `SlottingOrdinals` ordinals iterator for the given core.
-    For more details, see the documentation of `SlottingOrdinals`.
+    Returns an iterator over the slotting ordinals.
+
+    For details, see the docstring of [`SlottingOrdinals`].
      */
     fn slotting_ordinals(&self) -> SlottingOrdinals {
         return SlottingOrdinals::new(self.slots(), self.pole_pairs());
@@ -956,23 +957,44 @@ pub fn skew_factor(ordinal: usize, skew_angle: f64, num_segments: usize) -> f64 
 }
 
 /**
-The slotting of a ferromagnetic core causes permeance variations when moving along the air gap.
-This iterator returns the ordinals of the Fourier transformation of the permeance course
-(normalized to a polepair, therefore "electrical" ordinals).
-The ordinals are calculated by the formula:
+An iterator over the slotting ordinals of a core.
+
+When moving along the [`CoreExt::air_gap_width`] of a core, the slot openings
+cause a variation in the magnetic resistance / reluctance of the air gap.
+Plotting the air gap _permeance_ (inverse reluctance) over the air gap width
+will result in a straight line over the tooth heads interrupted by sudden drops
+in the slot opening area. This graph can be used to analytically assess the
+influence of the tooth head / slot opening geometry on phenomena such as cogging
+torque. To do that, the graph is disassembled into its harmonics via Fourier
+transformation.
+
+This iterator returns the "electrical" ordinals of those harmonics, i.e. the
+ordinal is normalized to a pole pair. To obtain the "mechanical" ordinals,
+simply multiply the electrical ordinals by the number of pole pairs.
+
+The ordinals are calculated by [\[1\]](#SlottingOrdinals_1), eq. (8):
 `o = k * N / p`
 where
 `k = 0, 1, 2, ...`
-`N`: Inner of slots
-`p`: Inner of pole pairs
+`N`: Number of slots
+`p`: Number of pole pairs
 
-Since `k` goes from 0 to infinity, the number of ordinals is also infinite. If the ferromagnetic core
-is not slotted, the constructor input value of `slots` should be zero, in which case this iterator
-returns `None`.
+Since `k` goes from 0 to infinity, the number of ordinals and therefore this
+iterator are also infinite (although it will panic / overflow when
+[`usize::MAX`] items have been requested).
 
-The calculation formula is taken from [Hut95], eq. (8).
+The returned iterator items are [`Ratio`](num::rational::Ratio)s instead of
+floating point numbers so the underlying physical meaning is clearly visible.
+To convert the ratio into a floating point number, use:
+`*ratio.denom() as f64 / *ratio.numer() as f64`
 
-# Example:
+# Literature
+<a id="SlottingOrdinals_1">\[1\]</a>
+Huth, Gerhard: Nutrastung von permanenterregten AC-Servomotoren mit gestaffelter
+Rotoranordnung, Electrical Engineering 78 (1995), p. 391-397, Springer-Verlag
+
+# Examples
+
 ```
 use magnetic_core::SlottingOrdinals;
 use num::rational::Ratio;
@@ -981,21 +1003,21 @@ use num::rational::Ratio;
 let mut iter = SlottingOrdinals::new(0, 1);
 assert_eq!(iter.next(), None);
 
-// 12 slots and 4 pole pairs => Inner of slots per pole pair is 3
+// 12 slots and 4 pole pairs => Number of slots per pole pair is 3
 let mut iter = SlottingOrdinals::new(12, 4);
 assert_eq!(iter.next(), Some(Ratio::new(3, 1)));
 assert_eq!(iter.next(), Some(Ratio::new(6, 1)));
 assert_eq!(iter.next(), Some(Ratio::new(9, 1)));
 assert_eq!(iter.next(), Some(Ratio::new(12, 1)));
 
-// 12 slots and 5 pole pairs => Inner of slots per pole pair is 12 / 5 = 2.4
+// 12 slots and 5 pole pairs => Number of slots per pole pair is 12 / 5 = 2.4
 let mut iter = SlottingOrdinals::new(12, 5);
 assert_eq!(iter.next(), Some(Ratio::new(12, 5)));
 assert_eq!(iter.next(), Some(Ratio::new(24, 5)));
 assert_eq!(iter.next(), Some(Ratio::new(36, 5)));
 assert_eq!(iter.next(), Some(Ratio::new(48, 5)));
 
-// 24 slots and 10 pole pairs => Inner of slots per pole pair is 24 / 10 = 2.4
+// 24 slots and 10 pole pairs => Number of slots per pole pair is 24 / 10 = 2.4
 let mut iter = SlottingOrdinals::new(24, 10);
 assert_eq!(iter.next(), Some(Ratio::new(12, 5)));
 assert_eq!(iter.next(), Some(Ratio::new(24, 5)));
@@ -1003,6 +1025,7 @@ assert_eq!(iter.next(), Some(Ratio::new(36, 5)));
 assert_eq!(iter.next(), Some(Ratio::new(48, 5)));
 ```
  */
+#[derive(Debug, Clone, Copy)]
 pub struct SlottingOrdinals {
     slots: u16,
     pole_pairs: u16,
@@ -1010,9 +1033,7 @@ pub struct SlottingOrdinals {
 }
 
 impl SlottingOrdinals {
-    /**
-    Create a new `SlottingOrdinals` iterator for the specified number of slots and pole pairs.
-     */
+    /// Creates a new instance of the [`SlottingOrdinals`] iterator.
     pub fn new(slots: u16, pole_pairs: u16) -> Self {
         /*
         Calculate the least common multiple between slots and pole pairs ->
