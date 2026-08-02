@@ -8,6 +8,7 @@ use stem_core::prelude::*;
 use stem_core::stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
 use stem_slot::planar_geo::draw::Drawable;
 use stem_slot::planar_geo::{DEFAULT_EPSILON, DEFAULT_MAX_RELATIVE};
+use stem_slot::semi_trapezoid::SemiTrapezoidWidthsAndHeightsBuilder;
 use uom::typenum::P2;
 
 fn create_outer_core(
@@ -748,6 +749,93 @@ fn test_plot_inner_assembly() {
                     w.draw(cr)?;
                 }
                 return Ok(());
+            });
+        };
+        assert!(compare_or_create(path, &callback, 0.98).is_ok());
+    }
+}
+
+#[test]
+fn test_odd_number_of_slots() {
+    let slot: SemiTrapezoidSlot = SemiTrapezoidWidthsAndHeightsBuilder {
+        bottom_width: Length::new::<millimeter>(6.76),
+        bottom_side_width: Length::new::<millimeter>(6.76),
+        top_side_width: Length::new::<millimeter>(8.0),
+        top_width: Length::new::<millimeter>(1.5),
+        opening_width: Length::new::<millimeter>(1.5),
+        bottom_height: Length::new::<millimeter>(0.0),
+        side_height: Length::new::<millimeter>(6.79 - 0.75 - 0.5),
+        top_height: Length::new::<millimeter>(0.5),
+        opening_height: Length::new::<millimeter>(0.75),
+        bottom_radius: Length::new::<millimeter>(0.0),
+        bottom_side_radius: Length::new::<millimeter>(0.0),
+        top_radius: Length::new::<millimeter>(0.0),
+        top_side_radius: Length::new::<millimeter>(0.0),
+        opening_radius: Length::new::<millimeter>(0.0),
+        consider_tooth_tip_leakage: true,
+    }
+    .try_into()
+    .expect("valid slot");
+
+    {
+        let air_gap =
+            SlottedAirGap::new(15, true, CarterFactorModel::Bin12, Box::new(slot.clone()));
+        let core: RotCore = RotCoreBuilder {
+            air_gap_radius: Length::new::<millimeter>(40.0),
+            yoke_radius: Length::new::<millimeter>(19.0),
+            axial_length: Length::new::<millimeter>(165.0),
+            axial_coil_overhang: Length::new::<millimeter>(0.0),
+            iron_fill_factor: 1.0,
+            material: Arc::new(Material::default()),
+            pole_pairs: 2,
+            skew_angle: 0.0,
+            air_gap: Box::new(air_gap),
+            flux_barrier: None,
+        }
+        .try_into()
+        .unwrap();
+
+        let drawable = core.drawable();
+        let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
+        let path = std::path::Path::new(
+            "tests/img/rot_slotted/core_odd_number_of_slots_starts_in_slot_middle.png",
+        );
+        let callback = |path: &std::path::Path| {
+            return view.write_to_file(path, |cr| {
+                cr.set_source_rgb(1.0, 1.0, 1.0);
+                cr.paint()?;
+                drawable.draw(cr)
+            });
+        };
+        assert!(compare_or_create(path, &callback, 0.98).is_ok());
+    }
+    {
+        let air_gap = SlottedAirGap::new(15, false, CarterFactorModel::Bin12, Box::new(slot));
+        let core: RotCore = RotCoreBuilder {
+            air_gap_radius: Length::new::<millimeter>(40.0),
+            yoke_radius: Length::new::<millimeter>(19.0),
+            axial_length: Length::new::<millimeter>(165.0),
+            axial_coil_overhang: Length::new::<millimeter>(0.0),
+            iron_fill_factor: 1.0,
+            material: Arc::new(Material::default()),
+            pole_pairs: 2,
+            skew_angle: 0.0,
+            air_gap: Box::new(air_gap),
+            flux_barrier: None,
+        }
+        .try_into()
+        .unwrap();
+
+        let drawable = core.drawable();
+        let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
+        let path = std::path::Path::new(
+            "tests/img/rot_slotted/core_odd_number_of_slots_starts_in_tooth_middle.png",
+        );
+        let callback = |path: &std::path::Path| {
+            return view.write_to_file(path, |cr| {
+                cr.set_source_rgb(1.0, 1.0, 1.0);
+                cr.paint()?;
+                drawable.draw(cr)
             });
         };
         assert!(compare_or_create(path, &callback, 0.98).is_ok());

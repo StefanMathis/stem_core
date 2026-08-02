@@ -1,7 +1,7 @@
 /*!
 A module providing the the [`LinCore`] and [`RotCore`] structs, the owning and
 borrowing enum wrappers [`Core`] and [`CoreRef`] and the sealed trait
-[`CoreExt`].
+[`CoreExt`] which provides a common interface for both core types.
 
 # Overview
 
@@ -26,17 +26,18 @@ where the air gap shape is defined by [`Slot`](stem_slot::slot::Slot)s:
 #![cfg_attr(feature = "doc-images", doc = "")]
 #![cfg_attr(
     feature = "doc-images",
-    doc = "![Linear and rotary core][lin_and_rot_core.svg]"
+    doc = "![Slotted linear and rotary core][lin_and_rot_core_slotted.svg]"
 )]
 #![cfg_attr(feature = "doc-images",
 cfg_attr(all(),
-doc = ::embed_doc_image::embed_image!("lin_and_rot_core.svg", "docs/img/lin_and_rot_core.svg"),
+doc = ::embed_doc_image::embed_image!("lin_and_rot_core_slotted.svg", "docs/img/lin_and_rot_core_slotted.svg"),
 ))]
 #![cfg_attr(
     not(feature = "doc-images"),
     doc = "**Doc images not enabled**. Compile docs with `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
 /*!
+_Image created with `/examples/lin_and_rot_core_plots.rs`._
 
 The core shape can be further customized by optionally inserting a
 [`FluxBarrier`](crate::flux_barrier::FluxBarrier) into the core, which can both
@@ -73,6 +74,7 @@ doc = ::embed_doc_image::embed_image!("lin_core_air_gap_and_slotted_winding.svg"
     doc = "**Doc images not enabled**. Compile docs with `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
 /*!
+_Image created with `/examples/lin_and_rot_core_plots.rs`._
 
 It is evident that the space available for the individual winding zones is
 determined by the specific [`AirGap`](crate::air_gap::AirGap) trait object.
@@ -109,6 +111,7 @@ doc = ::embed_doc_image::embed_image!("lin_and_rot_core_surface_magnets.svg", "d
     doc = "**Doc images not enabled**. Compile docs with `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
 /*!
+_Image created with `/examples/lin_and_rot_core_plots.rs`._
 
 # Interior magnets
 
@@ -135,6 +138,9 @@ doc = ::embed_doc_image::embed_image!("lin_and_rot_core_interior_magnets.svg", "
     not(feature = "doc-images"),
     doc = "**Doc images not enabled**. Compile docs with `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
+/*!
+_Image created with `/examples/lin_and_rot_core_plots.rs`._
+ */
 
 use std::sync::Arc;
 
@@ -160,9 +166,9 @@ use crate::flux_barrier::FluxBarrier;
 An owning enum  for a [`LinCore`] or [`RotCore`].
 
 This enum is meant for use cases where a magnetic core is needed but the type
-(linear or rotary) is unknown until runtime. Therefore, this type "behaves like"
-a magnetic core by implementing [`CoreExt`] like the underlying [`LinCore`] /
-[`RotCore`]. Every method implementation looks like this:
+(linear or rotary) is unknown until runtime. This enum provides an type-erased
+wrapper which "behaves like" a magnetic core by implementing [`CoreExt`]. Every
+method implementation looks like this:
 
 ```ignore
 fn pole_pairs(&self) -> u16 {
@@ -373,9 +379,9 @@ impl TryFrom<Core> for RotCore {
 A borrowing enum for a [`LinCore`] or [`RotCore`].
 
 This enum is meant for use cases where a reference to a magnetic core is needed
-but the type (linear or rotary) is unknown until runtime. Therefore, this type
-"behaves like" a magnetic core by implementing [`CoreExt`] like the underlying
-[`LinCore`] / [`RotCore`]. Every method implementation looks like this:
+but the type (linear or rotary) is unknown until runtime. This enum provides an
+type-erased wrapper which "behaves like" a magnetic core by implementing
+[`CoreExt`]. Every method implementation looks like this:
 
 ```ignore
 fn pole_pairs(&self) -> u16 {

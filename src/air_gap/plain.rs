@@ -47,7 +47,7 @@ impl PlainAirGap {
     pub fn new(
         air_gap_winding_height: Length,
         winding_coverage: f64,
-        num_segments: NonZero<usize>,
+        num_segments: usize,
         slots: u16,
         starts_in_slot_middle: bool,
     ) -> Result<Self, Error> {
@@ -57,7 +57,7 @@ impl PlainAirGap {
         return Ok(Self {
             air_gap_winding_height,
             winding_coverage,
-            num_segments: num_segments.into(),
+            num_segments,
             slots,
             starts_in_slot_middle,
         });

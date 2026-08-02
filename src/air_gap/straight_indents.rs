@@ -1,7 +1,4 @@
-use std::{
-    f64::consts::{FRAC_PI_2, PI, TAU},
-    num::NonZero,
-};
+use std::f64::consts::{FRAC_PI_2, PI, TAU};
 
 use crate::{magnets::PositionedMagnetShape, planar_geo};
 use compare_variables::compare_variables;
@@ -37,16 +34,16 @@ pub struct StraightIndentsAirGap {
 
 impl StraightIndentsAirGap {
     pub fn new(
-        num_segments: NonZero<usize>,
+        num_segments: usize,
         indent_width: Length,
         indent_depth: Length,
-        indents_per_pole: NonZero<usize>,
+        indents_per_pole: usize,
     ) -> Self {
         return Self {
-            num_segments: num_segments.into(),
+            num_segments,
             indent_width,
             indent_depth,
-            indents_per_pole: indents_per_pole.into(),
+            indents_per_pole,
         };
     }
 }

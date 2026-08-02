@@ -190,7 +190,7 @@ impl<T: Transformation + Clone + ToBoundingBox, const LIN: bool> WindingZonesEqS
 
         // Cannot panic, because the index is the remainder of a division by the
         // total number of layers and therefore is always in bounds
-        let mut contour = self.zones[current_layer].clone();
+        let mut geom = self.zones[current_layer].clone();
 
         if LIN {
             // If all vertices of the contour are negative, shift it to the
@@ -198,24 +198,24 @@ impl<T: Transformation + Clone + ToBoundingBox, const LIN: bool> WindingZonesEqS
             // case the slot starts in the tooth middle
             let factor = if current_slot == 0.0
                 && self.starts_in_slot_middle
-                && contour.bounding_box().xmax() <= DEFAULT_EPSILON.sqrt()
+                && geom.bounding_box().xmax() <= DEFAULT_EPSILON.sqrt()
             {
                 1.0
             } else {
                 1.0 / f64::from(self.slots)
                     * (current_slot + 0.5 * (!self.starts_in_slot_middle) as u32 as f64)
             };
-            contour.translate([self.air_gap_length.get::<meter>() * factor, 0.0]);
+            geom.translate([self.air_gap_length.get::<meter>() * factor, 0.0]);
         } else {
-            contour.translate([0.0, self.air_gap_length.get::<meter>() / TAU]);
+            geom.translate([0.0, self.air_gap_length.get::<meter>() / TAU]);
             let angle = -TAU
                 * (current_slot + 0.5 * (!self.starts_in_slot_middle) as u32 as f64) as f64
                 / self.slots as f64
                 + FRAC_PI_2;
-            contour.rotate([0.0, 0.0], angle);
+            geom.rotate([0.0, 0.0], angle);
         }
         return Some((
-            contour,
+            geom,
             Zone {
                 slot: current_slot as u16,
                 layer: current_layer as u16,

@@ -1,6 +1,8 @@
 /*!
-CoreExt trait -> Shared functionality between LinCore, RotCore and the Core and CoreRef enums
-Trait is sealed, because it is not meant to be implemented for foreign types
+This module contains the [`CoreExt`] trait, which provides shared functionality
+for all core types: [`LinCore`](crate::core::LinCore),
+[`RotCore`](crate::core::RotCore), and the [`Core`](crate::core::Core) and
+[`CoreRef`] enums. It is a sealed trait. See its docstring for more.
 */
 
 use std::sync::Arc;
@@ -13,31 +15,84 @@ use stem_slot::{
 };
 
 use super::CoreRef;
-use crate::{LinOrRot, air_gap::AirGap, magnets::Magnets, winding_zones::WindingZones};
+use crate::{
+    LinOrRot,
+    air_gap::AirGap,
+    flux_barrier::FluxBarrier,
+    magnets::Magnets,
+    winding_zones::{PositionedZoneContour, WindingZones},
+};
 
 pub(crate) mod private {
     /// Sealed trait for [`CoreExt`]
     pub trait Sealed {}
 }
 
+/**
+When a [`collision_check`](CoreExt::collision_check) fails, this enum describes
+one of the components which collided with another component. See
+[`AssemblingFailure`] for more information.
+ */
 #[derive(Clone, Debug)]
 pub enum Component {
+    /// Shape of the core  which collided with another component.
     Core(Shape),
-    Zone { idx: usize, contour: Contour },
-    SurfaceMagnet { idx: usize, shape: Shape },
-    InteriorMagnet { idx: usize, shape: Shape },
+    /// Contour of a winding zone which collided with another component.
+    Zone {
+        /// The nth element of the [`WindingZones`] iterator created by
+        /// [`CoreExt::winding_zones`], which collided with another component.
+        idx: usize,
+        /// The winding zone contour and the
+        /// [`Zone`](crate::winding_zones::Zone) index.
+        contour: PositionedZoneContour,
+    },
+    /// Shape of a surface magnet which collided with another component.
+    SurfaceMagnet {
+        /// The nth element of the [`Magnets`] iterator created by
+        /// [`CoreExt::surface_magnets`], which collided with another component.
+        idx: usize,
+        /// The shape of the colliding surface magnet.
+        shape: Shape,
+    },
+    /// Shape of an interior magnet which collided with another component.
+    InteriorMagnet {
+        /// The nth element of the [`Magnets`] iterator created by
+        /// [`CoreExt::interior_magnets`], which collided with another
+        /// component.
+        idx: usize,
+        /// The shape of the colliding interior magnet.
+        shape: Shape,
+    },
 }
 
+/**
+An error type created by [`CoreExt::collision_check`] which describes a
+collision between two components of an active part (magnetic core,
+winding zones, surface magnets, interior magnets). It holds the two colliding
+components and the reason for the collision.
+ */
 #[derive(Clone, Debug)]
 pub struct AssemblingFailure {
+    /// One of the colliding components.
     pub left_component: Component,
+    /// The component which collided with the `left_component`.
     pub right_component: Component,
+    /// Reason for the collision.
     pub reason: AssemblingFailureReason,
 }
 
+/**
+An enum which describes the reason for a collision between the two components of
+an active part. It is created as part of the [`AssemblingFailure`] error when a
+[`collision_check`](CoreExt::collision_check) fails.
+ */
 #[derive(Clone, Debug)]
 pub enum AssemblingFailureReason {
+    /// The two components are overlapping.
     Overlap(Overlap),
+    /// One component which should be contained by another one isn't. An example
+    /// would be an interior magnet which is not contained by the
+    /// [`CoreExt::shape`].
     NotContained(NotContained),
 }
 
@@ -53,24 +108,103 @@ impl From<NotContained> for AssemblingFailureReason {
     }
 }
 
+/**
+A sealed trait providing shared functionality for all core types:
+[`LinCore`](crate::core::LinCore), [`RotCore`](crate::core::RotCore), and the
+[`Core`](crate::core::Core) and [`CoreRef`] enums.
+
+The main purpose of this enum is to provide a common interface for all core
+types, allowing for polymorphic behavior and code reuse. It is sealed to prevent
+external implementations, ensuring that only the intended core types can
+implement it.
+*/
 pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
+    /// Converts the reference of `self` into a [`CoreRef`] enum.
+    ///
+    /// This method is used for the [`AirGap`] and [`FluxBarrier`] traits to
+    /// access the core's properties without requiring generics, because those
+    /// traits need to be object-safe. The [`CoreRef`] enum acts as a
+    /// type-erased wrapper around the core, allowing for dynamic dispatch
+    /// and polymorphism.
     fn as_core_ref(&self) -> CoreRef<'_>;
 
+    /// Returns a reference to the [`AirGap`] trait object describing the air
+    /// gap contour of the core.
     fn air_gap(&self) -> &dyn AirGap;
 
-    /// Return the axial length of the core
+    /// Returns a reference to the [`FluxBarrier`] trait object describing the
+    /// flux barrier of the core, if it has one. If it hasn't, this method
+    /// returns `None`.
+    fn flux_barrier(&self) -> Option<&dyn FluxBarrier>;
+
+    /// Returns the axial length of the core, i.e. the length into the image
+    /// plane when looking at the cross section of the core.
+    ///
+    /// See the docstrings of [`LinCore`](crate::core::LinCore) and
+    /// [`RotCore`](crate::core::RotCore) for a visualization.
     fn axial_length(&self) -> Length;
 
-    /// Return the iron fill factor of the core
-    fn iron_fill_factor(&self) -> f64;
-
-    /// Return the number of core poles
+    /// Returns the number of pole pairs of `self`.
     fn pole_pairs(&self) -> u16;
 
-    /// Return a reference to the core material
+    /// Returns a reference to the core [`Material`].
     fn material(&self) -> &Arc<Material>;
 
-    /// Return the yoke height
+    /// Returns the iron fill factor of the core, which is the ratio of the iron
+    /// volume to the total core volume.
+    ///
+    /// Magnetic cores are often made from laminated steel sheets which are
+    /// glued together in order to reduce eddy current losses. This reduces the
+    /// effective iron volume and hence the magnetic permeability of the core.
+    /// This can be accounted for by using a fictive [`CoreExt::iron_length`],
+    /// which is the product of the [`CoreExt::axial_length`] and the iron fill
+    /// factor. The iron fill factor is the ratio between the steel and the
+    /// total lamination thickness as shown in the image below. Typical values
+    /// are between 0.9 and 1, depending on the glue thickness.
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![Iron fill factor][cad_iron_fill_factor]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image(
+            "cad_iron_fill_factor",
+            "docs/img/cad_iron_fill_factor.svg"
+        )
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    fn iron_fill_factor(&self) -> f64;
+
+    /// Returns the yoke height of the core.
+    ///
+    /// The yoke is the "backbone" of the core, where the magnetic flux lines
+    /// coming from the air gap closes. Its height is the
+    /// [`LinCore::height`](crate::core::LinCore::height) or the absolute
+    /// difference between
+    /// [`RotCore::yoke_radius`](crate::core::RotCore::yoke_radius) and
+    /// [`RotCore::air_gap_radius`](crate::core::RotCore::air_gap_radius) minus
+    /// the [`CoreExt::tooth_height`]. The following image shows the dimensions
+    /// for a [`PlainAirGap`](crate::air_gap::PlainAirGap) and a
+    /// [`SlottedAirGap`](crate::air_gap::SlottedAirGap):
+    #[doc = ""]
+    #[cfg_attr(feature = "doc-images", doc = "![Yoke height][cad_yoke_tooth_height]")]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image(
+            "cad_yoke_tooth_height",
+            "docs/img/cad_yoke_tooth_height.svg"
+        )
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
     fn yoke_height(&self) -> Length;
 
     /// Return the skew angle of the component. The skewing can be implemented
@@ -84,9 +218,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
      */
     fn air_gap_width(&self) -> Length;
 
-    /**
-    Return whether the core is linear or rotary.
-     */
+    /// Returns if the core is linear or rotary.
     fn lin_or_rot(&self) -> LinOrRot;
 
     /**
@@ -102,16 +234,15 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
          └──────┘
     ```
 
-    Axial overhang can be caused by e.g. the end winding insulation. While this overhang is part of the end winding,
-    it is not included in the calculation of the end winding length of the `IsWinding` trait method `end_winding_half_turn_length`.
+    Axial overhang can be caused by e.g. the end winding insulation. While this
+    overhang is part of the end winding, it is not included in the calculation
+    of the end winding length of the `IsWinding` trait method `end_winding_half_turn_length`.
     Therefore, in the calculation of the end winding inductance, the coil length is calculated as `axial_coil_overhang` + `end_winding_half_turn_length`.
     This length is not considered in the main inductance calculation.
      */
     fn axial_coil_overhang(&self) -> Length;
 
-    fn flux_barrier(&self) -> Option<&dyn crate::flux_barrier::FluxBarrier>;
-
-    /// Return the lamination shape
+    /// Returns a reference to the cross-section shape of `self`.
     fn shape(&self) -> &Shape;
 
     /// Relative coverage of air gap
@@ -136,9 +267,11 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         max_relative: f64,
     ) -> Result<(), AssemblingFailure> {
         let core_shape = self.shape();
-        let zones: Vec<Contour> = self.winding_zones(coil_layout).map(From::from).collect();
+        let zones: Vec<PositionedZoneContour> = self.winding_zones(coil_layout).collect();
         if let Some(o) = zones.par_iter().enumerate().find_map_any(|(i1, z1)| {
-            if let Ok(overlap) = core_shape.contains_any_composite(z1, epsilon, max_relative) {
+            if let Ok(overlap) =
+                core_shape.contains_any_composite(&z1.contour, epsilon, max_relative)
+            {
                 return Some(AssemblingFailure {
                     left_component: Component::Core(core_shape.clone()),
                     right_component: Component::Zone {
@@ -153,7 +286,10 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
                 if i1 <= i2 {
                     return None;
                 }
-                if let Ok(overlap) = z2.contains_any_composite(z1, epsilon, max_relative) {
+                if let Ok(overlap) =
+                    z2.contour
+                        .contains_any_composite(&z1.contour, epsilon, max_relative)
+                {
                     return Some(AssemblingFailure {
                         left_component: Component::Zone {
                             idx: i1,
@@ -218,7 +354,9 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
                 }
 
                 if let Some(o) = zones.par_iter().enumerate().find_map_any(|(i, z)| {
-                    if let Ok(overlap) = m1.contains_any_composite(z, epsilon, max_relative) {
+                    if let Ok(overlap) =
+                        m1.contains_any_composite(&z.contour, epsilon, max_relative)
+                    {
                         return Some(AssemblingFailure {
                             left_component: Component::Zone {
                                 idx: i,
@@ -282,6 +420,11 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         return Ok(());
     }
 
+    /**
+    Returns the slot pitch of the core. This is the quotient of the
+    [`air_gap_width`](CoreExt::air_gap_width) and the number of
+    [`slots`](CoreExt::slots).
+     */
     fn slot_pitch(&self) -> Length {
         self.air_gap_width() / self.slots() as f64
     }
@@ -357,7 +500,10 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         return mass;
     }
 
-    /// Return the number of slots
+    /// Returns the number of slots at the air gap.
+    ///
+    /// This method forwards to [`AirGap::slots`], using `self` as the second
+    /// argument.
     fn slots(&self) -> u16 {
         return self.air_gap().slots(self.as_core_ref());
     }
@@ -370,21 +516,48 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
             .slot_opening_factor(slots, ordinal, self.as_core_ref());
     }
 
+    /// Returns the current displacement coefficients for a winding mounted on
+    /// `self`
+    ///
+    /// This method forwards to [`AirGap::current_displacement_coefficients`],
+    /// using `self` as the second argument. If the
+    /// [`air_gap`](CoreExt::air_gap) is a
+    /// [`SlottedAirGap`](crate::air_gap::SlottedAirGap), the
+    /// [`Slot::current_displacement_coefficients`] method gets invoked. See its
+    /// docstring for a general discussion of current displacement.
     fn current_displacement_coefficients(&self) -> CurrentDisplacementCalculator {
         return self
             .air_gap()
             .current_displacement_coefficients(self.as_core_ref());
     }
 
-    /**
-    Return the slot of the core, if it has one
-     */
+    /// Returns the slot type of the core, if the core is slotted.
+    ///
+    /// This method forwards to [`AirGap::slot`], using `self` as the second
+    /// argument.
     fn slot(&self) -> Option<&dyn Slot> {
         return self.air_gap().slot(self.as_core_ref());
     }
 
-    /// Approximate the tooth height as being equal to the slot height.
-    /// If the core has no slot, this value is zero.
+    /// Returns the tooth height of the core.
+    ///
+    /// This method forwards to [`AirGap::tooth_height`] with `self` as the
+    /// second argument. Usually, the returned value is the [`Slot::height`], as
+    /// shown below, but the specific implementation may vary.
+    #[doc = ""]
+    #[cfg_attr(feature = "doc-images", doc = "![Yoke height][cad_yoke_tooth_height]")]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image(
+            "cad_yoke_tooth_height",
+            "docs/img/cad_yoke_tooth_height.svg"
+        )
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
     fn tooth_height(&self) -> Length {
         return self.air_gap().tooth_height(self.as_core_ref());
     }
@@ -393,10 +566,17 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         return self.air_gap().tooth_width_at(self.as_core_ref(), height);
     }
 
+    /// Returns whether a winding can be mounted on the core or not.
+    ///
+    /// A winding can be mounted if [`CoreExt::slots`] is not zero.
     fn windable(&self) -> bool {
         return self.slots() != 0;
     }
 
+    /// Returns whether the core is slotted.
+    ///
+    /// This method is implemented as `self.slot().is_some()`, i.e. the core is
+    /// slotted if [`CoreExt::slot`] doesn't return `None`.
     fn slotted(&self) -> bool {
         return self.slot().is_some();
     }

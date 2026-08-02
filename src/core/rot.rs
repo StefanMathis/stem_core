@@ -26,14 +26,27 @@ coaxial hollow cylinders / tubes, where one of them (the rotor) rotates around
 the other (the stator). Therefore, the cross section of the stator / rotor core
 is effectively also a hollow cylinder described by the inner radius, outer
 radius and axial length (which in the cross section view goes into the image
-plane). The space between the two cylinders is called the air gap. The outer
-radius of the inner cylinder / core is called the
-[`air_gap_radius`](RotCore::air_gap_radius) and its inner radius
-is called the [`yoke_radius`](RotCore::yoke_radius). For the outer cylinder /
-core, it is the other way around: The outer radius is the yoke radius, the inner
-one the air gap radius. Hence, a core is called an _inner_ core, if
-`core.air_gap_radius() > core.yoke_radius()`, otherwise it is called an _outer_
-core.
+plane).
+*/
+#[doc = ""]
+#[cfg_attr(feature = "doc-images", doc = "![Main dimensions][cad_rot_core_dims]")]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image("cad_rot_core_dims", "docs/img/cad_rot_core_dims.svg")
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/**
+
+The space between the two cylinders is the air gap. The outer radius of the
+inner cylinder / core is called the [`air_gap_radius`](RotCore::air_gap_radius)
+and its inner radius is called the [`yoke_radius`](RotCore::yoke_radius). For
+the outer cylinder / core, it is the other way around: The outer radius is the
+yoke radius, the inner one the air gap radius. Hence, a core is an _inner_ core,
+if `core.air_gap_radius() > core.yoke_radius()`, otherwise it is an _outer_ core.
 
 Both inner and outer cores may have geometric features such as a special air gap
 contour or cutouts (flux barriers). The following image shows an inner core with
@@ -215,13 +228,13 @@ impl RotCore {
     #[doc = ""]
     #[cfg_attr(
         feature = "doc-images",
-        doc = "![Yoke middle radius][cad_yoke_middle_radius]"
+        doc = "![Yoke middle radius][cad_yoke_tooth_height]"
     )]
     #[cfg_attr(
         feature = "doc-images",
         embed_doc_image::embed_doc_image(
-            "cad_yoke_middle_radius",
-            "docs/img/cad_yoke_middle_radius.svg"
+            "cad_yoke_tooth_height",
+            "docs/img/cad_yoke_tooth_height.svg"
         )
     )]
     #[cfg_attr(
@@ -255,7 +268,7 @@ impl RotCore {
     /// let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
     ///     bottom_width: Length::new::<millimeter>(4.0),
     ///     opening_width: Length::new::<millimeter>(2.0),
-    ///     height: Length::new::<millimeter>(8.0),
+    ///     height: Length::new::<millimeter>(10.0),
     ///     opening_height: Length::new::<millimeter>(1.0),
     ///     slot_angle: 0.0,
     ///     bottom_radius: Length::new::<millimeter>(0.0),

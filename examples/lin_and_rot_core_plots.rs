@@ -233,8 +233,8 @@ fn plot_lin_and_rot_core_common_image() -> Result<(), Box<dyn std::error::Error>
     ]);
     drawables.push(rot_core_drawable);
 
-    let fp =
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(&format!("docs/img/lin_and_rot_core.svg"));
+    let fp = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join(&format!("docs/img/lin_and_rot_core_slotted.svg"));
 
     let ag_radius = rot_core.air_gap_radius().get::<meter>();
     let width = lin_core.width().get::<meter>();

@@ -31,6 +31,20 @@ effectively two rectangles (stator and rotor) where the rotor slides against the
 stator. Therefore, the cross section of the stator / rotor core is effectively
 also a rectangle and the extents of it are described by its width, height and
 axial length (which in the cross section view goes into the image plane).
+*/
+#[doc = ""]
+#[cfg_attr(feature = "doc-images", doc = "![Main dimensions][cad_lin_core_dims]")]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image("cad_lin_core_dims", "docs/img/cad_lin_core_dims.svg")
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/**
+
 Furthermore, the core may have geometric features such as a special air gap
 contour or cutouts (flux barriers). The following image shows the cross section
 of a slotted core with simple "star" flux barriers. The slots may hold a
