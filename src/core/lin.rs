@@ -77,7 +77,6 @@ use std::sync::Arc;
 use stem_core::prelude::*;
 
 // Valid parameters
-let air_gap = PlainAirGap::default();
 let builder = LinCoreBuilder {
     height: Length::new::<millimeter>(20.0),
     width: Length::new::<millimeter>(100.0),
@@ -87,7 +86,7 @@ let builder = LinCoreBuilder {
     iron_fill_factor: 1.0,
     material: Arc::new(Material::default()),
     pole_pairs: 2,
-    air_gap: Box::new(air_gap),
+    air_gap: Box::new(PlainAirGap::default()),
     flux_barrier: None,
 };
 
@@ -95,7 +94,6 @@ let core = LinCore::new(builder).expect("valid inputs");
 assert_eq!(core.width().get::<millimeter>(), 100.0);
 
 // Invalid parameters (negative core width).
-let air_gap = PlainAirGap::default();
 let builder = LinCoreBuilder {
     height: Length::new::<millimeter>(20.0),
     width: Length::new::<millimeter>(-100.0), // Negative width!
@@ -105,7 +103,7 @@ let builder = LinCoreBuilder {
     iron_fill_factor: 1.0,
     material: Arc::new(Material::default()),
     pole_pairs: 2,
-    air_gap: Box::new(air_gap),
+    air_gap: Box::new(PlainAirGap::default()),
     flux_barrier: None,
 };
 

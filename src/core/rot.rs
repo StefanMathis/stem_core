@@ -80,7 +80,6 @@ use std::sync::Arc;
 use stem_core::prelude::*;
 
 // Valid parameters (resulting in an outer core, since air_gap_radius < yoke_radius)
-let air_gap = PlainAirGap::default();
 let builder = RotCoreBuilder {
     air_gap_radius: Length::new::<millimeter>(55.0),
     yoke_radius: Length::new::<millimeter>(90.0),
@@ -90,7 +89,7 @@ let builder = RotCoreBuilder {
     material: Arc::new(Material::default()),
     pole_pairs: 2,
     skew_angle: 0.0,
-    air_gap: Box::new(air_gap),
+    air_gap: Box::new(PlainAirGap::default()),
     flux_barrier: None,
 };
 
@@ -98,7 +97,6 @@ let core = RotCore::new(builder).expect("valid inputs");
 assert_eq!(core.air_gap_radius().get::<millimeter>(), 55.0);
 
 // Invalid parameters (negative air_gap_radius).
-let air_gap = PlainAirGap::default();
 let builder = RotCoreBuilder {
     air_gap_radius: Length::new::<millimeter>(-55.0),
     yoke_radius: Length::new::<millimeter>(90.0),
@@ -108,7 +106,7 @@ let builder = RotCoreBuilder {
     material: Arc::new(Material::default()),
     pole_pairs: 2,
     skew_angle: 0.0,
-    air_gap: Box::new(air_gap),
+    air_gap: Box::new(PlainAirGap::default()),
     flux_barrier: None,
 };
 

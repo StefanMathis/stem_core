@@ -22,7 +22,25 @@ pub use straight_indents::{AirGapPolygonBuilder, StraightIndentsAirGap};
 
 #[cfg_attr(feature = "serde", typetag::serde)]
 pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
-    /// Axial segments of the core
+    /// Returns the discretization / number of segments of the core.
+    ///
+    /// Depending on `self`, a core may be composed of multiple
+    /// individual segments  against each other as defined by the
+    /// [`CoreExt::skew_angle`](crate::core::CoreExt::skew_angle). This affects
+    /// the [`skew_factor`](crate::core::skew_factor) of the core, which can be
+    /// used to suppress/ unwanted magnetic harmonics.  See the
+    /// docstrings of [`CoreExt::skew_angle`](crate::core::CoreExt::skew_angle)
+    /// and [`skew_factor`](crate::core::skew_factor) for details.
+    /// If this value is zero, the core is continuously skewed. If it is one,
+    /// the component is not skewed at all, as it consists of a single straight
+    /// (non-twisted) segment.
+    ///
+    /// Some [`AirGap`]s might not be discretizable; an example would be the
+    /// [`SlottedAirGap`] type. If the air gap can however be skewed, this
+    /// method should return 0. If skewing is also not possible, it should
+    /// return 1. In return, some air gaps like [`StraightIndentsAirGap`] might
+    /// be discretizable, but not continuously skewable. In the case of
+    /// [`StraightIndentsAirGap`], this is ensured by the constructor.
     fn num_segments(&self, core: CoreRef<'_>) -> usize;
 
     fn surface_magnets(

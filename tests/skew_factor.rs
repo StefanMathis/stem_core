@@ -2,10 +2,43 @@ use std::f64::consts::{PI, TAU};
 
 use stem_core::core::ext::skew_factor;
 
+#[test]
+fn test_skew_factor_no_segment() {
+    approx::assert_abs_diff_eq!(skew_factor(60, 6.0 / 180.0 * PI, 0), 0.0, epsilon = 0.0001);
+    approx::assert_abs_diff_eq!(skew_factor(30, 12.0 / 180.0 * PI, 0), 0.0, epsilon = 0.0001);
+    approx::assert_abs_diff_eq!(skew_factor(60, 12.0 / 180.0 * PI, 0), 0.0, epsilon = 0.0001);
+    approx::assert_abs_diff_eq!(skew_factor(90, 12.0 / 180.0 * PI, 0), 0.0, epsilon = 0.0001);
+    approx::assert_abs_diff_eq!(
+        skew_factor(120, 12.0 / 180.0 * PI, 0),
+        0.0,
+        epsilon = 0.0001
+    );
+    approx::assert_abs_diff_eq!(
+        skew_factor(150, 12.0 / 180.0 * PI, 0),
+        0.0,
+        epsilon = 0.0001
+    );
+    approx::assert_abs_diff_eq!(
+        skew_factor(180, 12.0 / 180.0 * PI, 0),
+        0.0,
+        epsilon = 0.0001
+    );
+}
+
+#[test]
+fn test_skew_factor_single_segment() {
+    assert_eq!(skew_factor(60, 6.0 / 180.0 * PI, 1), 1.0);
+    assert_eq!(skew_factor(10, 6.0 / 180.0 * PI, 1), 1.0);
+    assert_eq!(skew_factor(10, 0.1, 1), 1.0);
+    assert_eq!(skew_factor(10, 3.0, 1), 1.0);
+    assert_eq!(skew_factor(20, 3.0, 1), 1.0);
+    assert_eq!(skew_factor(25, 2.0, 1), 1.0);
+}
+
 // Manually calculate the normalized torque harmonic for a staggered component
 // and compare it with the skew factor calculation
 #[test]
-fn test_skew_factor() {
+fn test_skew_factor_multiple_segments() {
     {
         // Cogging torque supression of a 12/10 winding with staggered rotor magnets
         approx::assert_abs_diff_eq!(skew_factor(60, 6.0 / 180.0 * PI, 3), 0.0, epsilon = 0.0001);
@@ -15,6 +48,23 @@ fn test_skew_factor() {
             epsilon = 0.0001
         );
         approx::assert_abs_diff_eq!(skew_factor(30, 12.0 / 180.0 * PI, 3), 0.0, epsilon = 0.0001);
+        approx::assert_abs_diff_eq!(skew_factor(60, 12.0 / 180.0 * PI, 3), 0.0, epsilon = 0.0001);
+        approx::assert_abs_diff_eq!(skew_factor(90, 12.0 / 180.0 * PI, 3), 1.0, epsilon = 0.0001);
+        approx::assert_abs_diff_eq!(
+            skew_factor(120, 12.0 / 180.0 * PI, 3),
+            0.0,
+            epsilon = 0.0001
+        );
+        approx::assert_abs_diff_eq!(
+            skew_factor(150, 12.0 / 180.0 * PI, 3),
+            0.0,
+            epsilon = 0.0001
+        );
+        approx::assert_abs_diff_eq!(
+            skew_factor(180, 12.0 / 180.0 * PI, 3),
+            1.0,
+            epsilon = 0.0001
+        );
     }
     {
         const NUMBER_POINTS: usize = 50;

@@ -8,7 +8,7 @@ use stem_slot::planar_geo::prelude::*;
 
 fn create_core(indent_width: Length, indent_depth: Length, indents_per_pole: usize) -> LinCore {
     let air_gap = StraightIndentsAirGap::new(
-        1,
+        1.try_into().unwrap(),
         indent_width,
         indent_depth,
         indents_per_pole.try_into().unwrap(),

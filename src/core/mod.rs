@@ -154,7 +154,7 @@ pub mod ext;
 pub mod lin;
 pub mod rot;
 
-pub use ext::CoreExt;
+pub use ext::*;
 pub use lin::*;
 pub use rot::*;
 

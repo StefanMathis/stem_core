@@ -1,4 +1,7 @@
-use std::f64::consts::{FRAC_PI_2, PI, TAU};
+use std::{
+    f64::consts::{FRAC_PI_2, PI, TAU},
+    num::NonZero,
+};
 
 use crate::{magnets::PositionedMagnetShape, planar_geo};
 use compare_variables::compare_variables;
@@ -22,7 +25,7 @@ use crate::{
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub struct StraightIndentsAirGap {
-    pub num_segments: usize,
+    pub num_segments: NonZero<usize>,
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub indent_width: Length,
@@ -34,7 +37,7 @@ pub struct StraightIndentsAirGap {
 
 impl StraightIndentsAirGap {
     pub fn new(
-        num_segments: usize,
+        num_segments: NonZero<usize>,
         indent_width: Length,
         indent_depth: Length,
         indents_per_pole: usize,
@@ -290,7 +293,7 @@ impl StraightIndentsAirGap {
 #[cfg_attr(feature = "serde", typetag::serde)]
 impl AirGap for StraightIndentsAirGap {
     fn num_segments(&self, _core: CoreRef<'_>) -> usize {
-        self.num_segments
+        self.num_segments.into()
     }
 
     fn surface_magnets(
@@ -393,7 +396,7 @@ impl AirGap for StraightIndentsAirGap {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub struct AirGapPolygonBuilder {
-    pub num_segments: usize,
+    pub num_segments: NonZero<usize>,
     pub indents_per_pole: usize,
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub indent_depth: Length, // Depth of the indent. A negative depth leads to an extrusion

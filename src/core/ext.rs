@@ -178,7 +178,12 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         doc = "**Doc images not enabled**. Compile docs with
         `cargo doc --features 'doc-images'` and Rust version >= 1.54."
     )]
-    fn iron_fill_factor(&self) -> f64;
+    fn iron_fill_factor(&self) -> f64 {
+        // embed_doc_image does not support documenting trait methods without
+        // a body, so a dummy implementation is provided (which is overridden
+        // by the actual implementors).
+        return 0.0;
+    }
 
     /// Returns the yoke height of the core.
     ///
@@ -205,16 +210,96 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         doc = "**Doc images not enabled**. Compile docs with
         `cargo doc --features 'doc-images'` and Rust version >= 1.54."
     )]
-    fn yoke_height(&self) -> Length;
+    fn yoke_height(&self) -> Length {
+        // embed_doc_image does not support documenting trait methods without
+        // a body, so a dummy implementation is provided (which is overridden
+        // by the actual implementors).
+        return Length::new::<meter>(0.0);
+    }
 
-    /// Return the skew angle of the component. The skewing can be implemented
-    /// either within the core itself or in the magnet arrangement.
+    /// Returns the skew angle of the core.
+    ///
+    /// The magnetic field in the air gap is composed of various harmonics,
+    /// which result from both the magnet field sources (windings and magnets)
+    /// and the core geometry, particularly the air gap contour. For example,
+    /// when a core is slotted, the resulting field will have "slot harmonics"
+    /// whose order is a multiple of [`CoreExt::slots`]. With the exception of
+    /// the pole pair (main) harmonic, which provides the continouos force
+    /// driving the motor, these harmonics should be usually minimized because
+    /// they result in force fluctations and noise.
+    ///
+    /// One way to suppress the harmonics is to "skew" the motor by the
+    /// so-called skew angle. In the case of a linear motor, this means shifting
+    /// one end by `skew_angle / (2*pi) * core.width()` against the other. A
+    /// rotary motor is twisted along its rotational axis by the skew angle.
+    /// Depending on the angle, this leads to destructive interference of
+    /// undesired harmonics. For example, to suppress the aforementioned slot
+    /// harmonics, the core needs to be skewed by `2 * pi / core.slots()`. See
+    /// [\[1\]](#core_ext_skew_angle_1), section 6.5 for more. Be aware that
+    /// skewing affects all harmonics, including the useful (force-producing)
+    /// first stator harmonic. The general goal is therefore to find an angle
+    /// which suppresses the unwanted harmonics while reducing the useful ones
+    /// as little as possible.
+    ///
+    /// The exact realization of the skewing depends on
+    /// [`CoreExt::num_segments`]. If this number is zero, the core is skewed
+    /// continuously along its axial length. For the typical case of a laminated
+    /// core, each lamination sheet is shifted a bit against its neighbors.
+    /// Otherwise, the core is discretized ("staggered") into the specified
+    /// number of segments which are shifted by `skew_angle / num_segments`
+    /// against each other. The amount of segments heavily influences which
+    /// harmonics are suppressed, see the docstring of [`skew_factor`] for
+    /// details.
+    ///
+    /// # Literature
+    /// <a id="core_ext_skew_angle_1">\[1\]</a>
+    /// Binder, Andreas: Elektrische Maschinen und Antriebe (2012), Springer-
+    /// Verlag, Berlin Heidelberg
     fn skew_angle(&self) -> f64;
 
     /**
-    Return the air gap "width" of the core.  In case of a linear core,
-    this is the actual width of the stator cross section. For a rotary core,
-    this is the air gap outline (radius times 2 pi).
+    Returns the air gap "width" of the core.
+
+    For a linear core, this is [`LinCore::width`](crate::core::LinCore::width).
+    For a rotary core, this is the air gap outline
+    ([`RotCore::air_gap_radius`](crate::core::RotCore::air_gap_radius) times 2
+    pi).
+
+    # Examples
+
+    ```
+    use std::sync::Arc;
+    use std::f64::consts::TAU;
+    use stem_core::prelude::*;
+
+    let lin_core: LinCore = LinCoreBuilder {
+        height: Length::new::<millimeter>(20.0),
+        width: Length::new::<millimeter>(100.0),
+        axial_length: Length::new::<millimeter>(100.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        skew_angle: 0.0,
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 2,
+        air_gap: Box::new(PlainAirGap::default()),
+        flux_barrier: None,
+    }.try_into().expect("valid inputs");
+    assert_eq!(lin_core.air_gap_width().get::<millimeter>(), 100.0);
+
+    let rot_core: RotCore = RotCoreBuilder {
+        air_gap_radius: Length::new::<millimeter>(50.0),
+        yoke_radius: Length::new::<millimeter>(90.0),
+        axial_length: Length::new::<millimeter>(165.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 2,
+        skew_angle: 0.0,
+        air_gap: Box::new(PlainAirGap::default()),
+        flux_barrier: None,
+    }.try_into().expect("valid inputs");
+    assert_eq!(rot_core.air_gap_width().get::<millimeter>(), 50.0 * TAU);
+    ```
      */
     fn air_gap_width(&self) -> Length;
 
@@ -437,8 +522,19 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
             .carter_factor(self.as_core_ref(), air_gap_width)
     }
 
-    /// Returns the number of segments. If this value is 0, the component is
-    /// continuously skewed.
+    /// Returns the discretization / number of segments of the core.
+    ///
+    /// Depending on its [`AirGap`], a core may be composed of multiple
+    /// individual segments  against each other as defined by the
+    /// [`CoreExt::skew_angle`]. This affects the [`skew_factor`] of the core,
+    /// which can be used to suppress unwanted magnetic harmonics. See the
+    /// docstrings of [`CoreExt::skew_angle`] and [`skew_factor`] for details.
+    /// If this value is zero, the core is continuously skewed. If it is one,
+    /// the component is not skewed at all, as it consists of a single straight
+    /// (non-twisted) segment.
+    ///
+    /// This method forwards to [`AirGap::num_segments`], using `self` as the
+    /// second argument.
     fn num_segments(&self) -> usize {
         return self.air_gap().num_segments(self.as_core_ref());
     }
@@ -629,6 +725,12 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         return Area::new::<square_meter>(self.shape().area());
     }
 
+    /// Returns the skew factor of the core for the given ordinal.
+    ///
+    /// This methods forwards to the free function [`skew_factor`] with
+    /// [`CoreExt::skew_angle`] and [`CoreExt::num_segments`] as the third and
+    /// fourth argument. See the docstring of [`skew_factor`] for details and
+    /// examples.
     fn skew_factor(&self, ordinal: usize) -> f64 {
         return skew_factor(ordinal, self.skew_angle(), self.num_segments());
     }
@@ -674,68 +776,180 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
 }
 
 /**
-Calculate the skew factor for a given ordinal for either a continuously skewed (`num_segments` = 0) or discretly staggered (`num_segments` > 0) electrical machine component.
-In case of discrete staggering, each segment is twisted by `skew_angle / num_segments` against its neighboring segments. For an infinite number of segments,
-this results in the same skew factor as a continuous skewing. The formulae are taken from [Hut95]. For additional explanation, see also [Bin12], p. 629.
+Calculates the skew factor for a mechanical ordinal for an either continuously
+skewed or discretized core.
 
-The skew factor represents the normalized superposition of multiple (in case of discrete staggering) or infinitely many (in case of continuous skew) sinusoidals
-which are shifted against each other by the skew angle. Therefore, it describes the influence of the skew angle on any time- or space dependent property. Two examples are:
-- The flux linkage between stator and rotor caused by currents / permanent magnets
-- The cogging torque / torque ripple caused by the stator slotting / the non-sinusoidal field excitation curve.
+One way to suppress unwanted harmonics of the magnetic air gap field is to
+"skew" or "stagger" a magnetic core. The docstring of [`CoreExt::skew_angle`]
+contains background information.
 
-The "mechanical" ordinal gives the number of repetitions of the sinusoidal in the entire airgap. Dividing by the number of pole pairs gives the "electrical" ordinal.
-In this formula, the mechanical ordinal is used.
+This function calculates the "skew factor" for an harmonic with the specified
+mechanical `ordinal` where the core is skewed by the `skew_angle`. Multiplying
+the skew factor with the amplitude of that harmonic calculated for the unskewed
+core returns its resulting (actual) amplitude. The mechanical ordinal is related
+to the electrical ordinal via:
 
-# Arguments
-- ordinal: Mechanical ordinal of the harmonic
-- skew_angle: Skew angle in rad
-- num_segments: Inner of component segments. If set to 0, the component is continuously skewed.
+```ignore
+mechanical_ordinal = electrical_ordinal * pole_pairs
+```
 
-The calculation formula for a continuously skewed component is taken from [Hut18].
+i.e. the electrical ordinal gives the number of maxima of the sinusoidal curve
+over one pole pair and the mechanical ordinal the number of maxima over the
+entire air gap.
+
+If `num_segments` is zero, the core is continuously twisted along its axial
+length, otherwise it is composed of `num_segments` straight segments which are
+shifted by `skew_angle / num_segments` against each other. In particular, this
+means that for `num_segments`, the resulting skew factor is always 1 (as the
+core is effectively unskewed). If the number of segments approach infinity, the
+core is effectively continuously skewed and the resulting skew factor is
+identical to that of `num_segments = 0`. These relations can be directly seen
+from the formula for the staggered skew factor taken from
+[\[1\]](#skew_factor_1), eq. (3):
+
+```ignore
+skew_factor = sin(0.5 * ordinal * skew_angle) / (num_segments * sin(0.5 * ordinal * skew_angle / num_segments))
+```
+
+For `num_segments = 0`, the formula simplifies to [\[2\]](#skew_factor_2), eq.
+(6.5-18):
+
+```ignore
+skew_factor = sin(0.5 * ordinal * skew_angle) / (0.5 * ordinal * skew_angle)
+```
+
+# Literature
+<a id="skew_factor_1">\[1\]</a>
+Huth, Gerhard: Nutrastung von permanenterregten AC-Servomotoren mit gestaffelter
+Rotoranordnung, Electrical Engineering 78 (1995), p. 391-397, Springer-Verlag
+
+<a id="skew_factor_2">\[2\]</a>
+Binder, Andreas: Elektrische Maschinen und Antriebe (2012), Springer-Verlag,
+Berlin Heidelberg
+
+# Examples
+
+## Continuous skewing
+
+A core with 15 slots and 5 pole pairs produces cogging torque harmonics with
+the mechanical ordinals 15, 30, 45 and so on due to the slotting. These can be
+suppressed by skewing with a full slot pitch (360 / 15 = 24 degree)
 
 ```
-use std::f64::consts::PI;
-use magnetic_core::skew_factor;
+use std::f64::consts::TAU;
+use stem_core::core::skew_factor;
 use approx::assert_abs_diff_eq;
 
-// Continuous case:
-// This example describes the 15/10 double-layer winding from [Mat22], which has a skew angle of 12 degree (half a slot)
-// to suppress the the first cogging torque harmonic (ordinal 30)
-let angle = 12.0 / 180.0 * PI;
-assert_abs_diff_eq!(skew_factor(5, angle, 0), 0.95493, epsilon = 0.0001); // First stator field harmonic
-assert_abs_diff_eq!(skew_factor(25, angle, 0), 0.190985, epsilon = 0.0001); // Fifth stator field harmonic
-assert_abs_diff_eq!(skew_factor(35, angle, 0), -0.1364, epsilon = 0.0001); // Seventh stator field harmonic
+let slots = 15;
+let pole_pairs = 5;
+let angle = TAU / slots as f64;
+let num_segments = 0;
 
-assert_abs_diff_eq!(skew_factor(30, angle, 0), 0.0, epsilon = 0.0001); // First cogging torque harmonic
-assert_abs_diff_eq!(skew_factor(60, angle, 0), 0.0, epsilon = 0.0001); // Second cogging torque harmonic
-assert_abs_diff_eq!(skew_factor(90, angle, 0), 0.0, epsilon = 0.0001); // Third cogging torque harmonic
+// All cogging harmonics are fully suppressed
+for k in 1..100 {
+    assert_abs_diff_eq!(skew_factor(slots * k, angle, num_segments), 0.0, epsilon = 1e-5);
+}
 
-// Staggered case
-assert_abs_diff_eq!(skew_factor(30, angle, 1), 1.0, epsilon = 0.0001); // One segment => No suppression
+// Other harmonics like the first stator harmonic (which creates the torque)
+// are reduced as well.
+assert_abs_diff_eq!(skew_factor(pole_pairs, angle, num_segments), 0.82699, epsilon = 1e-5);
+```
 
-// Two segments are sufficient to supress the first cogging torque harmonic. Using more segments does not change that.
-assert_abs_diff_eq!(skew_factor(30, angle, 2), 0.0, epsilon = 0.0001);
-assert_abs_diff_eq!(skew_factor(30, angle, 3), 0.0, epsilon = 0.0001);
-assert_abs_diff_eq!(skew_factor(30, angle, 4), 0.0, epsilon = 0.0001);
+If especially the 30th ordinal is problematic, it might be more sensible to
+skew by 360 / 30 = 12 degree. This reduces the losses for the first harmonic
+massively while still fully suppressing the 30th and its multiples.
 
-// However, the second cogging torque harmonic requires more segments.
-assert_abs_diff_eq!(skew_factor(60, angle, 2), -1.0, epsilon = 0.0001); // Two segments
-assert_abs_diff_eq!(skew_factor(60, angle, 3), 0.0, epsilon = 0.0001);
-assert_abs_diff_eq!(skew_factor(60, angle, 4), 0.0, epsilon = 0.0001);
+```
+use std::f64::consts::TAU;
+use stem_core::core::skew_factor;
+use approx::assert_abs_diff_eq;
 
-// For a large number of segments, the continuous and the staggered case converge
-assert_abs_diff_eq!(skew_factor(5, 12.0 / 180.0 * PI, 30), skew_factor(5, 12.0 / 180.0 * PI, 0), epsilon = 0.0001);
+let slots = 15;
+let pole_pairs = 5;
+let angle = 0.5 * TAU / slots as f64;
+let num_segments = 0;
+
+// Every second cogging harmonic is still fully suppressed
+for k in 1..100 {
+    assert_abs_diff_eq!(skew_factor(2 * slots * k, angle, num_segments), 0.0, epsilon = 1e-5);
+}
+
+// Torque-creating harmonic is much less affected
+assert_abs_diff_eq!(skew_factor(pole_pairs, angle, num_segments), 0.95493, epsilon = 1e-5);
+```
+
+## Staggering
+
+As discussed above, having only one segment is equal to not skewing at all:
+
+```
+use std::f64::consts::TAU;
+use stem_core::core::skew_factor;
+use approx::assert_abs_diff_eq;
+
+let slots = 15;
+let pole_pairs = 5;
+let angle = 0.5 * TAU / slots as f64;
+let num_segments = 1;
+
+// No suppression of any ordinal
+for k in 1..100 {
+    assert_abs_diff_eq!(skew_factor(2 * slots * k, angle, num_segments), 1.0, epsilon = 1e-5);
+}
+assert_abs_diff_eq!(skew_factor(pole_pairs, angle, num_segments), 1.0, epsilon = 1e-5);
+```
+
+With two segments, the 30th ordinal can already be suppressed, but some of its
+multiples aren't. By increasing the number of segments further, more and more
+of these are suppressed as well. For a sufficiently high number of segments,
+the staggered rotor behaves like the skewed one and suppresses all multiples.
+
+```
+use std::f64::consts::TAU;
+use stem_core::core::skew_factor;
+use approx::assert_abs_diff_eq;
+
+let slots = 15;
+let pole_pairs = 5;
+let angle = 0.5 * TAU / slots as f64;
+
+// Two segments
+assert_abs_diff_eq!(skew_factor(2 * slots, angle, 2), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(4 * slots, angle, 2), -1.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(6 * slots, angle, 2), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(8 * slots, angle, 2), 1.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(pole_pairs, angle, 2), 0.96592, epsilon = 1e-5);
+
+// Three segments
+assert_abs_diff_eq!(skew_factor(2 * slots, angle, 3), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(4 * slots, angle, 3), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(6 * slots, angle, 3), 1.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(8 * slots, angle, 3), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(pole_pairs, angle, 3), 0.95979, epsilon = 1e-5);
+
+// Four segments
+assert_abs_diff_eq!(skew_factor(2 * slots, angle, 4), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(4 * slots, angle, 4), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(6 * slots, angle, 4), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(8 * slots, angle, 4), -1.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(pole_pairs, angle, 4), 0.95766, epsilon = 1e-5);
+
+// 100 segments
+assert_abs_diff_eq!(skew_factor(2 * slots, angle, 100), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(4 * slots, angle, 100), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(6 * slots, angle, 100), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(8 * slots, angle, 100), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(pole_pairs, angle, 100), 0.95493, epsilon = 1e-5); // Equals skewed case
 ```
  */
 pub fn skew_factor(ordinal: usize, skew_angle: f64, num_segments: usize) -> f64 {
     if skew_angle == 0.0 {
         return 1.0;
     } else {
+        let arg = ordinal as f64 * skew_angle / 2.0;
         if num_segments == 0 {
-            let arg = ordinal as f64 * skew_angle / 2.0;
             return arg.sin() / arg;
         } else {
-            let arg = ordinal as f64 * skew_angle / 2.0;
             return arg.sin() / (num_segments as f64 * (arg / num_segments as f64).sin());
         }
     }
