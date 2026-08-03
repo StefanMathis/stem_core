@@ -309,8 +309,14 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /**
     Returns the total axial coil overhang on boths sides of the magnetic core.
 
-    The ASCII art below visualizes the axial coil overhang with equal signs (=).
-    If = equals one mm, the return value of `axial_coil_overhang` would be 3 mm.
+    If the core holds a winding, its coils can generally be separated into two
+    different parts: A straight one where the coil goes along the axial length
+    of the core and the end winding, where the coil closes. Sometimes, the
+    straight part extends a bit from the core ends due to e.g. the slot
+    insulation extending outside the core. This "extended" coil length is called
+    the axial coil overhang. The ASCII art below visualizes it with equal signs
+    (=). If = equals one mm, the return value of `axial_coil_overhang` would be
+    3 mm.
     ```ignore
          ┌──────┐
     ┌──==│      │=──┐
@@ -319,21 +325,139 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
          └──────┘
     ```
 
-    Axial overhang can be caused by e.g. the end winding insulation. While this
-    overhang is part of the end winding, it is not included in the calculation
-    of the end winding length of the `IsWinding` trait method `end_winding_half_turn_length`.
-    Therefore, in the calculation of the end winding inductance, the coil length is calculated as `axial_coil_overhang` + `end_winding_half_turn_length`.
-    This length is not considered in the main inductance calculation.
+    The total length of a full turn is therefore
+    `2 * (axial_length + axial_coil_overhang + end_winding_half_turn_length)`.
+    Since this part of the coil is outside the core, it is not considered when
+    calculating core-dependent parameters such as the main inductance. Instead,
+    it is treated as part of the end winding and therefore is added to the
+    `end_winding_half_turn_length` when calculating parameters such as the end
+    winding resistance or inductance.
      */
     fn axial_coil_overhang(&self) -> Length;
 
     /// Returns a reference to the cross-section shape of `self`.
     fn shape(&self) -> &Shape;
 
-    /// Relative coverage of air gap
-    /// If surface_magnet_assembly given -> coverage of surface magnets
-    /// If not given -> Coverage of flux barrier or simply half the air gap
-    fn pole_coverage(&self, surface_magnet_assembly: Option<&MagnetAssembly>) -> f64;
+    /// Returns the d-axis pole coverage of `self` as a relative fraction of the
+    /// entire air gap surface (value betwen 0 and 1). 0 means that the entire
+    /// air gap surface is covered by the q-axis, 1 means that it is completely
+    /// covered by the d-axis.
+    ///
+    /// If the core holds no magnets and has no flux barrier, this value is
+    /// simply 0.5 (air gap evenly split between d- and q-axis). If a surface
+    /// magnet assembly is provided as the second argument, the area covered by
+    /// magnets is divided by the entire air gap area to get the pole
+    /// coverage. If no surface magnet assembly is given, but the core holds a
+    /// flux barrier, this methods forwards to [`FluxBarrier::pole_coverage`].
+    ///
+    /// The image below all three of these cases, using a
+    /// [`V1rFluxBarrier`](crate::flux_barrier::V1rFluxBarrier) for the
+    /// rightmost core, where the
+    /// d-axis covers 4 of 7 teeth per pole and hence the resulting pole
+    /// coverage is 4/7 ≈ 0.571.
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![Pole coverage comparison][pole_coverage]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image("pole_coverage", "docs/img/pole_coverage.svg")
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    ///
+    /// # Examples
+    ///
+    /// This example calculates the pole coverages for the three core
+    /// configurations shown in the image above.
+    ///
+    /// ```
+    /// use std::f64::consts::FRAC_PI_2;
+    /// use std::sync::Arc;
+    ///
+    /// use approx::assert_abs_diff_eq;
+    ///
+    /// use stem_core::prelude::*;
+    /// use stem_slot::semi_trapezoid::SemiTrapezoidWidthsAndHeightsBuilder;
+    ///
+    /// let slot: SemiTrapezoidSlot = SemiTrapezoidWidthsAndHeightsBuilder {
+    ///     bottom_width: Length::new::<millimeter>(6.76),
+    ///     bottom_side_width: Length::new::<millimeter>(6.76),
+    ///     top_side_width: Length::new::<millimeter>(8.0),
+    ///     top_width: Length::new::<millimeter>(1.5),
+    ///     opening_width: Length::new::<millimeter>(1.5),
+    ///     bottom_height: Length::new::<millimeter>(0.0),
+    ///     side_height: Length::new::<millimeter>(6.79 - 0.75 - 0.5),
+    ///     top_height: Length::new::<millimeter>(0.5),
+    ///     opening_height: Length::new::<millimeter>(0.75),
+    ///     bottom_radius: Length::new::<millimeter>(0.0),
+    ///     bottom_side_radius: Length::new::<millimeter>(0.0),
+    ///     top_radius: Length::new::<millimeter>(0.0),
+    ///     top_side_radius: Length::new::<millimeter>(0.0),
+    ///     opening_radius: Length::new::<millimeter>(0.0),
+    ///     consider_tooth_tip_leakage: true,
+    /// }
+    /// .try_into().expect("valid slot");
+    ///
+    /// let air_gap = SlottedAirGap::new(28, false, CarterFactorModel::Bin12, Box::new(slot));
+    /// let mut core: RotCore = RotCoreBuilder {
+    ///     air_gap_radius: Length::new::<millimeter>(54.4),
+    ///     yoke_radius: Length::new::<millimeter>(19.0),
+    ///     axial_length: Length::new::<millimeter>(165.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     iron_fill_factor: 1.0,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 2,
+    ///     skew_angle: 0.0,
+    ///     air_gap: Box::new(air_gap),
+    ///     flux_barrier: None,
+    /// }
+    /// .try_into().expect("valid core");
+    ///
+    /// // Core without surface magnets or surface assembly
+    /// assert_eq!(core.pole_coverage(None), 0.5);
+    ///
+    /// // With surface magnets
+    /// let angle = 0.35 * FRAC_PI_2; // One pole is one quarter arc, 2 magnets per pole -> 0.7 pole coverage
+    /// let magnet = ArcParallelMagnet::with_const_thickness(
+    ///     core.axial_length(),
+    ///     core.air_gap_radius(),
+    ///     SideHeightOrThickness::Thickness(Length::new::<millimeter>(4.0)),
+    ///     AngleOrWidth::Angle(angle),
+    ///     Arc::new(Material::default()),
+    /// ).expect("valid magnet");
+    /// let mag_assembly = MagnetAssembly::new(magnet, 1.try_into().expect("not zero"), 2.try_into().expect("not zero"));
+    ///
+    /// assert_abs_diff_eq!(core.pole_coverage(Some(&mag_assembly)), 0.7, epsilon = 1e-4);
+    ///
+    /// // With flux barrier
+    /// let barrier = V1rFluxBarrier {
+    ///     yoke_distance: Length::new::<millimeter>(4.5),
+    ///     relief_path_air_gap_width: Length::new::<millimeter>(3.5),
+    ///     relief_path_length: Length::new::<millimeter>(1.33),
+    ///     relief_path_width: Length::new::<millimeter>(4.0),
+    ///     opening_angle: FRAC_PI_2,
+    ///     magnet_space_width: Length::new::<millimeter>(10.0),
+    ///     magnet_space_height: Length::new::<millimeter>(20.0),
+    ///     glue_gap: Length::new::<millimeter>(0.2),
+    ///     leakage_path_width: Length::new::<millimeter>(1.0),
+    ///     magnet_material: Some(Arc::new(Material::default())),
+    ///     cache: None,
+    /// };
+    /// core.set_flux_barrier(Some(Box::new(barrier))).expect("compatible to core");
+    ///
+    /// assert_abs_diff_eq!(core.pole_coverage(None), 4.0 / 7.0, epsilon = 1e-4);
+    /// ```
+    fn pole_coverage(&self, _surface_magnet_assembly: Option<&MagnetAssembly>) -> f64 {
+        // embed_doc_image does not support documenting trait methods without
+        // a body, so a dummy implementation is provided (which is overridden
+        // by the actual implementors).
+        return 0.5;
+    }
 
     // =========================================================================
 
@@ -996,7 +1120,7 @@ Rotoranordnung, Electrical Engineering 78 (1995), p. 391-397, Springer-Verlag
 # Examples
 
 ```
-use magnetic_core::SlottingOrdinals;
+use stem_core::core::SlottingOrdinals;
 use num::rational::Ratio;
 
 // Unslotted core
