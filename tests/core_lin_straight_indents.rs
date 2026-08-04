@@ -29,7 +29,7 @@ fn create_core(indent_width: Length, indent_depth: Length, indents_per_pole: usi
     .unwrap();
 }
 #[test]
-fn test_collision_check() {
+fn test_assembly_check() {
     let magnet = BreadLoafMagnet::new(
         Length::new::<millimeter>(165.0),
         Length::new::<millimeter>(8.0),
@@ -47,7 +47,7 @@ fn test_collision_check() {
             3,
         );
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
@@ -63,7 +63,7 @@ fn test_collision_check() {
             3,
         );
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
@@ -79,7 +79,7 @@ fn test_collision_check() {
             3,
         );
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
@@ -95,7 +95,7 @@ fn test_collision_check() {
             3,
         );
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
@@ -121,7 +121,7 @@ fn test_collision_check() {
             3,
         );
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,

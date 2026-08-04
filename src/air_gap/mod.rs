@@ -20,6 +20,14 @@ pub use plain::PlainAirGap;
 pub use slotted::{CarterFactorModel, SlottedAirGap};
 pub use straight_indents::{AirGapPolygonBuilder, StraightIndentsAirGap};
 
+/**
+TODO: Explain that all methods which take a core as second arg are not meant to
+be used standalone, but instead are called from the corresponding [`CoreExt`]
+methods, using core.air_gap() as first, core as second arg. Hence, these methods
+basically implement the [`CoreExt`] methods.
+
+See docstring of CoreExt for in-depth discussion.
+ */
 #[cfg_attr(feature = "serde", typetag::serde)]
 pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// Returns the discretization / number of segments of the core.

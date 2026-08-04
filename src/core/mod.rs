@@ -90,7 +90,7 @@ Some [`AirGap`](crate::air_gap::AirGap)s allow for mounting magnets directly on
 the core surface / in the core air gap. Similar to [`CoreExt::winding_zones`],
 the [`CoreExt::surface_magnets`] method returns an iterator over the
 [`PositionedMagnetShape`](crate::magnets::PositionedMagnetShape)s for a provided
-[`MagnetAssembly`]. The [`CoreExt::collision_check`] method can be used to
+[`MagnetAssembly`]. The [`CoreExt::assembly_check`] method can be used to
 check if the mounting results in collisions and therefore if the provided
 [`MagnetAssembly`] is compatible with the core. The image below shows an example
 for a linear core with an assembly consisting of [`BreadLoafMagnet`]s and for a

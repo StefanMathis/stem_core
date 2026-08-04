@@ -29,9 +29,9 @@ pub(crate) mod private {
 }
 
 /**
-When a [`collision_check`](CoreExt::collision_check) fails, this enum describes
+When a [`assembly_check`](CoreExt::assembly_check) fails, this enum describes
 one of the components which collided with another component. See
-[`AssemblingFailure`] for more information.
+[`AssemblyFailure`] for more information.
  */
 #[derive(Clone, Debug)]
 pub enum Component {
@@ -66,28 +66,28 @@ pub enum Component {
 }
 
 /**
-An error type created by [`CoreExt::collision_check`] which describes a
+An error type created by [`CoreExt::assembly_check`] which describes a
 collision between two components of an active part (magnetic core,
 winding zones, surface magnets, interior magnets). It holds the two colliding
 components and the reason for the collision.
  */
 #[derive(Clone, Debug)]
-pub struct AssemblingFailure {
+pub struct AssemblyFailure {
     /// One of the colliding components.
     pub left_component: Component,
     /// The component which collided with the `left_component`.
     pub right_component: Component,
     /// Reason for the collision.
-    pub reason: AssemblingFailureReason,
+    pub reason: AssemblyFailureReason,
 }
 
 /**
 An enum which describes the reason for a collision between the two components of
-an active part. It is created as part of the [`AssemblingFailure`] error when a
-[`collision_check`](CoreExt::collision_check) fails.
+an active part. It is created as part of the [`AssemblyFailure`] error when a
+[`assembly_check`](CoreExt::assembly_check) fails.
  */
 #[derive(Clone, Debug)]
-pub enum AssemblingFailureReason {
+pub enum AssemblyFailureReason {
     /// The two components are overlapping.
     Overlap(Overlap),
     /// One component which should be contained by another one isn't. An example
@@ -96,13 +96,13 @@ pub enum AssemblingFailureReason {
     NotContained(NotContained),
 }
 
-impl From<Overlap> for AssemblingFailureReason {
+impl From<Overlap> for AssemblyFailureReason {
     fn from(value: Overlap) -> Self {
         Self::Overlap(value)
     }
 }
 
-impl From<NotContained> for AssemblingFailureReason {
+impl From<NotContained> for AssemblyFailureReason {
     fn from(value: NotContained) -> Self {
         Self::NotContained(value)
     }
@@ -117,6 +117,29 @@ The main purpose of this enum is to provide a common interface for all core
 types, allowing for polymorphic behavior and code reuse. It is sealed to prevent
 external implementations, ensuring that only the intended core types can
 implement it.
+
+Some of the trait methods require different implementations depending on the
+[`AirGap`] or [`FluxBarrier`] of the core. These methods are wrappers around
+the methods of [`AirGap`] / [`FluxBarrier`]; an example would be
+[`CoreExt::winding_zones`] which wraps [`AirGap::winding_zones`]. The wrappers
+always have the signature `wrapper(core, ...)`, while the wrappers look like
+this: `wrapped(air_gap / flux_barrier, core, ...)`. Using the example of the
+`winding_zones` method, the wrapper implementation looks like this:
+
+```ignore
+fn winding_zones(&self, coil_layout: &CoilLayout) -> WindingZones {
+    return self
+        .air_gap()
+        .winding_zones(self.as_core_ref(), coil_layout);
+}
+```
+
+The wrapped methods are used as way to implement polymorphism and are not
+intended to be used standalone. In particular, calling them with a `core` which
+wasn't build using the specified [`AirGap`] / [`FluxBarrier`] trait object may
+result in incorrect or unexpected results (although it must never result in
+undefined behaviour)! The implementation of the [`AirGap`] / [`FluxBarrier`]
+traits is not required to guard against this misuse of the interface.
 */
 pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// Converts the reference of `self` into a [`CoreRef`] enum.
@@ -468,20 +491,106 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         return 2 * self.pole_pairs();
     }
 
-    fn collision_check(
+    /**
+    Checks if the core can be assembled with the given `coil_layout` and
+    `surface_magnet_assembly`, using `epsilon` and `max_relative` as tolerances
+    for overlap checks.
+
+    This method first collects all geometric bodies ([`Shape`]s and
+    [`Contour`]s) belonging to the assembly:
+    - The core shape itself ([`CoreExt::shape`]),
+    - The [`PositionedZoneContour`]s returned by the [`CoreExt::winding_zones`]
+    method, using `coil_layout` as the second argument (if the core is not
+    windable, the iterator will return `None`),
+    - If a `surface_magnet_assembly` was provided, the magnet shapes created via
+    [`CoreExt::surface_magnets`],
+    - If the core has a [`flux_barrier`](`CoreExt::flux_barrier`) which can hold
+    magnets, their shapes returned by [`CoreExt::interior_magnets`].
+
+    If any two of these bodies overlap (checked with
+    [`Composite::contains_any_composite`] using the provided `epsilon` and
+    `max_relative` tolerances, an [`AssemblyFailure`] is returned, containing
+    both the two overlapping bodes as well as the exact [`Overlap`] provided by
+    [`Composite::contains_any_composite`]. Furthermore, all interior magnets of
+    should be contained within the [`Shape::contour`] of the core shape, which
+    is tested with [`Composite::contains_composite`]. If this is not the case,
+    the core shape and the magnet shape are returned together with a
+    [`NotContained`] enum providing more details.
+
+    These checks are performed concurrently. If multiple issues exist, the one
+    found first will be returned. Hence, this method may return different
+    [`AssemblyFailure`]s when called repeatedly.
+
+    # Examples
+
+    The following example shows a successfull and a failing assembly check for
+    two different surface magnet assemblies. In the failing case, the magnet
+    covers a full quarter circle, which leads to an overlap due to the core
+    having 6 magnets.
+
+    ```
+    use std::f64::consts::FRAC_PI_2;
+    use std::sync::Arc;
+
+    use stem_core::prelude::*;
+    use stem_core::planar_geo::prelude::*;
+
+    let air_gap_plain = PlainAirGap::default();
+
+    let core: RotCore = RotCoreBuilder {
+        air_gap_radius: Length::new::<millimeter>(53.0),
+        yoke_radius: Length::new::<millimeter>(19.0),
+        axial_length: Length::new::<millimeter>(165.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 3,
+        skew_angle: 0.0,
+        air_gap: Box::new(air_gap_plain),
+        flux_barrier: None,
+    }
+    .try_into()
+    .unwrap();
+
+    // Magnet covers one eight of a circle (0.5 * FRAC_PI_2)
+    let magnet = ArcParallelMagnet::with_const_thickness(
+        core.axial_length(),
+        core.air_gap_radius(),
+        SideHeightOrThickness::Thickness(Length::new::<millimeter>(4.0)),
+        AngleOrWidth::Angle(0.5 * FRAC_PI_2),
+        Arc::new(Material::default()),
+    ).expect("valid magnet");
+    let assembly_1 = MagnetAssembly::new(magnet, 1.try_into().expect("not zero"), 1.try_into().expect("not zero"));
+
+    assert!(core.assembly_check(&CoilLayout::SingleFilled, Some(&assembly_1), DEFAULT_EPSILON, DEFAULT_MAX_RELATIVE).is_ok());
+
+    // Magnet covers one quarter of a circle (FRAC_PI_2)
+    let magnet = ArcParallelMagnet::with_const_thickness(
+        core.axial_length(),
+        core.air_gap_radius(),
+        SideHeightOrThickness::Thickness(Length::new::<millimeter>(4.0)),
+        AngleOrWidth::Angle(FRAC_PI_2),
+        Arc::new(Material::default()),
+    ).expect("valid magnet");
+    let assembly_2 = MagnetAssembly::new(magnet, 1.try_into().expect("not zero"), 1.try_into().expect("not zero"));
+
+    assert!(core.assembly_check(&CoilLayout::SingleFilled, Some(&assembly_2), DEFAULT_EPSILON, DEFAULT_MAX_RELATIVE).is_err());
+    ```
+     */
+    fn assembly_check(
         &self,
         coil_layout: &CoilLayout,
         surface_magnet_assembly: Option<&MagnetAssembly>,
         epsilon: f64,
         max_relative: f64,
-    ) -> Result<(), AssemblingFailure> {
+    ) -> Result<(), AssemblyFailure> {
         let core_shape = self.shape();
         let zones: Vec<PositionedZoneContour> = self.winding_zones(coil_layout).collect();
         if let Some(o) = zones.par_iter().enumerate().find_map_any(|(i1, z1)| {
             if let Ok(overlap) =
                 core_shape.contains_any_composite(&z1.contour, epsilon, max_relative)
             {
-                return Some(AssemblingFailure {
+                return Some(AssemblyFailure {
                     left_component: Component::Core(core_shape.clone()),
                     right_component: Component::Zone {
                         idx: i1,
@@ -499,7 +608,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
                     z2.contour
                         .contains_any_composite(&z1.contour, epsilon, max_relative)
                 {
-                    return Some(AssemblingFailure {
+                    return Some(AssemblyFailure {
                         left_component: Component::Zone {
                             idx: i1,
                             contour: z1.clone(),
@@ -529,7 +638,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         }) {
             if let Some(o) = magnets.par_iter().enumerate().find_map_any(|(i1, m1)| {
                 if let Ok(overlap) = core_shape.contains_any_composite(m1, epsilon, max_relative) {
-                    return Some(AssemblingFailure {
+                    return Some(AssemblyFailure {
                         left_component: Component::Core(core_shape.clone()),
                         right_component: Component::SurfaceMagnet {
                             idx: i1,
@@ -545,7 +654,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
                     }
 
                     if let Ok(overlap) = m2.contains_any_composite(m1, epsilon, max_relative) {
-                        return Some(AssemblingFailure {
+                        return Some(AssemblyFailure {
                             left_component: Component::SurfaceMagnet {
                                 idx: i1,
                                 shape: m1.clone(),
@@ -566,7 +675,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
                     if let Ok(overlap) =
                         m1.contains_any_composite(&z.contour, epsilon, max_relative)
                     {
-                        return Some(AssemblingFailure {
+                        return Some(AssemblyFailure {
                             left_component: Component::Zone {
                                 idx: i,
                                 contour: z.clone(),
@@ -597,8 +706,11 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
             .par_iter()
             .enumerate()
             .find_map_any(|(i, m)| {
-                if let Err(e) = core_shape.contains_shape(&m.shape, epsilon, max_relative) {
-                    return Some(AssemblingFailure {
+                if let Err(e) = core_shape
+                    .contour()
+                    .contains_shape(&m.shape, epsilon, max_relative)
+                {
+                    return Some(AssemblyFailure {
                         left_component: Component::Core(core_shape.clone()),
                         right_component: Component::InteriorMagnet {
                             idx: i,
@@ -610,7 +722,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
 
                 if let Ok(overlap) = core_shape.contains_any_shape(&m.shape, epsilon, max_relative)
                 {
-                    return Some(AssemblingFailure {
+                    return Some(AssemblyFailure {
                         left_component: Component::Core(core_shape.clone()),
                         right_component: Component::InteriorMagnet {
                             idx: i,
@@ -639,7 +751,18 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     }
 
     /**
-    Method forwards to [`AirGap::carter_factor`] converting self into [`CoreRef`] -> See its docstring.
+    Returns the carter factor of `self`.
+
+    The _carter factor_ `kc `describes the effect of non-smooth (e.g. slotted)
+    air gaps contours on the magnetic resistance / reluctance of the air gap.
+    The magnetically effective air gap width can be calculated as
+    `kc_stator_core * kc_rotor_core * geometric_air_gap_width` with both factors
+    being equal to or larger than 1.
+
+    The exact implementation of the carter factor calculation depends on the
+    [`AirGap`] itself, hence this method forwards to [`AirGap::carter_factor`],
+    using `self` as the second argument and `air_gap_width` as the third. See
+    the docstring of [`AirGap::carter_factor`] for details and examples.
      */
     fn carter_factor(&self, air_gap_width: Length) -> f64 {
         self.air_gap()
@@ -663,6 +786,86 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         return self.air_gap().num_segments(self.as_core_ref());
     }
 
+    /// Returns an iterator over the [`PositionedZoneContour`]s for the given
+    /// `coil_layout`.
+    ///
+    /// If a core [`is_windable`](CoreExt::is_windable), this iterator returns
+    /// the contours of all of its winding zones. The winding zone contours
+    /// depend on the [`AirGap`] of the core: For example, the winding zones of
+    /// a [`SlottedAirGap`](crate::air_gap::SlottedAirGap) are inside its slots,
+    /// whereas those of a [`PlainAirGap`](crate::air_gap::PlainAirGap) are
+    /// located on the top of the air gap contour / inside the air gap itself.
+    /// The image below shows the contours and their return order for the
+    /// aforementioned examples of a slotted and a plain air gap with
+    /// a [`CoilLayout::DoubleHorizontal`].
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![Winding zones for a slotted and a plain air gap][winding_zones]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image("winding_zones", "docs/img/winding_zones.svg")
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    /// This method forwards to [`AirGap::winding_zones`], using `self` as the
+    /// second and `coil_layout` as the third argument.
+    ///
+    /// # Examples
+    ///
+    /// The number of winding zones is equal to the number of slots times the
+    /// number of [`CoilLayout::layers`]:
+    ///
+    /// ```
+    /// use std::f64::consts::PI;
+    /// use std::sync::Arc;
+    ///
+    /// use approx::assert_abs_diff_eq;
+    ///
+    /// use stem_core::prelude::*;
+    /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
+    ///
+    /// let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
+    ///     bottom_width: Length::new::<millimeter>(9.0),
+    ///     opening_width: Length::new::<millimeter>(2.0),
+    ///     height: Length::new::<millimeter>(20.0),
+    ///     opening_height: Length::new::<millimeter>(2.0),
+    ///     slot_angle: 10.0 * PI / 180.0,
+    ///     bottom_radius: Length::new::<millimeter>(2.0),
+    ///     top_radius: Length::new::<millimeter>(1.0),
+    ///     opening_radius: Length::new::<millimeter>(0.0),
+    ///     consider_tooth_tip_leakage: true,
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// let air_gap_slotted = SlottedAirGap::new(36, false, CarterFactorModel::Bin12, Box::new(slot));
+    ///
+    /// let core: RotCore = RotCoreBuilder {
+    ///     air_gap_radius: Length::new::<millimeter>(55.0),
+    ///     yoke_radius: Length::new::<millimeter>(90.0),
+    ///     axial_length: Length::new::<millimeter>(165.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     iron_fill_factor: 1.0,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 2,
+    ///     skew_angle: 0.0,
+    ///     air_gap: Box::new(air_gap_slotted),
+    ///     flux_barrier: None,
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// let coil_layout = CoilLayout::Quadruple;
+    ///
+    /// let zones: Vec<PositionedZoneContour> = core.winding_zones(&coil_layout).collect();
+    /// assert_eq!(zones.len(), usize::from(coil_layout.layers()) * usize::from(core.slots()));
+    /// assert_eq!(zones.len(), 4 * 36);
+    /// ```
     fn winding_zones(&self, coil_layout: &CoilLayout) -> WindingZones {
         return self
             .air_gap()
@@ -789,7 +992,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// Returns whether a winding can be mounted on the core or not.
     ///
     /// A winding can be mounted if [`CoreExt::slots`] is not zero.
-    fn windable(&self) -> bool {
+    fn is_windable(&self) -> bool {
         return self.slots() != 0;
     }
 

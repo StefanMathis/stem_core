@@ -7,7 +7,10 @@ use std::{
 use cairo_viewport::{SideLength, Viewport, bounding_box::ToBoundingBox, compare_or_create};
 use planar_geo::draw::{Color, Style};
 use stem_core::prelude::*;
-use stem_slot::semi_trapezoid::SemiTrapezoidWidthsAndHeightsBuilder;
+use stem_slot::{
+    planar_geo::{DEFAULT_EPSILON, DEFAULT_MAX_RELATIVE},
+    semi_trapezoid::SemiTrapezoidWidthsAndHeightsBuilder,
+};
 
 fn create_slotted_core(flux_barrier: Option<V1rFluxBarrier>) -> RotCore {
     let slot: SemiTrapezoidSlot = SemiTrapezoidWidthsAndHeightsBuilder {
@@ -97,6 +100,17 @@ fn test_slotted_core_90deg_open() {
     }
     {
         let core = create_slotted_core(Some(barrier));
+
+        assert!(
+            core.assembly_check(
+                &CoilLayout::SingleFilled,
+                None,
+                DEFAULT_EPSILON,
+                DEFAULT_MAX_RELATIVE
+            )
+            .is_ok()
+        );
+
         let flux_barrier = (core.flux_barrier().unwrap() as &dyn Any)
             .downcast_ref::<V1rFluxBarrier>()
             .unwrap();

@@ -179,7 +179,7 @@ fn create_outer_core_from_phd(model: CarterFactorModel) -> RotCore {
 }
 
 #[test]
-fn test_collision_check() {
+fn test_assembly_check() {
     {
         let core = create_inner_core(12, 4, false, false);
 
@@ -195,7 +195,7 @@ fn test_collision_check() {
 
         let core = create_inner_core(12, 4, false, true);
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
@@ -206,7 +206,7 @@ fn test_collision_check() {
 
         let core = create_inner_core(12, 4, true, true);
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
@@ -216,7 +216,7 @@ fn test_collision_check() {
         );
 
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
@@ -227,7 +227,7 @@ fn test_collision_check() {
 
         let core = create_inner_core(12, 4, true, false);
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
@@ -250,7 +250,7 @@ fn test_collision_check() {
         let assembly = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
 
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
@@ -261,7 +261,7 @@ fn test_collision_check() {
 
         let core = create_outer_core(12, 4, true, false);
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
@@ -272,7 +272,7 @@ fn test_collision_check() {
 
         let core = create_outer_core(12, 4, false, true);
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
@@ -283,7 +283,7 @@ fn test_collision_check() {
 
         let core = create_outer_core(12, 4, true, true);
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,

@@ -172,7 +172,7 @@ fn create_core(
 }
 
 #[test]
-fn test_collision_check_inner() {
+fn test_assembly_check_inner() {
     let magnet = BreadLoafMagnet::new(
         Length::new::<millimeter>(165.0),
         Length::new::<millimeter>(18.0),
@@ -186,7 +186,7 @@ fn test_collision_check_inner() {
     {
         let core = create_core(20.0, 0.0, 3, false);
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
@@ -198,7 +198,7 @@ fn test_collision_check_inner() {
     {
         let core = create_core(20.0, -2.0, 3, false);
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
@@ -210,7 +210,7 @@ fn test_collision_check_inner() {
     {
         let core = create_core(20.0, 2.0, 3, false);
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
@@ -222,7 +222,7 @@ fn test_collision_check_inner() {
     {
         let core = create_core(20.0, -5.0, 3, false);
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
@@ -234,7 +234,7 @@ fn test_collision_check_inner() {
     {
         let core = create_core(20.0, 5.0, 3, false);
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
@@ -246,7 +246,7 @@ fn test_collision_check_inner() {
     {
         let core = create_core(17.0, 2.0, 3, false);
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
@@ -258,7 +258,7 @@ fn test_collision_check_inner() {
 }
 
 #[test]
-fn test_collision_check_outer() {
+fn test_assembly_check_outer() {
     let magnet = BreadLoafMagnet::new(
         Length::new::<millimeter>(165.0),
         Length::new::<millimeter>(18.0),
@@ -272,7 +272,7 @@ fn test_collision_check_outer() {
     {
         let core = create_core(20.0, 0.0, 3, true);
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
@@ -284,7 +284,7 @@ fn test_collision_check_outer() {
     {
         let core = create_core(20.0, -2.0, 3, true);
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
@@ -296,7 +296,7 @@ fn test_collision_check_outer() {
     {
         let core = create_core(20.0, 2.0, 3, true);
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
@@ -308,7 +308,7 @@ fn test_collision_check_outer() {
     {
         let core = create_core(20.0, -5.0, 3, true);
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
@@ -320,7 +320,7 @@ fn test_collision_check_outer() {
     {
         let core = create_core(20.0, 5.0, 3, true);
         assert!(
-            core.collision_check(
+            core.assembly_check(
                 &CoilLayout::SingleFilled,
                 Some(&assembly),
                 DEFAULT_EPSILON,
