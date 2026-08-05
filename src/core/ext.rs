@@ -879,6 +879,83 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
             .winding_zones(self.as_core_ref(), coil_layout);
     }
 
+    /// Returns an iterator over the
+    /// [`PositionedMagnetShape`](crate::magnets::PositionedMagnetShape)s for
+    /// the given `magnet_assembly`.
+    ///
+    /// This method takes the magnet out of the provided `magnet_assembly` and
+    /// retrieves the magnet nort and south shapes if `split` is true or the
+    /// full magnet shape otherwise (see [`Magnet::shape`] and
+    /// [`Magnet::north_south_shapes`]) and positions them along the air gap
+    /// relative to the [`CoreExt::shape`] of `self`. The number of magnets
+    /// positioned next to each other on a single pole is defined via
+    /// [`MagnetAssembly::num_tangential`]. This assembly is then repeated for
+    /// each pole. The total number of elements returned by the iterator is
+    /// therefore `magnet_assembly.num_tangential() * (1 + split) *
+    /// self.poles()`.
+    ///
+    /// The positioning itself is done by [`AirGap::surface_magnets`], using
+    /// `self` as the second, `magnet_assembly` as the third and `split` as the
+    /// fourth/ argument. The image below shows two examples: On the left a
+    /// [`PlainAirGap`](crate::air_gap::PlainAirGap) and on the right a
+    /// [`StraightIndentsAirGap`](crate::air_gap::StraightIndentsAirGap).
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![Winding zones for a slotted and a plain air gap][surface_magnets]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image("surface_magnets", "docs/img/surface_magnets.svg")
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    /// _This image was produced with `examples/surface_magnets.rs`._
+    ///
+    /// # Examples
+    ///
+    /// The number of magnet shapes is equal to the number of poles times
+    /// [`MagnetAssembly::num_tangential`] times (1 + split).
+    ///
+    /// ```
+    /// use std::f64::consts::FRAC_PI_2;
+    /// use std::sync::Arc;
+    ///
+    /// use approx::assert_abs_diff_eq;
+    ///
+    /// use stem_core::prelude::*;
+    ///
+    /// let core: RotCore = RotCoreBuilder {
+    ///     air_gap_radius: Length::new::<millimeter>(55.0),
+    ///     yoke_radius: Length::new::<millimeter>(90.0),
+    ///     axial_length: Length::new::<millimeter>(165.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     iron_fill_factor: 1.0,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 2,
+    ///     skew_angle: 0.0,
+    ///     air_gap: Box::new(PlainAirGap::default()),
+    ///     flux_barrier: None,
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// let magnet = ArcParallelMagnet::with_const_thickness(
+    ///    core.axial_length(),
+    ///    core.air_gap_radius(),
+    ///    SideHeightOrThickness::Thickness(Length::new::<millimeter>(4.0)),
+    ///    AngleOrWidth::Angle(0.7 * FRAC_PI_2 / 2.0),
+    ///    Arc::new(Material::default()),
+    /// ).unwrap();
+    /// let surface_magnets = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 2.try_into().unwrap());
+    ///
+    /// let zones: Vec<PositionedMagnetShape> = core.surface_magnets(&surface_magnets, true).collect();
+    /// assert_eq!(zones.len(), 2 * usize::from(core.poles()) * usize::from(surface_magnets.num_tangential()));
+    /// assert_eq!(zones.len(), 16);
+    /// ```
     fn surface_magnets(&self, magnet_assembly: &MagnetAssembly, split: bool) -> Magnets {
         return self
             .air_gap()

@@ -85,6 +85,9 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     ///
     /// When implementing this method for custom [`AirGap`]s, the following
     /// rules should be followed:
+    /// - If the core is not windable, an empty iterator should be returned
+    /// (which can for example be constructed from
+    /// [`WindingZonesEqSpaced::no_slots`](crate::magnets::WindingZonesEqSpaced)).
     /// - The iterator should return `n`
     /// [`PositionedZoneContour`](core::winding_zones::PositionedZoneContour)
     /// elements, where `n = coil_layout.layers() * self.slots()`
