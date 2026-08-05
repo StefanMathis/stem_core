@@ -5,6 +5,7 @@ use cairo_viewport::{BoundingBox, SideLength, Viewport};
 use planar_geo::Transformation;
 use planar_geo::draw::*;
 use stem_core::prelude::*;
+use stem_slot::planar_geo::prelude::Composite;
 use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -65,16 +66,52 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         cr.paint()?;
 
         core_plain.drawable().draw(cr)?;
-        for w in core_plain.winding_zones(&CoilLayout::DoubleVertical) {
+        for (idx, w) in core_plain
+            .winding_zones(&CoilLayout::DoubleVertical)
+            .enumerate()
+        {
+            let text = Text {
+                text: idx.to_string(),
+                anchor: Anchor::Center,
+                fixed_anchor_offset: [0.0, 0.0],
+                scaled_anchor_offset: w.contour.centroid(),
+                color: Color {
+                    r: 0.0,
+                    g: 0.0,
+                    b: 0.0,
+                    a: 1.0,
+                },
+                font_size: 12.0,
+                angle: 0.0,
+            };
             w.into_drawable().draw(cr)?;
+            text.draw(cr)?;
         }
 
         let mut drawable: Drawable = core_slotted.drawable().into();
         drawable.translate([shift, 0.0]);
         drawable.draw(cr)?;
-        for mut w in core_slotted.winding_zones(&CoilLayout::DoubleVertical) {
+        for (idx, mut w) in core_slotted
+            .winding_zones(&CoilLayout::DoubleVertical)
+            .enumerate()
+        {
             w.translate([shift, 0.0]);
+            let text = Text {
+                text: idx.to_string(),
+                anchor: Anchor::Center,
+                fixed_anchor_offset: [0.0, 0.0],
+                scaled_anchor_offset: w.contour.centroid(),
+                color: Color {
+                    r: 0.0,
+                    g: 0.0,
+                    b: 0.0,
+                    a: 1.0,
+                },
+                font_size: 12.0,
+                angle: 0.0,
+            };
             w.into_drawable().draw(cr)?;
+            text.draw(cr)?;
         }
 
         return Ok(());
