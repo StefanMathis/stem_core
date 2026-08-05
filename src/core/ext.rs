@@ -794,14 +794,15 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// `coil_layout`.
     ///
     /// If a core [`is_windable`](CoreExt::is_windable), this iterator returns
-    /// the contours of all of its winding zones. The winding zone contours
-    /// depend on the [`AirGap`] of the core: For example, the winding zones of
-    /// a [`SlottedAirGap`](crate::air_gap::SlottedAirGap) are inside its slots,
+    /// the contours of all of its winding zones positioned relative to the
+    /// [`CoreExt::shape`] of `self`. The winding zone contours depend on the
+    /// [`AirGap`] of the core: For example, the winding zones of a
+    /// [`SlottedAirGap`](crate::air_gap::SlottedAirGap) are inside its slots,
     /// whereas those of a [`PlainAirGap`](crate::air_gap::PlainAirGap) are
     /// located on the top of the air gap contour / inside the air gap itself.
     /// The image below shows the contours and their return order for the
     /// aforementioned examples of a slotted and a plain air gap with
-    /// a [`CoilLayout::DoubleHorizontal`].
+    /// a [`CoilLayout::DoubleVertical`].
     #[doc = ""]
     #[cfg_attr(
         feature = "doc-images",
@@ -816,13 +817,15 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         doc = "**Doc images not enabled**. Compile docs with
         `cargo doc --features 'doc-images'` and Rust version >= 1.54."
     )]
+    /// _This image was produced with `examples/winding_zones.rs`._
+    ///
     /// This method forwards to [`AirGap::winding_zones`], using `self` as the
     /// second and `coil_layout` as the third argument.
     ///
     /// # Examples
     ///
     /// The number of winding zones is equal to the number of slots times the
-    /// number of [`CoilLayout::layers`]:
+    /// number of [`CoilLayout::layers`].
     ///
     /// ```
     /// use std::f64::consts::PI;
