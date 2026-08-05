@@ -58,6 +58,49 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
         split: bool,
     ) -> Magnets;
 
+    /// Returns an iterator over the
+    /// [`PositionedZoneContour`](core::winding_zones::PositionedZoneContour)s
+    /// for the given `coil_layout`.
+    ///
+    /// This method implements [`CoreExt::winding_zones`] depending on the type
+    /// of `self`. For example, for a [`PlainAirGap`], the winding zone contours
+    /// are located inside the air gap itself, whereas those of a
+    /// [`SlottedAirGap`] are situated within the slots as shown in the image
+    /// below:
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![Winding zones for a slotted and a plain air gap][winding_zones]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image("winding_zones", "docs/img/winding_zones.svg")
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    /// _This image was produced with `examples/winding_zones.rs`._
+    ///
+    /// When implementing this method for custom [`AirGap`]s, the following
+    /// rules should be followed:
+    /// - The iterator should return `n`
+    /// [`PositionedZoneContour`](core::winding_zones::PositionedZoneContour)
+    /// elements, where `n = coil_layout.layers() * self.slots()`
+    /// - Each element should have a unique [`Zone`](core::winding_zones::Zone)
+    /// index. In sum, all returned elements should cover all possible layer
+    /// / slot combinations resulting from `coil_layout` and `self.slots()`.
+    /// - The zones must not overlap each other or the
+    /// [`core.shape()`](CoreExt::Shape). This can be checked using
+    /// [`CoreExt::assembly_check`].
+    /// - Although not strictly required by [`CoreExt::assembly_check`], the
+    /// zone contours should not "hover" over the core shape, but instead be
+    /// attached to it.
+    ///
+    /// The [`crate::winding_zones`] module contains some predefined iterators
+    /// to simplify the implementation of this method, see e.g. the source code
+    /// of [`PlainAirGap::winding_zones`] for an example.
     fn winding_zones(&self, core: CoreRef<'_>, coil_layout: &CoilLayout) -> WindingZones;
 
     /// Return the number of slots. If zero, slot is not windable. This number
