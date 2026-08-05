@@ -134,6 +134,10 @@ fn winding_zones(&self, coil_layout: &CoilLayout) -> WindingZones {
 }
 ```
 
+The docstrings of the [`CoreExt`] trait will generally focus on the _use_ of the
+methods, whereas the [`AirGap`] / [`FluxBarrier`] docstrings will give details
+on how to _implement_ them.
+
 The wrapped methods are used as way to implement polymorphism and are not
 intended to be used standalone. In particular, calling them with a `core` which
 wasn't build using the specified [`AirGap`] / [`FluxBarrier`] trait object may
