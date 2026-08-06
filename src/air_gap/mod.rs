@@ -51,6 +51,60 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// [`StraightIndentsAirGap`], this is ensured by the constructor.
     fn num_segments(&self, core: CoreRef<'_>) -> usize;
 
+    /// Retusn an iterator over the surface magnet shapes for the given
+    /// `magnet_assembly` and `core`.
+    ///
+    /// This method implements [`CoreExt::surface_magnets`] for the different
+    /// possible air gap types. For example, for a [`PlainAirGap`] and a rotary
+    /// core, the magnets are arranged on the circular air gap surface of the
+    /// core, whereas they are positioned in the indent middle for a
+    /// [`StraightIndentsAirGap`].
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![Surface magnets for a plain and an indent air gap][surface_magnets]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image("surface_magnets", "docs/img/surface_magnets.svg")
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    /// _This image was produced with `examples/surface_magnets.rs`._
+    ///
+    /// When implementing this method for custom [`AirGap`]s, the following
+    /// rules should be followed:
+    /// - If no magnets can be placed on the air gap surface, an empty iterator
+    /// should be returned (for example
+    /// `Magnets::Other(Box::new([].into_iter()))`.
+    /// - The iterator should return `n`
+    /// [`PositionedMagnetShape`](crate::magnets::PositionedMagnetShape)
+    /// elements, where `magnet_assembly.num_tangential() * (1 + split) *
+    /// core.poles()`.
+    /// - The shapes must not overlap each other or the
+    /// [`core.shape()`](CoreExt::Shape). This can be checked using
+    /// [`CoreExt::assembly_check`].
+    /// - Although not strictly required by [`CoreExt::assembly_check`], the
+    /// magnet shapes should not "hover" over the core shape, but instead be
+    /// attached to it.
+    /// - Since there is only one type of magnet assembly located on the air gap
+    /// surface by definition,
+    /// [`PositionedMagnetShape::magnet_idx`](crate::magnets::PositionedMagnetShape::magnet_idx)
+    /// should always be zero.
+    /// - If `split` is true, each magnet should be separated in its north and
+    /// south shape using
+    /// [`Magnet::north_south_shapes`](stem_magnet::magnet::Magnet::north_south_shapes).
+    /// Otherwise, the whole magnet shape should be returned. When returning the
+    /// shapes for a negative pole, the shapes need to be adjusted for polarity
+    /// (see [`PositionedMagnetShape::is_north`](crate::magnets::PositionedMagnetShape::is_north)).
+    ///
+    ///
+    /// The [`crate::magnets`] module contains some predefined iterators
+    /// to simplify the implementation of this method, see e.g. the source code
+    /// of [`PlainAirGap::surface_magnets`] for an example.
     fn surface_magnets(
         &self,
         magnet_assembly: &MagnetAssembly,
@@ -62,11 +116,11 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// [`PositionedZoneContour`](core::winding_zones::PositionedZoneContour)s
     /// for the given `coil_layout`.
     ///
-    /// This method implements [`CoreExt::winding_zones`] depending on the type
-    /// of `self`. For example, for a [`PlainAirGap`], the winding zone contours
-    /// are located inside the air gap itself, whereas those of a
-    /// [`SlottedAirGap`] are situated within the slots as shown in the image
-    /// below:
+    /// This method implements [`CoreExt::winding_zones`] for the different
+    /// possible air gap types. For example, for a [`PlainAirGap`], the winding
+    /// zone contours are located inside the air gap itself, whereas those
+    /// of a [`SlottedAirGap`] are situated within the slots as shown in the
+    /// image below:
     #[doc = ""]
     #[cfg_attr(
         feature = "doc-images",

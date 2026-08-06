@@ -831,8 +831,6 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// use std::f64::consts::PI;
     /// use std::sync::Arc;
     ///
-    /// use approx::assert_abs_diff_eq;
-    ///
     /// use stem_core::prelude::*;
     /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
     ///
@@ -879,7 +877,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
             .winding_zones(self.as_core_ref(), coil_layout);
     }
 
-    /// Returns an iterator over the
+    /// Returns an iterator over the surface
     /// [`PositionedMagnetShape`](crate::magnets::PositionedMagnetShape)s for
     /// the given `magnet_assembly`.
     ///
@@ -892,17 +890,20 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// [`MagnetAssembly::num_tangential`]. This assembly is then repeated for
     /// each pole. The total number of elements returned by the iterator is
     /// therefore `magnet_assembly.num_tangential() * (1 + split) *
-    /// self.poles()`.
+    /// self.poles()`. Since there is only one type of magnet assembly on the
+    /// surface by definition,
+    /// [`PositionedMagnetShape::magnet_idx`](crate::magnets::PositionedMagnetShape::magnet_idx)
+    /// is always 0.
     ///
     /// The positioning itself is done by [`AirGap::surface_magnets`], using
     /// `self` as the second, `magnet_assembly` as the third and `split` as the
-    /// fourth/ argument. The image below shows two examples: On the left a
+    /// fourth argument. The image below shows two examples: On the left a
     /// [`PlainAirGap`](crate::air_gap::PlainAirGap) and on the right a
     /// [`StraightIndentsAirGap`](crate::air_gap::StraightIndentsAirGap).
     #[doc = ""]
     #[cfg_attr(
         feature = "doc-images",
-        doc = "![Winding zones for a slotted and a plain air gap][surface_magnets]"
+        doc = "![Surface magnets for a plain and an indent air gap][surface_magnets]"
     )]
     #[cfg_attr(
         feature = "doc-images",
@@ -923,8 +924,6 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// ```
     /// use std::f64::consts::FRAC_PI_2;
     /// use std::sync::Arc;
-    ///
-    /// use approx::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
     ///
@@ -952,9 +951,21 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// ).unwrap();
     /// let surface_magnets = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 2.try_into().unwrap());
     ///
-    /// let zones: Vec<PositionedMagnetShape> = core.surface_magnets(&surface_magnets, true).collect();
-    /// assert_eq!(zones.len(), 2 * usize::from(core.poles()) * usize::from(surface_magnets.num_tangential()));
-    /// assert_eq!(zones.len(), 16);
+    /// let split = true;
+    /// let magnets: Vec<PositionedMagnetShape> = core.surface_magnets(&surface_magnets, split).collect();
+    /// assert_eq!(magnets.len(), (1 + usize::from(split)) * usize::from(core.poles()) * usize::from(surface_magnets.num_tangential()));
+    /// assert_eq!(magnets.len(), 16);
+    /// for m in magnets.iter() {
+    ///     assert_eq!(m.magnet_idx, 0);
+    /// }
+    ///
+    /// let split = false;
+    /// let magnets: Vec<PositionedMagnetShape> = core.surface_magnets(&surface_magnets, split).collect();
+    /// assert_eq!(magnets.len(), (1 + usize::from(split)) * usize::from(core.poles()) * usize::from(surface_magnets.num_tangential()));
+    /// assert_eq!(magnets.len(), 8);
+    /// for m in magnets.iter() {
+    ///     assert_eq!(m.magnet_idx, 0);
+    /// }
     /// ```
     fn surface_magnets(&self, magnet_assembly: &MagnetAssembly, split: bool) -> Magnets {
         return self
@@ -967,22 +978,123 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         return usize::from(self.poles()) * magnet_assembly.num_magnets();
     }
 
-    /// Returns the total mass of all surface magnets mounted on `self`.
-    fn mass_surface_magnets(&self, magnet_assembly: &MagnetAssembly) -> Mass {
-        return self.poles() as f64 * magnet_assembly.mass();
-    }
-
-    fn starts_in_d_axis(&self) -> bool {
-        self.flux_barrier()
-            .map_or(false, |fb| fb.starts_in_d_axis(self.as_core_ref()))
-    }
-
+    /// Returns an iterator over the interior
+    /// [`PositionedMagnetShape`](crate::magnets::PositionedMagnetShape)s within
+    /// the flux barrier of `self`.
+    ///
+    /// If the core has a flux barrier ([`CoreExt::flux_barrier`] returns
+    /// `Some`), it may also have interior magnets. The type(s), shape(s) and
+    /// positioning of those magnets depend entirely on the [`FluxBarrier`]
+    /// implementation, see [`FluxBarrier::magnet_assemblies`] and
+    /// [`FluxBarrier::interior_magnets`] for details. Similar to
+    /// [`CoreExt::surface_magnets`], the shapes returned by the [`Magnets`]
+    /// iterator are already positioned relative to that returned by
+    /// [`CoreExt::shape`]. The `split` argument is forwarded to
+    /// [`FluxBarrier::interior_magnets`]
+    ///
+    /// The positioning itself is done by [`FluxBarrier::interior_magnets`],
+    /// using `self` as the second and `split` as the third argument. The
+    /// image below shows two examples: On the left a linear core
+    /// and on the right a rotary core, both containing a
+    /// [`Star1FluxBarrier`](crate::flux_barrier::Star1FluxBarrier).
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![Interior magnets for a linear and a rotary motor][lin_and_rot_core_interior_magnets]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image(
+            "lin_and_rot_core_interior_magnets",
+            "docs/img/lin_and_rot_core_interior_magnets.svg"
+        )
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    /// _This image was produced with `examples/lin_and_rot_core_plots.rs`._
+    ///
+    /// # Examples
+    ///
+    /// For the shown case of a linear core with a
+    /// [`Star1FluxBarrier`](crate::flux_barrier::Star1FluxBarrier), the number
+    /// of magnet shapes equals the number of poles times 1 plus `split`.
+    ///
+    /// ```
+    /// use std::sync::Arc;
+    ///
+    /// use stem_core::prelude::*;
+    ///
+    /// let fb = Star1FluxBarrier {
+    ///     air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
+    ///     yoke_leakage_path_width: Length::new::<millimeter>(1.0),
+    ///     relief_path_air_gap_width: Length::new::<millimeter>(0.0),
+    ///     magnet_space_width: Length::new::<millimeter>(10.0),
+    ///     magnet_space_height_or_relief_path_width: Star1HeightSplit::ReliefPathWidth(Length::new::<
+    ///         millimeter,
+    ///     >(0.0)),
+    ///     glue_gap: Length::new::<millimeter>(0.5),
+    ///     magnet_material: Some(Arc::new(Material::default())),
+    ///     cache: None,
+    /// };
+    ///
+    /// let lin_core: LinCore = LinCoreBuilder {
+    ///     height: Length::new::<millimeter>(20.0),
+    ///     width: Length::new::<millimeter>(150.0),
+    ///     axial_length: Length::new::<millimeter>(100.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     skew_angle: 0.0,
+    ///     iron_fill_factor: 1.0,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 3,
+    ///     air_gap: Box::new(PlainAirGap::default()),
+    ///     flux_barrier: Some(Box::new(fb)),
+    /// }
+    /// .try_into().expect("valid inputs");
+    ///
+    /// let split = true;
+    /// let zones: Vec<PositionedMagnetShape> = core.interior_magnets(split).collect();
+    /// assert_eq!(zones.len(), (1 + usize::from(split)) * usize::from(core.poles()));
+    /// assert_eq!(zones.len(), 12);
+    ///
+    /// let split = false;
+    /// let zones: Vec<PositionedMagnetShape> = core.interior_magnets(split).collect();
+    /// assert_eq!(zones.len(), (1 + usize::from(split)) * usize::from(core.poles()));
+    /// assert_eq!(zones.len(), 6);
+    /// ```
+    ///
+    /// If the core has no flux barrier, the iterator is always empty.
+    ///
+    /// ```
+    /// use std::sync::Arc;
+    ///
+    /// use stem_core::prelude::*;
+    ///
+    /// let lin_core: LinCore = LinCoreBuilder {
+    ///     height: Length::new::<millimeter>(20.0),
+    ///     width: Length::new::<millimeter>(150.0),
+    ///     axial_length: Length::new::<millimeter>(100.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     skew_angle: 0.0,
+    ///     iron_fill_factor: 1.0,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 3,
+    ///     air_gap: Box::new(PlainAirGap::default()),
+    ///     flux_barrier: None,
+    /// }
+    /// .try_into().expect("valid inputs");
+    ///
+    /// let zones: Vec<PositionedMagnetShape> = core.interior_magnets(true).collect();
+    /// assert!(zones.is_empty());
+    /// ```
     fn interior_magnets(&self, split: bool) -> Magnets {
         match self.flux_barrier() {
             Some(fb) => fb.interior_magnets(self.as_core_ref(), split),
             None => {
-                // Placeholder
-                Magnets::Other(Box::new([].into_iter())).into()
+                // Empty iterator
+                Magnets::Other(Box::new([].into_iter()))
             }
         }
     }
@@ -992,6 +1104,11 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
             Some(fb) => fb.magnet_assemblies(self.as_core_ref()),
             None => &[],
         }
+    }
+
+    /// Returns the total mass of all surface magnets mounted on `self`.
+    fn mass_surface_magnets(&self, magnet_assembly: &MagnetAssembly) -> Mass {
+        return self.poles() as f64 * magnet_assembly.mass();
     }
 
     fn mass_interior_magnets(&self) -> Mass {
@@ -1005,6 +1122,11 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
                 .unwrap_or(Mass::new::<kilogram>(0.0))
         }
         return mass;
+    }
+
+    fn starts_in_d_axis(&self) -> bool {
+        self.flux_barrier()
+            .map_or(false, |fb| fb.starts_in_d_axis(self.as_core_ref()))
     }
 
     /// Returns the number of slots at the air gap.

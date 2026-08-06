@@ -518,13 +518,6 @@ impl FluxBarrier for V2rFluxBarrier {
         return false;
     }
 
-    fn magnets(&self, _core: CoreRef<'_>) -> &[MagnetAssembly] {
-        match self.cache.as_ref() {
-            Some(c) => c.magnets.as_ref().map_or(&[], |m| m.as_slice()),
-            None => &[],
-        }
-    }
-
     fn pole_coverage(&self, core: CoreRef<'_>) -> f64 {
         let middle_leakage_segment = self
             .cache
@@ -600,5 +593,12 @@ impl FluxBarrier for V2rFluxBarrier {
             CoreRef::Lin(_) => Err(Error::IncompatibleToLinCore("V2rFluxBarrier")),
             CoreRef::Rot(rot_core) => self.combine_rot(rot_core),
         }
+    }
+
+    fn magnet_assemblies(&self, _core: CoreRef<'_>) -> &[MagnetAssembly] {
+        self.cache
+            .as_ref()
+            .and_then(|c| c.magnets.as_ref())
+            .map_or(&[], |m| m.as_slice())
     }
 }

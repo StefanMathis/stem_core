@@ -2,7 +2,7 @@ pub mod star1;
 pub mod v1r;
 pub mod v2r;
 
-pub use star1::{Star1HeightSplit, Star1FluxBarrier};
+pub use star1::{Star1FluxBarrier, Star1HeightSplit};
 pub use v1r::V1rFluxBarrier;
 pub use v2r::V2rFluxBarrier;
 
@@ -19,9 +19,6 @@ use crate::{core::CoreRef, error::Error, magnets::Magnets};
 #[cfg_attr(feature = "serde", typetag::serde)]
 pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static {
     /// TODO
-    fn magnets(&self, core: CoreRef<'_>) -> &[MagnetAssembly];
-
-    /// TODO
     fn starts_in_d_axis(&self, core: CoreRef<'_>) -> bool;
 
     /**
@@ -30,6 +27,71 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
      */
     fn pole_coverage(&self, core: CoreRef<'_>) -> f64;
 
+    /// Returns an iterator over the interior magnet shapes for the given
+    /// `core`.
+    ///
+    /// This method implements [`CoreExt::interior_magnets`] for the different
+    /// possible flux barrier types. For example, for a [`Star1FluxBarrier`],
+    /// the magnets are arranged in the center of the rectangular cutouts within
+    /// the core.
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![Interior magnets for a linear and a rotary motor][lin_and_rot_core_interior_magnets]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image(
+            "lin_and_rot_core_interior_magnets",
+            "docs/img/lin_and_rot_core_interior_magnets.svg"
+        )
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    /// _This image was produced with `examples/lin_and_rot_core_plots.rs`._
+    ///
+    /// The [crate::magnets::PositionedMagnetShape] elements returned by the
+    /// iterator have a
+    /// [`magnet_idx`](crate::magnets::PositionedMagnetShape::magnet_idx). By
+    /// indexing into the slice returned by [`FluxBarrier::magnet_assemblies`],
+    /// the assembly type to which the shape belongs can be found.
+    ///
+    /// When implementing this method for custom [`FluxBarrier`]s, the following
+    /// rules should be followed:
+    /// - If the flux barrier does not contain any magnets, an empty iterator
+    /// should be returned (for example
+    /// `Magnets::Other(Box::new([].into_iter()))`. For that particular case,
+    /// [`FluxBarrier::magnet_assemblies`] should likewise return an empty
+    /// slice.
+    /// - The iterator should return `n`
+    /// [`PositionedMagnetShape`](crate::magnets::PositionedMagnetShape)
+    /// elements, where `n` is the sum of
+    /// `magnet_assembly.num_tangential() * (1 + split) * core.poles()` for all
+    /// [`FluxBarrier::magnet_assemblies`] of `self`.
+    /// - The shapes must not overlap each other or the
+    /// [`core.shape()`](CoreExt::Shape). This can be checked using
+    /// [`CoreExt::assembly_check`].
+    /// - The element indices
+    /// ([`PositionedMagnetShape::magnet_idx`](crate::magnets::PositionedMagnetShape::magnet_idx))
+    /// must indicate the magnet assembly type to which the returned shape
+    /// belongs. For example, if `self.magnet_assemblies().len() == 2` and the
+    /// `magnet_idx` of a returned shape is 1, that shape belongs to the second
+    /// magnet assembly in the slice. Returning a `magnet_idx` which is out of
+    /// bounds of the slice will result in a panic when calling some methods
+    /// like e.g. [`CoreExt::mass_interior_magnets`].
+    /// - If `split` is true, each magnet should be separated in its north and
+    /// south shape using
+    /// [`Magnet::north_south_shapes`](stem_magnet::magnet::Magnet::north_south_shapes).
+    /// Otherwise, the whole magnet shape should be returned. When returning the
+    /// shapes for a negative pole, the shapes need to be adjusted for polarity
+    /// (see [`PositionedMagnetShape::is_north`](crate::magnets::PositionedMagnetShape::is_north)).
+    ///
+    /// The [`crate::magnets`] module contains some predefined iterators
+    /// to simplify the implementation of this method, see e.g. the source code
+    /// of [`Star1FluxBarrier::interior_magnets`] for an example.
     fn interior_magnets(&self, core: CoreRef<'_>, split: bool) -> Magnets;
 
     /// Combines `self` with the `core` and returns the resulting cross-section
@@ -56,9 +118,33 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     /// TODO: Slotted core image (linear core?)
     fn combine(&mut self, core: CoreRef<'_>) -> Result<Vec<Contour>, Error>;
 
-    fn magnet_assemblies(&self, _core: CoreRef<'_>) -> &[MagnetAssembly] {
-        return &[];
-    }
+    /**
+    Returns all different magnet assemblies which are placed within the flux
+    barrier contours.
+
+    A flux barrier may be able to contain magnets of one or even multiple types
+    (e.g. two different shapes of
+    [`BlockMagnet`](stem_magnet::block::BlockMagnet)s) which are part of
+    [`MagnetAssembly`](s). This method returns a slice view of all those
+    assemblies.
+
+    The [`FluxBarrier::interior_magnets`] returns an iterator over the shapes
+    of all interior magnets within `self`. By indexing into this slice with
+    [`PositionedMagnetShape::magnet_idx`](crate::magnets::PositionedMagnetShape::magnet_idx),
+    the magnet assembly to which a particular shape belongs can be determined.
+    For example, if `self.magnet_assemblies().len() == 2` and the
+    `PositionedMagnetShape::magnet_idx` of a returned shape is 1, that shape
+    belongs to the second magnet assembly in the slice. This can e.g. be used to
+    calculate the total mass of all interior magnets (see source code of
+    [`CoreExt::mass_interior_magnets`]). When implementing [`FluxBarrier`] for
+    an external type, this relation needs to be uphold, because otherwise these
+    calculations will return wrong results.
+
+    If the flux barrier does not hold magnets
+    ([`FluxBarrier::interior_magnets`] returns an empty iterator), this method
+    can be implemented by simply returning an empty slice.
+     */
+    fn magnet_assemblies(&self, _core: CoreRef<'_>) -> &[MagnetAssembly];
 }
 
 dyn_clone::clone_trait_object!(FluxBarrier);
