@@ -514,10 +514,6 @@ impl V2rFluxBarrier {
 
 #[cfg_attr(feature = "serde", typetag::serde)]
 impl FluxBarrier for V2rFluxBarrier {
-    fn starts_in_d_axis(&self, _core: CoreRef<'_>) -> bool {
-        return false;
-    }
-
     fn pole_coverage(&self, core: CoreRef<'_>) -> f64 {
         let middle_leakage_segment = self
             .cache

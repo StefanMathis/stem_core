@@ -974,6 +974,46 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     }
 
     /// Returns the total number of surface magnets mounted on `self`.
+    ///
+    /// A `magnet_assembly` instance is mounted on each pole of `self`. Hence,
+    /// the total number of magnets is `magnet_assembly.num_magnets() *
+    /// self.poles()`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::f64::consts::FRAC_PI_2;
+    /// use std::sync::Arc;
+    ///
+    /// use stem_core::prelude::*;
+    ///
+    /// let core: RotCore = RotCoreBuilder {
+    ///     air_gap_radius: Length::new::<millimeter>(55.0),
+    ///     yoke_radius: Length::new::<millimeter>(90.0),
+    ///     axial_length: Length::new::<millimeter>(165.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     iron_fill_factor: 1.0,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 2,
+    ///     skew_angle: 0.0,
+    ///     air_gap: Box::new(PlainAirGap::default()),
+    ///     flux_barrier: None,
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// let magnet = ArcParallelMagnet::with_const_thickness(
+    ///    core.axial_length(),
+    ///    core.air_gap_radius(),
+    ///    SideHeightOrThickness::Thickness(Length::new::<millimeter>(4.0)),
+    ///    AngleOrWidth::Angle(0.7 * FRAC_PI_2 / 2.0),
+    ///    Arc::new(Material::default()),
+    /// ).unwrap();
+    /// let surface_magnets = MagnetAssembly::new(magnet, 3.try_into().unwrap(), 2.try_into().unwrap());
+    ///
+    /// assert_eq!(core.num_surface_magnets(&surface_magnets), usize::from(core.poles()) * usize::from(surface_magnets.num_magnets()));
+    /// assert_eq!(core.num_surface_magnets(&surface_magnets), 24);
+    /// ```
     fn num_surface_magnets(&self, magnet_assembly: &MagnetAssembly) -> usize {
         return usize::from(self.poles()) * magnet_assembly.num_magnets();
     }
@@ -1099,6 +1139,12 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         }
     }
 
+    /// Returns all different magnet assemblies placed within the flux barrier,
+    /// if the core has one.
+    ///
+    /// If [`CoreExt::flux_barrier`] returns a [`FluxBarrier`], this method
+    /// forwards to [`FluxBarrier::magnet_assemblies`], see its docstring for
+    /// details. Otherwise it just returns an empty slice.
     fn interior_magnet_assemblies(&self) -> &[MagnetAssembly] {
         match self.flux_barrier() {
             Some(fb) => fb.magnet_assemblies(self.as_core_ref()),
@@ -1107,6 +1153,45 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     }
 
     /// Returns the total mass of all surface magnets mounted on `self`.
+    ///
+    /// A `magnet_assembly` instance is mounted on each pole of `self`. Hence,
+    /// the total magnet mass is `magnet_assembly.mass() * self.poles()`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::f64::consts::FRAC_PI_2;
+    /// use std::sync::Arc;
+    ///
+    /// use stem_core::prelude::*;
+    ///
+    /// let core: RotCore = RotCoreBuilder {
+    ///     air_gap_radius: Length::new::<millimeter>(55.0),
+    ///     yoke_radius: Length::new::<millimeter>(90.0),
+    ///     axial_length: Length::new::<millimeter>(165.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     iron_fill_factor: 1.0,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 2,
+    ///     skew_angle: 0.0,
+    ///     air_gap: Box::new(PlainAirGap::default()),
+    ///     flux_barrier: None,
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// let magnet = ArcParallelMagnet::with_const_thickness(
+    ///    core.axial_length(),
+    ///    core.air_gap_radius(),
+    ///    SideHeightOrThickness::Thickness(Length::new::<millimeter>(4.0)),
+    ///    AngleOrWidth::Angle(0.7 * FRAC_PI_2 / 2.0),
+    ///    Arc::new(Material::default()),
+    /// ).unwrap();
+    /// let surface_magnets = MagnetAssembly::new(magnet, 3.try_into().unwrap(), 2.try_into().unwrap());
+    ///
+    /// assert_eq!(core.mass_surface_magnets(&surface_magnets), core.poles() as f64 * surface_magnets.mass());
+    /// assert_eq!(core.mass_surface_magnets(&surface_magnets), Mass::new::<kilogram>(0.0));
+    /// ```
     fn mass_surface_magnets(&self, magnet_assembly: &MagnetAssembly) -> Mass {
         return self.poles() as f64 * magnet_assembly.mass();
     }
@@ -1122,11 +1207,6 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
                 .unwrap_or(Mass::new::<kilogram>(0.0))
         }
         return mass;
-    }
-
-    fn starts_in_d_axis(&self) -> bool {
-        self.flux_barrier()
-            .map_or(false, |fb| fb.starts_in_d_axis(self.as_core_ref()))
     }
 
     /// Returns the number of slots at the air gap.
@@ -1146,7 +1226,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     }
 
     /// Returns the current displacement coefficients for a winding mounted on
-    /// `self`
+    /// `self`.
     ///
     /// This method forwards to [`AirGap::current_displacement_coefficients`],
     /// using `self` as the second argument. If the

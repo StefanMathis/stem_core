@@ -18,9 +18,6 @@ use crate::{core::CoreRef, error::Error, magnets::Magnets};
 /// The `FluxBarrier` trait allows the usage of structs as flux barriers.
 #[cfg_attr(feature = "serde", typetag::serde)]
 pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static {
-    /// TODO
-    fn starts_in_d_axis(&self, core: CoreRef<'_>) -> bool;
-
     /**
     Returns the pole coverage of the flux barrier. The pole coverage is the air gap area of the d-axis flux over the total air gap area
     and is therefore a value between 0 and 1. This is usually the area between the flux leakage paths.
@@ -120,7 +117,7 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
 
     /**
     Returns all different magnet assemblies which are placed within the flux
-    barrier contours.
+    barrier.
 
     A flux barrier may be able to contain magnets of one or even multiple types
     (e.g. two different shapes of

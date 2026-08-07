@@ -421,13 +421,6 @@ impl Star1FluxBarrier {
 
 #[cfg_attr(feature = "serde", typetag::serde)]
 impl FluxBarrier for Star1FluxBarrier {
-    fn starts_in_d_axis(&self, core: CoreRef<'_>) -> bool {
-        match core {
-            CoreRef::Lin(_) => true,
-            CoreRef::Rot(_) => false,
-        }
-    }
-
     fn pole_coverage(&self, core: CoreRef<'_>) -> f64 {
         match core {
             CoreRef::Lin(lin_core) => (self.total_magnet_space_width() * lin_core.poles() as f64
