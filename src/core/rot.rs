@@ -549,7 +549,7 @@ impl CoreExt for RotCore {
         return self.flux_barrier.as_ref().map(|v| &**v);
     }
 
-    fn air_gap_width(&self) -> Length {
+    fn air_gap_length(&self) -> Length {
         return self.air_gap_radius() * TAU;
     }
 
@@ -615,6 +615,25 @@ impl CoreExt for RotCore {
             } else {
                 return 0.5;
             }
+        }
+    }
+
+    fn tooth_mass(&self) -> Mass {
+        match self.slot() {
+            Some(slot) => {
+                use uom::typenum::P2;
+
+                let m = if self.is_outer() { 1.0 } else { -1.0 };
+                let total_slot_area = std::f64::consts::PI
+                    * ((self.air_gap_radius() + m * self.tooth_height()).powi(P2::new())
+                        - self.air_gap_radius().powi(P2::new()))
+                    .abs();
+                let mass_density = self.material().mass_density().get(&[]);
+                return (total_slot_area / f64::from(self.slots()) - slot.area())
+                    * self.iron_length()
+                    * mass_density;
+            }
+            None => return Mass::new::<kilogram>(0.0),
         }
     }
 }

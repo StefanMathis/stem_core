@@ -347,7 +347,7 @@ impl CoreExt for LinCore {
         return self.axial_length;
     }
 
-    fn air_gap_width(&self) -> Length {
+    fn air_gap_length(&self) -> Length {
         return self.width;
     }
 
@@ -401,6 +401,19 @@ impl CoreExt for LinCore {
             } else {
                 return 0.5;
             }
+        }
+    }
+
+    fn tooth_mass(&self) -> Mass {
+        match self.slot() {
+            Some(slot) => {
+                let total_slot_area = self.width() * (self.height() - self.yoke_height());
+                let mass_density = self.material().mass_density().get(&[]);
+                return (total_slot_area / f64::from(self.slots()) - slot.area())
+                    * self.iron_length()
+                    * mass_density;
+            }
+            None => return Mass::new::<kilogram>(0.0),
         }
     }
 }

@@ -31,24 +31,24 @@ pub enum CarterFactorModel {
 impl CarterFactorModel {
     pub fn carter_factor(
         &self,
-        air_gap_width: Length,
+        air_gap_length: Length,
         opening_width: Length,
         slot_pitch: Length,
     ) -> f64 {
         match self {
             Self::Bin12 => {
-                let val = f64::from(opening_width / air_gap_width);
+                let val = f64::from(opening_width / air_gap_length);
                 let gamma = val.powi(2) / (5.0 + val);
-                return f64::from(slot_pitch / (slot_pitch - gamma * air_gap_width));
+                return f64::from(slot_pitch / (slot_pitch - gamma * air_gap_length));
             }
             Self::MVP08 => {
-                let gamma = opening_width / (5.0 * air_gap_width + opening_width);
-                return f64::from(slot_pitch / (slot_pitch - gamma * air_gap_width));
+                let gamma = opening_width / (5.0 * air_gap_length + opening_width);
+                return f64::from(slot_pitch / (slot_pitch - gamma * air_gap_length));
             }
             Self::PS62 => {
                 return f64::from(
-                    (slot_pitch + 10.0 * air_gap_width)
-                        / (slot_pitch - opening_width + 10.0 * air_gap_width),
+                    (slot_pitch + 10.0 * air_gap_length)
+                        / (slot_pitch - opening_width + 10.0 * air_gap_length),
                 );
             }
         }
@@ -286,6 +286,10 @@ impl AirGap for SlottedAirGap {
     }
 
     fn tooth_width_at(&self, core: CoreRef<'_>, height: Length) -> Length {
+        if height < Length::new::<meter>(0.0) {
+            return Length::new::<meter>(0.0);
+        }
+
         match core {
             CoreRef::Lin(lin_core) => {
                 return lin_core.width() / self.slots(core) as f64 - self.slot.width_at(height);
@@ -389,9 +393,9 @@ impl AirGap for SlottedAirGap {
         return self.slot.current_displacement_coefficients(50);
     }
 
-    fn carter_factor(&self, core: CoreRef<'_>, air_gap_width: Length) -> f64 {
+    fn carter_factor(&self, core: CoreRef<'_>, air_gap_length: Length) -> f64 {
         return self.carter_factor_model().carter_factor(
-            air_gap_width,
+            air_gap_length,
             self.slot().opening_width(),
             core.slot_pitch(),
         );

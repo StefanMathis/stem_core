@@ -285,7 +285,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     fn skew_angle(&self) -> f64;
 
     /**
-    Returns the air gap "width" of the core.
+    Returns the air gap "length" of the core.
 
     For a linear core, this is [`LinCore::width`](crate::core::LinCore::width).
     For a rotary core, this is the air gap outline
@@ -311,7 +311,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         air_gap: Box::new(PlainAirGap::default()),
         flux_barrier: None,
     }.try_into().expect("valid inputs");
-    assert_eq!(lin_core.air_gap_width().get::<millimeter>(), 100.0);
+    assert_eq!(lin_core.air_gap_length().get::<millimeter>(), 100.0);
 
     let rot_core: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(50.0),
@@ -325,10 +325,10 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         air_gap: Box::new(PlainAirGap::default()),
         flux_barrier: None,
     }.try_into().expect("valid inputs");
-    assert_eq!(rot_core.air_gap_width().get::<millimeter>(), 50.0 * TAU);
+    assert_eq!(rot_core.air_gap_length().get::<millimeter>(), 50.0 * TAU);
     ```
      */
-    fn air_gap_width(&self) -> Length;
+    fn air_gap_length(&self) -> Length;
 
     /// Returns if the core is linear or rotary.
     fn lin_or_rot(&self) -> LinOrRot;
@@ -485,6 +485,65 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         // by the actual implementors).
         return 0.5;
     }
+
+    /// Returns the mass of a single tooth.
+    ///
+    /// In pseudo-code, this function calculates the tooth mass as follows:
+    ///
+    /// ```ignore
+    /// slot_area = core.total_area - core.yoke_area
+    /// tooth_area = slot_area - core.num_slots * slot.shape.area
+    /// tooth_mass = tooth_area * core.iron_length * core.material.mass_density
+    /// ```
+    ///
+    /// If [`CoreExt::slot`] returns `None`, this function returns a mass of 0
+    /// kg.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::f64::consts::PI;
+    /// use std::sync::Arc;
+    ///
+    /// use approx::assert_abs_diff_eq;
+    ///
+    /// use stem_core::prelude::*;
+    /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
+    ///
+    /// let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
+    ///     bottom_width: Length::new::<millimeter>(9.0),
+    ///     opening_width: Length::new::<millimeter>(2.0),
+    ///     height: Length::new::<millimeter>(20.0),
+    ///     opening_height: Length::new::<millimeter>(2.0),
+    ///     slot_angle: 10.0 * PI / 180.0,
+    ///     bottom_radius: Length::new::<millimeter>(2.0),
+    ///     top_radius: Length::new::<millimeter>(1.0),
+    ///     opening_radius: Length::new::<millimeter>(0.0),
+    ///     consider_tooth_tip_leakage: true,
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// let air_gap_slotted = SlottedAirGap::new(36, false, CarterFactorModel::Bin12, Box::new(slot));
+    ///
+    /// let core: RotCore = RotCoreBuilder {
+    ///     air_gap_radius: Length::new::<millimeter>(55.0),
+    ///     yoke_radius: Length::new::<millimeter>(90.0),
+    ///     axial_length: Length::new::<millimeter>(165.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     iron_fill_factor: 1.0,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 2,
+    ///     skew_angle: 0.0,
+    ///     air_gap: Box::new(air_gap_slotted),
+    ///     flux_barrier: None,
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// assert_abs_diff_eq!(core.tooth_mass().get::<kilogram>(), 0.015, epsilon = 1e-3);
+    /// ```
+    fn tooth_mass(&self) -> Mass;
 
     // =========================================================================
 
@@ -747,11 +806,11 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
 
     /**
     Returns the slot pitch of the core. This is the quotient of the
-    [`air_gap_width`](CoreExt::air_gap_width) and the number of
+    [`air_gap_length`](CoreExt::air_gap_length) and the number of
     [`slots`](CoreExt::slots).
      */
     fn slot_pitch(&self) -> Length {
-        self.air_gap_width() / self.slots() as f64
+        self.air_gap_length() / self.slots() as f64
     }
 
     /**
@@ -765,12 +824,12 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
 
     The exact implementation of the carter factor calculation depends on the
     [`AirGap`] itself, hence this method forwards to [`AirGap::carter_factor`],
-    using `self` as the second argument and `air_gap_width` as the third. See
+    using `self` as the second argument and `air_gap_length` as the third. See
     the docstring of [`AirGap::carter_factor`] for details and examples.
      */
-    fn carter_factor(&self, air_gap_width: Length) -> f64 {
+    fn carter_factor(&self, air_gap_length: Length) -> f64 {
         self.air_gap()
-            .carter_factor(self.as_core_ref(), air_gap_width)
+            .carter_factor(self.as_core_ref(), air_gap_length)
     }
 
     /// Returns the discretization / number of segments of the core.
@@ -1373,15 +1432,17 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// using `self` as the second argument. If the
     /// [`air_gap`](CoreExt::air_gap) is a
     /// [`SlottedAirGap`](crate::air_gap::SlottedAirGap), the
-    /// [`Slot::current_displacement_coefficients`] method gets invoked. See its
-    /// docstring for a general discussion of current displacement.
+    /// [`Slot::current_displacement_coefficients`] method gets invoked (for
+    /// other air gap types, it depends on their respective implementation). See
+    /// the docstring of [`Slot::current_displacement_coefficients`] for a
+    /// general discussion on current displacement.
     fn current_displacement_coefficients(&self) -> CurrentDisplacementCalculator {
         return self
             .air_gap()
             .current_displacement_coefficients(self.as_core_ref());
     }
 
-    /// Returns the slot type of the core, if the core is slotted.
+    /// Returns the slot type of the air gap.
     ///
     /// This method forwards to [`AirGap::slot`], using `self` as the second
     /// argument.
@@ -1408,10 +1469,110 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         doc = "**Doc images not enabled**. Compile docs with
         `cargo doc --features 'doc-images'` and Rust version >= 1.54."
     )]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::f64::consts::PI;
+    /// use std::sync::Arc;
+    ///
+    /// use approx::assert_abs_diff_eq;
+    ///
+    /// use stem_core::prelude::*;
+    /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
+    ///
+    /// let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
+    ///     bottom_width: Length::new::<millimeter>(9.0),
+    ///     opening_width: Length::new::<millimeter>(2.0),
+    ///     height: Length::new::<millimeter>(20.0),
+    ///     opening_height: Length::new::<millimeter>(2.0),
+    ///     slot_angle: 10.0 * PI / 180.0,
+    ///     bottom_radius: Length::new::<millimeter>(2.0),
+    ///     top_radius: Length::new::<millimeter>(1.0),
+    ///     opening_radius: Length::new::<millimeter>(0.0),
+    ///     consider_tooth_tip_leakage: true,
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// let air_gap_slotted = SlottedAirGap::new(36, false, CarterFactorModel::Bin12, Box::new(slot));
+    ///
+    /// let core: RotCore = RotCoreBuilder {
+    ///     air_gap_radius: Length::new::<millimeter>(55.0),
+    ///     yoke_radius: Length::new::<millimeter>(90.0),
+    ///     axial_length: Length::new::<millimeter>(165.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     iron_fill_factor: 1.0,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 2,
+    ///     skew_angle: 0.0,
+    ///     air_gap: Box::new(air_gap_slotted),
+    ///     flux_barrier: None,
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// assert_abs_diff_eq!(core.tooth_height().get::<millimeter>(), 20.0, epsilon = 1e-6);
+    /// ```
     fn tooth_height(&self) -> Length {
         return self.air_gap().tooth_height(self.as_core_ref());
     }
 
+    /// Returns the tooth width at a specific height, measured from the air gap.
+    ///
+    /// This method forwards to [`AirGap::tooth_width_at`] with `self` as the
+    /// second and `height` argument. The coordinate system of `height` starts
+    /// at the air gap and is perpendicular to it with positive values going
+    /// inside the core. Essentially, it is the same coordinate system as that
+    /// of a [`Slot`], just located in the tooth instead of in the slot middle.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::f64::consts::PI;
+    /// use std::sync::Arc;
+    ///
+    /// use approx::assert_abs_diff_eq;
+    ///
+    /// use stem_core::prelude::*;
+    /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
+    ///
+    /// let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
+    ///     bottom_width: Length::new::<millimeter>(9.0),
+    ///     opening_width: Length::new::<millimeter>(2.0),
+    ///     height: Length::new::<millimeter>(20.0),
+    ///     opening_height: Length::new::<millimeter>(2.0),
+    ///     slot_angle: 10.0 * PI / 180.0,
+    ///     bottom_radius: Length::new::<millimeter>(2.0),
+    ///     top_radius: Length::new::<millimeter>(1.0),
+    ///     opening_radius: Length::new::<millimeter>(0.0),
+    ///     consider_tooth_tip_leakage: true,
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// let air_gap_slotted = SlottedAirGap::new(36, false, CarterFactorModel::Bin12, Box::new(slot));
+    ///
+    /// let core: RotCore = RotCoreBuilder {
+    ///     air_gap_radius: Length::new::<millimeter>(55.0),
+    ///     yoke_radius: Length::new::<millimeter>(90.0),
+    ///     axial_length: Length::new::<millimeter>(165.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     iron_fill_factor: 1.0,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 2,
+    ///     skew_angle: 0.0,
+    ///     air_gap: Box::new(air_gap_slotted),
+    ///     flux_barrier: None,
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// assert_abs_diff_eq!(core.tooth_width_at(Length::new::<millimeter>(-1.0)).get::<millimeter>(), 0.0, epsilon = 1e-3);
+    /// assert_abs_diff_eq!(core.tooth_width_at(Length::new::<millimeter>(1.0)).get::<millimeter>(), 7.767, epsilon = 1e-3);
+    /// assert_abs_diff_eq!(core.tooth_width_at(Length::new::<millimeter>(5.0)).get::<millimeter>(), 4.106, epsilon = 1e-3);
+    /// assert_abs_diff_eq!(core.tooth_width_at(Length::new::<millimeter>(30.0)).get::<millimeter>(), 14.815, epsilon = 1e-3);
+    /// ```
     fn tooth_width_at(&self, height: Length) -> Length {
         return self.air_gap().tooth_width_at(self.as_core_ref(), height);
     }
@@ -1423,7 +1584,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         return self.slots() != 0;
     }
 
-    /// Returns whether the core is slotted.
+    /// Returns whether the core has [`Slot`]s.
     ///
     /// This method is implemented as `self.slot().is_some()`, i.e. the core is
     /// slotted if [`CoreExt::slot`] doesn't return `None`.
@@ -1431,24 +1592,48 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         return self.slot().is_some();
     }
 
-    fn yoke_mass(&self) -> Mass {
-        return self.mass() - self.teeth_mass();
-    }
-
-    /// Return the air gap area of the core. In case of a linear core, this
-    /// equals the core length times the core width. In case of a rotatory
-    /// core, this equals the air gap outline times the core length
+    /// Returns the air gap surface area of the core.
+    ///
+    /// The air gap surface area is
+    /// `self.axial_length() * self.air_gap_length()`, i.e. the area of the core
+    /// body face which faces the air gap.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::sync::Arc;
+    ///
+    /// use approx::assert_abs_diff_eq;
+    ///
+    /// use stem_core::prelude::*;
+    ///
+    /// let core: RotCore = RotCoreBuilder {
+    ///     air_gap_radius: Length::new::<millimeter>(55.0),
+    ///     yoke_radius: Length::new::<millimeter>(90.0),
+    ///     axial_length: Length::new::<millimeter>(165.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     iron_fill_factor: 1.0,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 2,
+    ///     skew_angle: 0.0,
+    ///     air_gap: Box::new(PlainAirGap::default()),
+    ///     flux_barrier: None
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// assert_abs_diff_eq!(core.air_gap_area().get::<square_millimeter>(), 57019.906, epsilon = 1e-3);
+    /// ```
     fn air_gap_area(&self) -> Area {
-        return self.axial_length() * self.air_gap_width();
+        return self.axial_length() * self.air_gap_length();
     }
 
-    /// Return the air gap length of the axial cross section. This is the core
-    /// air gap outline for a rotary core and the core width for a linear
-    /// core
-    fn air_gap_length(&self) -> Length {
-        return self.air_gap_area() / self.axial_length();
-    }
+    /**
+    Returns [`CoreExt::shape`] wrapped in a
+    [`DrawableCow`](planar_geo::draw::DrawableCow).
 
+    This is a convenience function to simplify drawing the [`Shape`] of `self`.
+     */
     #[cfg(feature = "cairo")]
     fn drawable(&self) -> planar_geo::draw::DrawableCow<'_> {
         let mut style = planar_geo::draw::Style::default();
@@ -1457,26 +1642,259 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         return planar_geo::draw::DrawableCow::new(shape, style);
     }
 
-    /// Calculate the electromagnetically active axial length
+    /// Returns the effective iron length of the core.
+    ///
+    /// This method returns the electromagnetically effective length of the core
+    /// as the product of `self.iron_fill_factor()` and `self.axial_length()`.
+    /// See [`CoreExt::iron_fill_factor`] for an explanation of the concept.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::sync::Arc;
+    ///
+    /// use approx::assert_abs_diff_eq;
+    ///
+    /// use stem_core::prelude::*;
+    ///
+    /// let core: RotCore = RotCoreBuilder {
+    ///     air_gap_radius: Length::new::<millimeter>(55.0),
+    ///     yoke_radius: Length::new::<millimeter>(90.0),
+    ///     axial_length: Length::new::<millimeter>(100.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     iron_fill_factor: 0.9,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 2,
+    ///     skew_angle: 0.0,
+    ///     air_gap: Box::new(PlainAirGap::default()),
+    ///     flux_barrier: None
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// // Iron fill factor of 90 % and axial length of 100 mm => iron length of 90 mm
+    /// assert_abs_diff_eq!(core.iron_length().get::<millimeter>(), 90.0, epsilon = 1e-6);
+    /// ```
     fn iron_length(&self) -> Length {
         return self.iron_fill_factor() * self.axial_length();
     }
 
-    /// Calculate the mass of the core
+    /// Returns the cross section area of the core.
+    ///
+    /// Since [`CoreExt::shape`] returns the cross section shape of `self`, this
+    /// method simply calculates the area of that shape and wraps it in an
+    /// [`Area`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::sync::Arc;
+    ///
+    /// use approx::assert_abs_diff_eq;
+    ///
+    /// use stem_core::prelude::*;
+    ///
+    /// let core: RotCore = RotCoreBuilder {
+    ///     air_gap_radius: Length::new::<millimeter>(55.0),
+    ///     yoke_radius: Length::new::<millimeter>(90.0),
+    ///     axial_length: Length::new::<millimeter>(100.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     iron_fill_factor: 0.9,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 2,
+    ///     skew_angle: 0.0,
+    ///     air_gap: Box::new(PlainAirGap::default()),
+    ///     flux_barrier: None
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// assert_abs_diff_eq!(core.cross_section_area().get::<square_millimeter>(), 15943.582, epsilon = 1e-3);
+    /// ```
+    fn cross_section_area(&self) -> Area {
+        return Area::new::<square_meter>(self.shape().area());
+    }
+
+    /// Returns the volume of the core.
+    ///
+    /// For a radial flux machine, the cross section is constant along its
+    /// axial length. Therefore, this value is the product of
+    /// `self.cross_section_area()` and `self.axial_length()`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::sync::Arc;
+    ///
+    /// use approx::assert_abs_diff_eq;
+    ///
+    /// use stem_core::prelude::*;
+    ///
+    /// let core: RotCore = RotCoreBuilder {
+    ///     air_gap_radius: Length::new::<millimeter>(55.0),
+    ///     yoke_radius: Length::new::<millimeter>(90.0),
+    ///     axial_length: Length::new::<millimeter>(100.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     iron_fill_factor: 0.9,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 2,
+    ///     skew_angle: 0.0,
+    ///     air_gap: Box::new(PlainAirGap::default()),
+    ///     flux_barrier: None
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// assert_abs_diff_eq!(core.volume().get::<cubic_millimeter>(), 1594358.271, epsilon = 1e-3);
+    /// ```
+    fn volume(&self) -> Volume {
+        return self.cross_section_area() * self.axial_length();
+    }
+
+    /// Returns the mass of the core.
+    ///
+    /// The mass of the core is the product of the core material mass density,
+    /// [`CoreExt::cross_section_area`] and [`CoreExt::iron_length`]. The mass
+    /// of the insulation / glue is neglected, since the steel sheets of the
+    /// lamination are much heavier.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::sync::Arc;
+    ///
+    /// use approx::assert_abs_diff_eq;
+    ///
+    /// use stem_core::prelude::*;
+    ///
+    /// let core: RotCore = RotCoreBuilder {
+    ///     air_gap_radius: Length::new::<millimeter>(55.0),
+    ///     yoke_radius: Length::new::<millimeter>(90.0),
+    ///     axial_length: Length::new::<millimeter>(100.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     iron_fill_factor: 0.9,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 2,
+    ///     skew_angle: 0.0,
+    ///     air_gap: Box::new(PlainAirGap::default()),
+    ///     flux_barrier: None
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// assert_abs_diff_eq!(core.mass().get::<kilogram>(), 1.4349224, epsilon = 1e-6);
+    /// ```
     fn mass(&self) -> Mass {
         return self.cross_section_area()
             * self.iron_length()
             * self.material().mass_density().get(&[]);
     }
 
-    /// Return the cross section area of the core
-    fn volume(&self) -> Volume {
-        return self.cross_section_area() * self.axial_length();
+    /// Returns the mass of all teeth.
+    ///
+    /// This function simply returns [`CoreExt::tooth_mass`] times
+    /// [`CoreExt::slots`]. See the docstring of [`CoreExt::tooth_mass`] for
+    /// details.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::f64::consts::PI;
+    /// use std::sync::Arc;
+    ///
+    /// use approx::assert_abs_diff_eq;
+    ///
+    /// use stem_core::prelude::*;
+    /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
+    ///
+    /// let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
+    ///     bottom_width: Length::new::<millimeter>(9.0),
+    ///     opening_width: Length::new::<millimeter>(2.0),
+    ///     height: Length::new::<millimeter>(20.0),
+    ///     opening_height: Length::new::<millimeter>(2.0),
+    ///     slot_angle: 10.0 * PI / 180.0,
+    ///     bottom_radius: Length::new::<millimeter>(2.0),
+    ///     top_radius: Length::new::<millimeter>(1.0),
+    ///     opening_radius: Length::new::<millimeter>(0.0),
+    ///     consider_tooth_tip_leakage: true,
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// let air_gap_slotted = SlottedAirGap::new(36, false, CarterFactorModel::Bin12, Box::new(slot));
+    ///
+    /// let core: RotCore = RotCoreBuilder {
+    ///     air_gap_radius: Length::new::<millimeter>(55.0),
+    ///     yoke_radius: Length::new::<millimeter>(90.0),
+    ///     axial_length: Length::new::<millimeter>(165.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     iron_fill_factor: 1.0,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 2,
+    ///     skew_angle: 0.0,
+    ///     air_gap: Box::new(air_gap_slotted),
+    ///     flux_barrier: None,
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// assert_abs_diff_eq!(core.teeth_mass().get::<kilogram>(), core.tooth_mass().get::<kilogram>() * core.slots() as f64, epsilon = 1e-3);
+    /// assert_abs_diff_eq!(core.teeth_mass().get::<kilogram>(), 0.5446, epsilon = 1e-3);
+    /// ```
+    fn teeth_mass(&self) -> Mass {
+        return self.tooth_mass() * self.slots() as f64;
     }
 
-    /// Return the cross section area of the core
-    fn cross_section_area(&self) -> Area {
-        return Area::new::<square_meter>(self.shape().area());
+    /// Returns the mass of the yoke area.
+    ///
+    /// This is simply `self.mass() - self.teeth_mass()`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::f64::consts::PI;
+    /// use std::sync::Arc;
+    ///
+    /// use approx::assert_abs_diff_eq;
+    ///
+    /// use stem_core::prelude::*;
+    /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
+    ///
+    /// let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
+    ///     bottom_width: Length::new::<millimeter>(9.0),
+    ///     opening_width: Length::new::<millimeter>(2.0),
+    ///     height: Length::new::<millimeter>(20.0),
+    ///     opening_height: Length::new::<millimeter>(2.0),
+    ///     slot_angle: 10.0 * PI / 180.0,
+    ///     bottom_radius: Length::new::<millimeter>(2.0),
+    ///     top_radius: Length::new::<millimeter>(1.0),
+    ///     opening_radius: Length::new::<millimeter>(0.0),
+    ///     consider_tooth_tip_leakage: true,
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// let air_gap_slotted = SlottedAirGap::new(36, false, CarterFactorModel::Bin12, Box::new(slot));
+    ///
+    /// let core: RotCore = RotCoreBuilder {
+    ///     air_gap_radius: Length::new::<millimeter>(55.0),
+    ///     yoke_radius: Length::new::<millimeter>(90.0),
+    ///     axial_length: Length::new::<millimeter>(165.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     iron_fill_factor: 1.0,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 2,
+    ///     skew_angle: 0.0,
+    ///     air_gap: Box::new(air_gap_slotted),
+    ///     flux_barrier: None,
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// assert_abs_diff_eq!(core.yoke_mass().get::<kilogram>(), 1.283, epsilon = 1e-3);
+    /// ```
+    fn yoke_mass(&self) -> Mass {
+        return self.mass() - self.teeth_mass();
     }
 
     /// Returns the skew factor of the core for the given `mech_ordinal`.
@@ -1494,34 +1912,45 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     }
 
     /**
-    Returns the length of a half-coil turn inside the core. If the core is not skewed, this value is equal to the axial length of the core.
-    If the core is skewed, the length of the half turn is increased due to the skewing. The corresponding formula is:
+    Returns the length of a half-coil turn inside the core.
+
+    If the core is not skewed, this value is equal to the axial length of the
+    core. If the core is skewed, the length of the half turn is increased due to
+    the skewing. The corresponding formula is:
     `half_turn_length = axial_length / cos(skew_angle)`.
+
+    # Examples
+
+    ```
+    use std::f64::consts::PI;
+    use std::sync::Arc;
+
+    use approx::assert_abs_diff_eq;
+
+    use stem_core::prelude::*;
+
+    // Skewing by one slot pitch
+    let air_gap = PlainAirGap::new(Length::new::<millimeter>(0.0), 0.8, 1, 36, true).unwrap();
+    let core: RotCore = RotCoreBuilder {
+        air_gap_radius: Length::new::<millimeter>(55.0),
+        yoke_radius: Length::new::<millimeter>(18.0),
+        axial_length: Length::new::<millimeter>(100.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 2,
+        skew_angle: 10.0 / 180.0 * PI,
+        air_gap: Box::new(air_gap),
+        flux_barrier: None,
+    }
+    .try_into()
+    .unwrap();
+
+    assert_abs_diff_eq!(core.axial_coil_length().get::<millimeter>(), 101.543, epsilon = 1e-3);
+    ```
      */
     fn axial_coil_length(&self) -> Length {
         return self.axial_length() / self.skew_angle().cos();
-    }
-
-    /// Approximates the mass of all core teeth
-    fn teeth_mass(&self) -> Mass {
-        return self.tooth_mass() * self.slots() as f64;
-    }
-
-    /// Approximates the mass of a single core tooth
-    /// Takes tooth width at middle of slot height -> therefore rough
-    /// approximation
-    fn tooth_mass(&self) -> Mass {
-        match self.slot() {
-            Some(slot) => {
-                let half_hight =
-                    slot.opening_height() + 0.5 * (slot.height() - slot.opening_height());
-                return self.material().mass_density().get(&[])
-                    * self.iron_length()
-                    * self.tooth_height()
-                    * self.tooth_width_at(half_hight);
-            }
-            None => return Mass::new::<kilogram>(0.0),
-        }
     }
 
     /**
@@ -1717,7 +2146,7 @@ pub fn skew_factor(mech_ordinal: usize, skew_angle: f64, num_segments: usize) ->
 /**
 An iterator over the slotting ordinals of a core.
 
-When moving along the [`CoreExt::air_gap_width`] of a core, the slot openings
+When moving along the [`CoreExt::air_gap_length`] of a core, the slot openings
 cause a variation in the magnetic resistance / reluctance of the air gap.
 Plotting the air gap _permeance_ (inverse reluctance) over the air gap width
 will result in a straight line over the tooth heads interrupted by sudden drops

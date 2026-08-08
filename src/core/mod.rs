@@ -289,10 +289,10 @@ impl CoreExt for Core {
         }
     }
 
-    fn air_gap_width(&self) -> Length {
+    fn air_gap_length(&self) -> Length {
         match self {
-            Self::Lin(c) => c.air_gap_width(),
-            Self::Rot(c) => c.air_gap_width(),
+            Self::Lin(c) => c.air_gap_length(),
+            Self::Rot(c) => c.air_gap_length(),
         }
     }
 
@@ -335,6 +335,13 @@ impl CoreExt for Core {
         match self {
             Self::Lin(c) => c.pole_coverage(surface_magnet_assembly),
             Self::Rot(c) => c.pole_coverage(surface_magnet_assembly),
+        }
+    }
+
+    fn tooth_mass(&self) -> Mass {
+        match self {
+            Self::Lin(c) => c.tooth_mass(),
+            Self::Rot(c) => c.tooth_mass(),
         }
     }
 }
@@ -482,10 +489,10 @@ impl<'a> CoreExt for CoreRef<'a> {
         }
     }
 
-    fn air_gap_width(&self) -> Length {
+    fn air_gap_length(&self) -> Length {
         match self {
-            Self::Lin(c) => c.air_gap_width(),
-            Self::Rot(c) => c.air_gap_width(),
+            Self::Lin(c) => c.air_gap_length(),
+            Self::Rot(c) => c.air_gap_length(),
         }
     }
 
@@ -525,6 +532,13 @@ impl<'a> CoreExt for CoreRef<'a> {
         match self {
             Self::Lin(c) => c.pole_coverage(surface_magnet_assembly),
             Self::Rot(c) => c.pole_coverage(surface_magnet_assembly),
+        }
+    }
+
+    fn tooth_mass(&self) -> Mass {
+        match self {
+            Self::Lin(c) => c.tooth_mass(),
+            Self::Rot(c) => c.tooth_mass(),
         }
     }
 }
