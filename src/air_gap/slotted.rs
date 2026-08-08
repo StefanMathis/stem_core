@@ -281,39 +281,6 @@ impl AirGap for SlottedAirGap {
         return 0;
     }
 
-    fn tooth_height(&self, _: CoreRef<'_>) -> Length {
-        return self.slot.height();
-    }
-
-    fn tooth_width_at(&self, core: CoreRef<'_>, height: Length) -> Length {
-        if height < Length::new::<meter>(0.0) {
-            return Length::new::<meter>(0.0);
-        }
-
-        match core {
-            CoreRef::Lin(lin_core) => {
-                return lin_core.width() / self.slots(core) as f64 - self.slot.width_at(height);
-            }
-            CoreRef::Rot(rot_core) => {
-                let width = self.slot.width_at(height).get::<meter>();
-                let origin_height = if rot_core.is_outer() {
-                    (rot_core.origin_offset_core_to_slot() + height).get::<meter>()
-                } else {
-                    (rot_core.origin_offset_core_to_slot() - height).get::<meter>()
-                };
-                let radius = (origin_height.powi(2) + (0.5 * width).powi(2)).sqrt();
-                return Length::new::<meter>(
-                    stem_slot::slot::semi_regular_polygon_side_length(
-                        width,
-                        radius,
-                        2 * usize::from(self.slots(core)),
-                    )
-                    .unwrap(),
-                );
-            }
-        }
-    }
-
     fn winding_zones(&self, core: CoreRef<'_>, coil_layout: &CoilLayout) -> WindingZones {
         match core {
             CoreRef::Lin(_) => WindingZones::WindingZonesEqSpacedLin(WindingZonesEqSpaced::<
@@ -347,10 +314,6 @@ impl AirGap for SlottedAirGap {
 
     fn slot(&self, _core: CoreRef<'_>) -> Option<&dyn Slot> {
         return Some(&*self.slot);
-    }
-
-    fn zone_area(&self, _: CoreRef<'_>) -> Area {
-        Area::new::<square_meter>(0.0)
     }
 
     fn surface_magnets(

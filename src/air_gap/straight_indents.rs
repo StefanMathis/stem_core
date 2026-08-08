@@ -377,6 +377,14 @@ impl AirGap for StraightIndentsAirGap {
     fn slot_opening_factor(&self, _core: CoreRef<'_>, _mech_ordinal: i32) -> f64 {
         0.0
     }
+
+    fn carter_factor(&self, _core: CoreRef<'_>, _air_gap_width: Length) -> f64 {
+        return 1.0;
+    }
+
+    fn slot(&self, _core: CoreRef<'_>) -> Option<&dyn stem_slot::slot::Slot> {
+        return None;
+    }
 }
 
 #[derive(Debug, Clone)]

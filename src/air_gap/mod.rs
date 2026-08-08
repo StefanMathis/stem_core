@@ -16,12 +16,18 @@ pub use slotted::{CarterFactorModel, SlottedAirGap};
 pub use straight_indents::{AirGapPolygonBuilder, StraightIndentsAirGap};
 
 /**
+Trait object changes air gap contour: Comparison image of same core with PlainAirGap,
+SlottedAirGap and StraightIndentsAirGap.
+
 TODO: Explain that all methods which take a core as second arg are not meant to
 be used standalone, but instead are called from the corresponding [`CoreExt`]
 methods, using core.air_gap() as first, core as second arg. Hence, these methods
 basically implement the [`CoreExt`] methods.
 
 See docstring of CoreExt for in-depth discussion.
+
+Comment to architecture: Instead of having a RotCoreSlotted or a RotCorePlain,
+keep variants in check through composition
  */
 #[cfg_attr(feature = "serde", typetag::serde)]
 pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
@@ -95,7 +101,6 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// Otherwise, the whole magnet shape should be returned. When returning the
     /// shapes for a negative pole, the shapes need to be adjusted for polarity
     /// (see [`PositionedMagnetShape::is_north`](crate::magnets::PositionedMagnetShape::is_north)).
-    ///
     ///
     /// The [`crate::magnets`] module contains some predefined iterators
     /// to simplify the implementation of this method, see e.g. the source code
@@ -262,31 +267,99 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
      */
     fn slot_opening_factor(&self, core: CoreRef<'_>, mech_ordinal: i32) -> f64;
 
-    // =========================================================================
+    /// Returns the carter factor of `self` for the given `core`.
+    ///
+    /// This method implements [`CoreExt::carter_factor`] for the different
+    /// possible air gap types. If the air gap contour is (approximately) smooth
+    /// or the air gap cannot be wound in the first place, this method should
+    /// simply return 1 for any input. Otherwise, the returned value can depend
+    /// on core geometry and air gap width, see for example
+    /// [`CarterFactorModel`]. It should be equal to or larger than 1 to
+    /// represent the virtual "increase" of the `air_gap_width` due to the
+    /// non-smooth surface.
+    fn carter_factor(&self, core: CoreRef<'_>, air_gap_width: Length) -> f64;
 
-    /**
-    Return the cross section area of a winding zone. In case of a slotted air gap, this is the windable slot area.
-     */
-    fn zone_area(&self, _core: CoreRef<'_>) -> Area {
-        Area::new::<square_meter>(0.0)
+    /// Returns a reference to the [`Slot`] of the air gap, if it has one.
+    fn slot(&self, _core: CoreRef<'_>) -> Option<&dyn Slot>;
+
+    /// Returns the tooth height of the core.
+    ///
+    /// This method implements [`CoreExt::tooth_height`] for the different
+    /// possible air gap types. The default implementation returns
+    /// [`Slot::height`] for [`AirGap::slot`], if the latter is `Some`, and
+    /// a length of zero meter otherwise. If a particular [`AirGap`] implementor
+    /// defines the tooth height differently, this method can be overwritten.
+    ///
+    /// See [`CoreExt::tooth_height`] for examples.
+    fn tooth_height(&self, core: CoreRef<'_>) -> Length {
+        self.slot(core)
+            .map_or(Length::new::<meter>(0.0), |s| s.height())
     }
 
-    fn tooth_height(&self, _core: CoreRef<'_>) -> Length {
-        return Length::new::<meter>(0.0);
+    /// Returns the tooth width at a specific height, measured from the air gap.
+    ///
+    /// This method implements [`CoreExt::tooth_width_at`] for the different
+    /// possible air gap types. If [`AirGap::slot`] is `None`, the default
+    /// implementation returns a length of zero meter. If a slot does in fact
+    /// exist, its width at the given `height` is calculated using
+    /// [`Slot::width_at`] and the resulting value is then used to determine the
+    /// tooth width, i.e. the width of the space between two slots at that
+    /// particular `height`. If a particular [`AirGap`] implementor
+    /// defines the tooth width differently, this method can be overwritten.
+    ///
+    /// See [`CoreExt::tooth_width_at`] for examples.
+    fn tooth_width_at(&self, core: CoreRef<'_>, height: Length) -> Length {
+        let slot = match self.slot(core) {
+            Some(s) => s,
+            None => return Length::new::<meter>(0.0),
+        };
+
+        if height < Length::new::<meter>(0.0) {
+            return Length::new::<meter>(0.0);
+        }
+
+        match core {
+            CoreRef::Lin(lin_core) => {
+                return lin_core.width() / self.slots(core) as f64 - slot.width_at(height);
+            }
+            CoreRef::Rot(rot_core) => {
+                let width = slot.width_at(height).get::<meter>();
+                let origin_height = if rot_core.is_outer() {
+                    (rot_core.origin_offset_core_to_slot() + height).get::<meter>()
+                } else {
+                    (rot_core.origin_offset_core_to_slot() - height).get::<meter>()
+                };
+                let radius = (origin_height.powi(2) + (0.5 * width).powi(2)).sqrt();
+                return Length::new::<meter>(
+                    stem_slot::slot::semi_regular_polygon_side_length(
+                        width,
+                        radius,
+                        2 * usize::from(self.slots(core)),
+                    )
+                    .unwrap(),
+                );
+            }
+        }
     }
 
-    fn tooth_width_at(&self, _core: CoreRef<'_>, _height: Length) -> Length {
-        return Length::new::<meter>(0.0);
-    }
-
-    fn carter_factor(&self, _core: CoreRef<'_>, _air_gap_width: Length) -> f64 {
-        return 1.0;
-    }
-
-    fn slot(&self, _core: CoreRef<'_>) -> Option<&dyn Slot> {
-        return None;
-    }
-
+    /// Returns a calculator for determining the current displacement
+    /// coefficients for different current frequencies.
+    ///
+    /// This method implements [`CoreExt::current_displacement_coefficients`].
+    /// If an air gap supports windings created from massive conductors (e.g.
+    /// squirrel cage windings), the latter may be subject to non-negligible
+    /// current displacement affecting both the effective electrical resistance
+    /// and inductance. See [`CurrentDisplacementCalculator`] for a detailed
+    /// explanation of the effect and its calculation.
+    ///
+    /// This method is only used in the special case where the conductor is
+    /// (partially) surrounded by the core (currently only the case for a
+    /// [`SlottedAirGap`]). Hence, its default implementation creates a
+    /// calculator which simply returns [`CurrentDisplacementCoefficients`]
+    /// which are 1 for any input (i.e., no current displacement effects take
+    /// place). This method should only be overwritten if the [`AirGap`] contour
+    /// is expected to cause notable current displacement and [`SlottedAirGap`]
+    /// is insufficient for that particular use case.
     fn current_displacement_coefficients(
         &self,
         _core: CoreRef<'_>,

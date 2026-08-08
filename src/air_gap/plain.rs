@@ -1,4 +1,4 @@
-use std::{f64::consts::PI, num::NonZero};
+use std::f64::consts::PI;
 
 use crate::planar_geo;
 use compare_variables::compare_variables;
@@ -27,6 +27,8 @@ fn zero_length() -> Length {
 /**
 If you don't care about adding a winding, but care about core segmentation -> PlainAirGap::with_num_segments
 If you don't care about adding a winding and core segmentation -> PlainAirGap::default
+
+Implements Default -> how and why
  */
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -44,6 +46,29 @@ pub struct PlainAirGap {
 }
 
 impl PlainAirGap {
+    /**
+    Creates a new [`PlainAirGap`] from valid input data.
+
+    The creation fails if `air_gap_winding_height` is negative.
+    `winding_coverage` is clamped between 0 and 1. All other data is straight
+    fed into the [`PlainAirGap`] struct.
+
+    # Examples
+
+    ```
+    use stem_core::prelude::*;
+
+    // Valid input data
+    assert!(PlainAirGap::new(Length::new::<millimeter>(1.0), 0.5, 2, 12, true).is_ok());
+
+    // Winding coverage gets clamped
+    let ag = PlainAirGap::new(Length::new::<millimeter>(1.0), 2.0, 2, 12, true).expect("valid input data");
+    assert_eq!(ag.winding_coverage(), 1.0);
+
+    // Negative winding height -> creation fails
+    assert!(PlainAirGap::new(Length::new::<millimeter>(-1.0), 0.5, 2, 12, true).is_err());
+    ```
+     */
     pub fn new(
         air_gap_winding_height: Length,
         winding_coverage: f64,
@@ -63,11 +88,30 @@ impl PlainAirGap {
         });
     }
 
-    pub fn with_num_segments(num_segments: NonZero<usize>) -> Self {
+    /**
+    Creates a new [`PlainAirGap`] where all values except `num_segments` are set
+    to their default values (see [`PlainAirGap`] docstring).
+
+    This method sets `air_gap_winding_height`, `winding_coverage` and `slots` to
+    zero, meaning that the resulting air gap cannot hold a winding. Hence, this
+    method is essentially an alternative to the [`Default`] implementation of
+    [`PlainAirGap`] if `num_segments` should not be zero.
+
+    # Examples
+
+    ```
+    use stem_core::prelude::*;
+
+    let ag = PlainAirGap::with_num_segments(2);
+    assert_eq!(ag.air_gap_winding_height().get::<meter>(), 0.0);
+    assert_eq!(ag.winding_coverage(), 0.0);
+    ```
+     */
+    pub fn with_num_segments(num_segments: usize) -> Self {
         Self {
             air_gap_winding_height: Length::new::<meter>(0.0),
             winding_coverage: 0.0,
-            num_segments: num_segments.into(),
+            num_segments,
             slots: 0,
             starts_in_slot_middle: true,
         }
@@ -81,10 +125,7 @@ impl PlainAirGap {
         return self.winding_coverage;
     }
 
-    pub fn num_segments(&self) -> usize {
-        return self.num_segments;
-    }
-
+    /// Whe
     pub fn starts_in_slot_middle(&self) -> bool {
         return self.starts_in_slot_middle;
     }
@@ -215,5 +256,13 @@ impl AirGap for PlainAirGap {
             self.slots,
             mech_ordinal,
         );
+    }
+
+    fn carter_factor(&self, _core: CoreRef<'_>, _air_gap_width: Length) -> f64 {
+        return 1.0;
+    }
+
+    fn slot(&self, _core: CoreRef<'_>) -> Option<&dyn stem_slot::slot::Slot> {
+        return None;
     }
 }
