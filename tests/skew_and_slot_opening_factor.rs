@@ -1,6 +1,9 @@
 use std::f64::consts::{PI, TAU};
 
+use approx::assert_abs_diff_eq;
+use stem_core::air_gap::slot_opening_factor;
 use stem_core::core::ext::skew_factor;
+use stem_core::stem_material::prelude::*;
 
 #[test]
 fn test_skew_factor_no_segment() {
@@ -116,4 +119,47 @@ fn test_skew_factor_multiple_segments() {
             epsilon = 0.02
         );
     }
+}
+
+#[test]
+fn test_slot_opening_factor() {
+    let slot_pitch = Length::new::<millimeter>(10.0);
+
+    // Special (theoretical) case of the current load being concentrated in the slot
+    // middle
+    assert_abs_diff_eq!(
+        slot_opening_factor(slot_pitch, Length::new::<millimeter>(0.0), 36, 1.0),
+        1.0,
+        epsilon = 1e-6
+    );
+    assert_abs_diff_eq!(
+        slot_opening_factor(slot_pitch, Length::new::<millimeter>(0.0), 36, 10.0),
+        1.0,
+        epsilon = 1e-6
+    );
+
+    // Special case of the current load being distributed along the entire slot
+    // pitch
+    assert_abs_diff_eq!(
+        slot_opening_factor(slot_pitch, slot_pitch, 36, 1.0),
+        1.0,
+        epsilon = 1e-6
+    );
+    assert_abs_diff_eq!(
+        slot_opening_factor(slot_pitch, slot_pitch, 36, 10.0),
+        1.0,
+        epsilon = 1e-6
+    );
+
+    // Slot opening of 2 mm
+    assert_abs_diff_eq!(
+        slot_opening_factor(slot_pitch, Length::new::<millimeter>(2.0), 36, 1.0),
+        1.0,
+        epsilon = 1e-6
+    );
+    assert_abs_diff_eq!(
+        slot_opening_factor(slot_pitch, Length::new::<millimeter>(2.0), 36, 10.0),
+        1.0,
+        epsilon = 1e-6
+    );
 }

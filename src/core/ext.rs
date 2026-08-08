@@ -1030,7 +1030,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// [`CoreExt::surface_magnets`], the shapes returned by the [`Magnets`]
     /// iterator are already positioned relative to that returned by
     /// [`CoreExt::shape`]. The `split` argument is forwarded to
-    /// [`FluxBarrier::interior_magnets`]
+    /// [`FluxBarrier::interior_magnets`].
     ///
     /// The positioning itself is done by [`FluxBarrier::interior_magnets`],
     /// using `self` as the second and `split` as the third argument. The
@@ -1080,7 +1080,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///     cache: None,
     /// };
     ///
-    /// let lin_core: LinCore = LinCoreBuilder {
+    /// let core: LinCore = LinCoreBuilder {
     ///     height: Length::new::<millimeter>(20.0),
     ///     width: Length::new::<millimeter>(150.0),
     ///     axial_length: Length::new::<millimeter>(100.0),
@@ -1094,14 +1094,16 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// }
     /// .try_into().expect("valid inputs");
     ///
+    /// let magnets_per_pole: usize = core.interior_magnet_assemblies().iter().map(|m|m.num_magnets()).sum();
+    ///
     /// let split = true;
     /// let zones: Vec<PositionedMagnetShape> = core.interior_magnets(split).collect();
-    /// assert_eq!(zones.len(), (1 + usize::from(split)) * usize::from(core.poles()));
+    /// assert_eq!(zones.len(), (1 + usize::from(split)) * magnets_per_pole * usize::from(core.poles()));
     /// assert_eq!(zones.len(), 12);
     ///
     /// let split = false;
     /// let zones: Vec<PositionedMagnetShape> = core.interior_magnets(split).collect();
-    /// assert_eq!(zones.len(), (1 + usize::from(split)) * usize::from(core.poles()));
+    /// assert_eq!(zones.len(), (1 + usize::from(split)) * magnets_per_pole * usize::from(core.poles()));
     /// assert_eq!(zones.len(), 6);
     /// ```
     ///
@@ -1112,7 +1114,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///
     /// use stem_core::prelude::*;
     ///
-    /// let lin_core: LinCore = LinCoreBuilder {
+    /// let core: LinCore = LinCoreBuilder {
     ///     height: Length::new::<millimeter>(20.0),
     ///     width: Length::new::<millimeter>(150.0),
     ///     axial_length: Length::new::<millimeter>(100.0),
@@ -1163,6 +1165,8 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// use std::f64::consts::FRAC_PI_2;
     /// use std::sync::Arc;
     ///
+    /// use approx::assert_abs_diff_eq;
+    ///
     /// use stem_core::prelude::*;
     ///
     /// let core: RotCore = RotCoreBuilder {
@@ -1190,26 +1194,94 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// let surface_magnets = MagnetAssembly::new(magnet, 3.try_into().unwrap(), 2.try_into().unwrap());
     ///
     /// assert_eq!(core.mass_surface_magnets(&surface_magnets), core.poles() as f64 * surface_magnets.mass());
-    /// assert_eq!(core.mass_surface_magnets(&surface_magnets), Mass::new::<kilogram>(0.0));
+    /// assert_abs_diff_eq!(core.mass_surface_magnets(&surface_magnets).get::<kilogram>(), 0.478546, epsilon=1e-6);
     /// ```
     fn mass_surface_magnets(&self, magnet_assembly: &MagnetAssembly) -> Mass {
         return self.poles() as f64 * magnet_assembly.mass();
     }
 
+    /// Returns the total mass of all interior magnets mounted in the flux
+    /// barrier of `self`.
+    ///
+    /// This method calculates the mass of all magnets within a single pole with
+    /// `self.interior_magnet_assemblies().iter().map(|m| m.mass()).sum()`. The
+    /// resulting number is then simply multiplied with [`CoreExt::poles`]. See
+    /// [`CoreExt::interior_magnet_assemblies`] for details.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::f64::consts::FRAC_PI_2;
+    /// use std::sync::Arc;
+    ///
+    /// use approx::assert_abs_diff_eq;
+    ///
+    /// use stem_core::prelude::*;
+    ///
+    /// let fb = V1rFluxBarrier {
+    ///     yoke_distance: Length::new::<millimeter>(4.5),
+    ///     relief_path_air_gap_width: Length::new::<millimeter>(3.5),
+    ///     relief_path_length: Length::new::<millimeter>(1.33),
+    ///     relief_path_width: Length::new::<millimeter>(4.0),
+    ///     opening_angle: FRAC_PI_2,
+    ///     magnet_space_width: Length::new::<millimeter>(10.0),
+    ///     magnet_space_height: Length::new::<millimeter>(20.0),
+    ///     glue_gap: Length::new::<millimeter>(0.2),
+    ///     leakage_path_width: Length::new::<millimeter>(1.0),
+    ///     magnet_material: Some(Arc::new(Material::default())),
+    ///     cache: None,
+    /// };
+    ///
+    /// let core: RotCore = RotCoreBuilder {
+    ///     air_gap_radius: Length::new::<millimeter>(55.0),
+    ///     yoke_radius: Length::new::<millimeter>(18.0),
+    ///     axial_length: Length::new::<millimeter>(165.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     iron_fill_factor: 1.0,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 2,
+    ///     skew_angle: 0.0,
+    ///     air_gap: Box::new(PlainAirGap::default()),
+    ///     flux_barrier: Some(Box::new(fb)),
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// assert_abs_diff_eq!(core.mass_interior_magnets().get::<kilogram>(), 0.478546, epsilon=1e-6);
+    /// ```
     fn mass_interior_magnets(&self) -> Mass {
-        let assemblies = self.interior_magnet_assemblies();
-
-        let mut mass = Mass::new::<kilogram>(0.0);
-        for mag_idx in self.interior_magnets(false).map(|p| p.magnet_idx) {
-            mass += assemblies
-                .get(mag_idx)
-                .map(|m| m.mass())
-                .unwrap_or(Mass::new::<kilogram>(0.0))
-        }
-        return mass;
+        let mass_per_pole: Mass = self
+            .interior_magnet_assemblies()
+            .iter()
+            .map(|m| m.mass())
+            .sum();
+        return mass_per_pole * self.poles() as f64;
     }
 
-    /// Returns the number of slots at the air gap.
+    /// Returns the number of "slots" for a winding.
+    ///
+    /// A "slot" in this context is a space for winding coils which contains one
+    /// or more layers (see [`CoilLayout`]). This space can be an actual
+    /// [`Slot`] (e.g. for a [`SlottedAirGap`](crate::air_gap::SlottedAirGap)),
+    /// but doesn't necessarily need to be. For example, the "slots" for a
+    /// [`PlainAirGap`](crate::air_gap::PlainAirGap) are the coil mounting
+    /// points on the air gap surface. In this example image, both cores have
+    /// 24 slots separated in two layers:
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![Winding zones for a slotted and a plain air gap][winding_zones]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image("winding_zones", "docs/img/winding_zones.svg")
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    /// _This image was produced with `examples/winding_zones.rs`._
     ///
     /// This method forwards to [`AirGap::slots`], using `self` as the second
     /// argument.
@@ -1217,12 +1289,81 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         return self.air_gap().slots(self.as_core_ref());
     }
 
-    /// Calculate the slot opening factor for a non-slotted core according to
-    /// eq. (1.2.63) in [MVP08]
-    fn slot_opening_factor(&self, slots: u16, ordinal: f64) -> f64 {
+    /**
+    Returns the slot opening factor for the harmonic with the specified
+    `mech_ordinal`.
+
+    When determining the electric loading / induction distribution along the air
+    gap, analytical methods assume that the whole electric loading produced by
+    a particular slot is concentrated in its center at the air gap. For real
+    core and winding geometries, this is obviously not the case. For the example
+    of a [`SlottedAirGap`], the electric loading is distributed along the slot,
+    opening whereas a wound [`PlainAirGap`] distributes the load along the
+    entire air gap surface covered by coils. For further information, see
+    standard electric machines literature like e.g.
+    [\[1\]](#air_gap_slot_opening_factor_1), section 1.2.3.3.
+
+    The effect of this distribution on a particular harmonic can be calculated
+    with the "slot opening factor" ξ which is defined as:
+
+    `ξ = sin(k) / k`
+
+    with `k = mech_ordinal * slot_opening_width / slot_pitch * PI / slots`
+    [\[1\]](#air_gap_slot_opening_factor_1), eq. (1.2.62). The mechanical
+    ordinal is related to the electrical ordinal via:
+
+    `mech_ordinal = el_ordinal * pole_pairs`
+
+    Multiplying the absolute of this factor with the corresponding harmonic
+    amplitude for the idealized case returns the actual harmonic amplitude.
+
+    This method forwards to [`AirGap::slots`], using `self` as the second
+    and `mech_ordinal` as the third argument.
+
+    # Literature
+    <a id="air_gap_slot_opening_factor_1">\[1\]</a>
+    Müller, G., Vogt, K. and Ponick, B.: Berechnung elektrischer Maschinen,
+    6th edition, Wiley-VCH, 2008
+
+    # Examples
+
+    ```
+    use std::f64::consts::FRAC_PI_2;
+    use std::sync::Arc;
+
+    use approx::assert_abs_diff_eq;
+
+    use stem_core::prelude::*;
+
+    // 80 % of a slot pitch is covered by coils
+    let air_gap = PlainAirGap::new(Length::new::<millimeter>(0.0), 0.8, 1, 36, true).unwrap();
+    let core: RotCore = RotCoreBuilder {
+        air_gap_radius: Length::new::<millimeter>(55.0),
+        yoke_radius: Length::new::<millimeter>(18.0),
+        axial_length: Length::new::<millimeter>(165.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 2,
+        skew_angle: 0.0,
+        air_gap: Box::new(PlainAirGap::default()),
+        flux_barrier: Some(Box::new(fb)),
+    }
+    .try_into()
+    .unwrap();
+
+    // First electrical / second mechanical harmonic
+    assert_abs_diff_eq!(core.air_gap().slot_opening_factor(core.as_core_ref(), 2), 0.212, epsilon = 1e-6);
+
+    // Superharmonics produced by the winding like the electrical 5th and 7th one.
+    assert_abs_diff_eq!(core.slot_opening_factor(10), 0.212, epsilon = 1e-6);
+    assert_abs_diff_eq!(core.slot_opening_factor(14), 0.212, epsilon = 1e-6);
+    ```
+     */
+    fn slot_opening_factor(&self, mech_ordinal: i32) -> f64 {
         return self
             .air_gap()
-            .slot_opening_factor(slots, ordinal, self.as_core_ref());
+            .slot_opening_factor(self.as_core_ref(), mech_ordinal);
     }
 
     /// Returns the current displacement coefficients for a winding mounted on
@@ -1338,14 +1479,18 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         return Area::new::<square_meter>(self.shape().area());
     }
 
-    /// Returns the skew factor of the core for the given ordinal.
+    /// Returns the skew factor of the core for the given `mech_ordinal`.
+    ///
+    /// The mechanical ordinal is related to the electrical ordinal via:
+    ///
+    /// `mech_ordinal = el_ordinal * pole_pairs`
     ///
     /// This methods forwards to the free function [`skew_factor`] with
     /// [`CoreExt::skew_angle`] and [`CoreExt::num_segments`] as the third and
     /// fourth argument. See the docstring of [`skew_factor`] for details and
     /// examples.
-    fn skew_factor(&self, ordinal: usize) -> f64 {
-        return skew_factor(ordinal, self.skew_angle(), self.num_segments());
+    fn skew_factor(&self, mech_ordinal: usize) -> f64 {
+        return skew_factor(mech_ordinal, self.skew_angle(), self.num_segments());
     }
 
     /**
@@ -1390,7 +1535,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
 }
 
 /**
-Calculates the skew factor for a mechanical ordinal for an either continuously
+Calculates the skew factor for a `mech_ordinal` for an either continuously
 skewed or discretized core.
 
 One way to suppress unwanted harmonics of the magnetic air gap field is to
@@ -1398,13 +1543,13 @@ One way to suppress unwanted harmonics of the magnetic air gap field is to
 contains background information.
 
 This function calculates the "skew factor" for an harmonic with the specified
-mechanical `ordinal` where the core is skewed by the `skew_angle`. Multiplying
+`mech_ordinal` where the core is skewed by the `skew_angle`. Multiplying
 the skew factor with the amplitude of that harmonic calculated for the unskewed
 core returns its resulting (actual) amplitude. The mechanical ordinal is related
 to the electrical ordinal via:
 
 ```ignore
-mechanical_ordinal = electrical_ordinal * pole_pairs
+mech_ordinal = el_ordinal * pole_pairs
 ```
 
 i.e. the electrical ordinal gives the number of maxima of the sinusoidal curve
@@ -1422,14 +1567,14 @@ from the formula for the staggered skew factor taken from
 [\[1\]](#skew_factor_1), eq. (3):
 
 ```ignore
-skew_factor = sin(0.5 * ordinal * skew_angle) / (num_segments * sin(0.5 * ordinal * skew_angle / num_segments))
+skew_factor = sin(0.5 * mech_ordinal * skew_angle) / (num_segments * sin(0.5 * mech_ordinal * skew_angle / num_segments))
 ```
 
 For `num_segments = 0`, the formula simplifies to [\[2\]](#skew_factor_2), eq.
 (6.5-18):
 
 ```ignore
-skew_factor = sin(0.5 * ordinal * skew_angle) / (0.5 * ordinal * skew_angle)
+skew_factor = sin(0.5 * mech_ordinal * skew_angle) / (0.5 * mech_ordinal * skew_angle)
 ```
 
 # Literature
@@ -1556,11 +1701,11 @@ assert_abs_diff_eq!(skew_factor(8 * slots, angle, 100), 0.0, epsilon = 1e-5);
 assert_abs_diff_eq!(skew_factor(pole_pairs, angle, 100), 0.95493, epsilon = 1e-5); // Equals skewed case
 ```
  */
-pub fn skew_factor(ordinal: usize, skew_angle: f64, num_segments: usize) -> f64 {
+pub fn skew_factor(mech_ordinal: usize, skew_angle: f64, num_segments: usize) -> f64 {
     if skew_angle == 0.0 {
         return 1.0;
     } else {
-        let arg = ordinal as f64 * skew_angle / 2.0;
+        let arg = mech_ordinal as f64 * skew_angle / 2.0;
         if num_segments == 0 {
             return arg.sin() / arg;
         } else {

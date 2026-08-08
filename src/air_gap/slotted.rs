@@ -396,4 +396,14 @@ impl AirGap for SlottedAirGap {
             core.slot_pitch(),
         );
     }
+
+    fn slot_opening_factor(&self, core: CoreRef<'_>, mech_ordinal: i32) -> f64 {
+        let slot_pitch = core.slot_pitch();
+        return super::slot_opening_factor(
+            slot_pitch,
+            self.slot.opening_width(),
+            self.slots,
+            mech_ordinal,
+        );
+    }
 }

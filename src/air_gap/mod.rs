@@ -5,12 +5,7 @@ use planar_geo::{polysegment::Polysegment, shape::Shape};
 use stem_magnet::assembly::MagnetAssembly;
 use stem_slot::prelude::*;
 
-use crate::{
-    core::{CoreExt, CoreRef},
-    error::Error,
-    magnets::Magnets,
-    winding_zones::WindingZones,
-};
+use crate::{core::CoreRef, error::Error, magnets::Magnets, winding_zones::WindingZones};
 
 pub mod plain;
 pub mod slotted;
@@ -51,7 +46,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// [`StraightIndentsAirGap`], this is ensured by the constructor.
     fn num_segments(&self, core: CoreRef<'_>) -> usize;
 
-    /// Retusn an iterator over the surface magnet shapes for the given
+    /// Returns an iterator over the surface magnet shapes for the given
     /// `magnet_assembly` and `core`.
     ///
     /// This method implements [`CoreExt::surface_magnets`] for the different
@@ -190,6 +185,83 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// TODO: Slotted core image (linear core?)
     fn combine(&mut self, core: CoreRef<'_>) -> Result<Shape, Error>;
 
+    /**
+    Returns the slot opening factor for the harmonic with the specified
+    `mech_ordinal`.
+
+    When determining the electric loading / induction distribution along the air
+    gap, analytical methods assume that the whole electric loading produced by
+    a particular slot is concentrated in its center at the air gap. For real
+    core and winding geometries, this is obviously not the case. For the example
+    of a [`SlottedAirGap`], the electric loading is distributed along the slot,
+    opening whereas a wound [`PlainAirGap`] distributes the load along the
+    entire air gap surface covered by coils. For further information, see
+    standard electric machines literature like e.g.
+    [\[1\]](#air_gap_slot_opening_factor_1), section 1.2.3.3.
+
+    The effect of this distribution on a particular harmonic can be calculated
+    with the "slot opening factor" ξ which is defined as:
+
+    `ξ = sin(k) / k`
+
+    with `k = mech_ordinal * slot_opening_width / slot_pitch * PI / slots`
+    [\[1\]](#air_gap_slot_opening_factor_1), eq. (1.2.62). The mechanical
+    ordinal is related to the electrical ordinal via:
+
+    `mech_ordinal = el_ordinal * pole_pairs`
+
+    Multiplying the absolute of this factor with the corresponding harmonic
+    amplitude for the idealized case returns the actual harmonic amplitude.
+
+    [\[1\]](#air_gap_slot_opening_factor_1), eq. (1.2.62) is implemented in
+    the free [`slot_opening_factor`] function. It is recommended to use this
+    function when implementing an [`AirGap`] unless there is a good reason to
+    use a custom formula. See the implementations of [`PlainAirGap`] and
+    [`SlottedAirGap`] for examples on how to utilize [`slot_opening_factor`] for
+    implementing this method.
+
+    # Literature
+    <a id="air_gap_slot_opening_factor_1">\[1\]</a>
+    Müller, G., Vogt, K. and Ponick, B.: Berechnung elektrischer Maschinen,
+    6th edition, Wiley-VCH, 2008
+
+    # Examples
+
+    ```
+    use std::f64::consts::FRAC_PI_2;
+    use std::sync::Arc;
+
+    use approx::assert_abs_diff_eq;
+
+    use stem_core::prelude::*;
+
+    // 80 % of a slot pitch is covered by coils
+    let air_gap = PlainAirGap::new(Length::new::<millimeter>(0.0), 0.8, 1, 36, true).unwrap();
+    let core: RotCore = RotCoreBuilder {
+        air_gap_radius: Length::new::<millimeter>(55.0),
+        yoke_radius: Length::new::<millimeter>(18.0),
+        axial_length: Length::new::<millimeter>(165.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 2,
+        skew_angle: 0.0,
+        air_gap: Box::new(PlainAirGap::default()),
+        flux_barrier: Some(Box::new(fb)),
+    }
+    .try_into()
+    .unwrap();
+
+    // First electrical / second mechanical harmonic
+    assert_abs_diff_eq!(core.air_gap().slot_opening_factor(core.as_core_ref(), 2), 0.212, epsilon = 1e-6);
+
+    // Superharmonics produced by the winding like the electrical 5th and 7th one.
+    assert_abs_diff_eq!(core.air_gap().slot_opening_factor(core.as_core_ref(), 10), 0.212, epsilon = 1e-6);
+    assert_abs_diff_eq!(core.air_gap().slot_opening_factor(core.as_core_ref(), 14), 0.212, epsilon = 1e-6);
+    ```
+     */
+    fn slot_opening_factor(&self, core: CoreRef<'_>, mech_ordinal: i32) -> f64;
+
     // =========================================================================
 
     /**
@@ -221,26 +293,88 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     ) -> CurrentDisplacementCalculator {
         return CurrentDisplacementCalculator::from_slice_dims([].into_iter());
     }
-
-    /// Calculate the slot opening factor for a non-slotted core according to
-    /// eq. (1.2.63) in [MVP08]
-    fn slot_opening_factor(&self, slots: u16, ordinal: f64, core: CoreRef<'_>) -> f64 {
-        return slot_opening_factor(core.pole_pairs(), slots, ordinal);
-    }
 }
 
 dyn_clone::clone_trait_object!(AirGap);
 
-/// Calculate the slot opening factor for a non-slotted core according to eq.
-/// (1.2.63) in [MVP08]
-fn slot_opening_factor(pole_pairs: u16, slots: u16, ordinal: f64) -> f64 {
-    let arg = ordinal * pole_pairs as f64 * PI / slots as f64;
-    return (arg.sin() / arg).abs();
+/**
+Returns the slot opening factor for the harmonic with the specified
+`mech_ordinal`.
+
+When determining the electric loading / induction distribution along the air
+gap, analytical methods assume that the whole electric loading produced by
+a particular slot is concentrated in its center at the air gap. For real
+core and winding geometries, this is obviously not the case. For the example
+of a [`SlottedAirGap`], the electric loading is distributed along the slot,
+opening whereas a wound [`PlainAirGap`] distributes the load along the
+entire air gap surface covered by coils. For further information, see
+standard electric machines literature like e.g.
+[\[1\]](#air_gap_slot_opening_factor_1), section 1.2.3.3.
+
+The effect of this distribution on a particular harmonic can be calculated
+with the "slot opening factor" ξ which is defined as:
+
+`ξ = sin(k) / k`
+
+with `k = mech_ordinal * slot_opening_width / slot_pitch * PI / slots`
+[\[1\]](#air_gap_slot_opening_factor_1), eq. (1.2.62). The mechanical
+ordinal is related to the electrical ordinal via:
+
+`mech_ordinal = el_ordinal * pole_pairs`
+
+Multiplying the absolute of this factor with the corresponding harmonic
+amplitude for the idealized case returns the actual harmonic amplitude.
+
+The mechanical ordinal can be specified as an integer (as one would expect), but
+also as a float. This enables calculating the continuous graph of ξ over the
+ordinals.
+
+# Literature
+<a id="air_gap_slot_opening_factor_1">\[1\]</a>
+Müller, G., Vogt, K. and Ponick, B.: Berechnung elektrischer Maschinen,
+6th edition, Wiley-VCH, 2008
+
+# Examples
+
+```
+use approx::assert_abs_diff_eq;
+
+use stem_core::air_gap::slot_opening_factor;
+use stem_core::prelude::*;
+
+let slot_pitch = Length::new::<millimeter>(10.0);
+
+// Special (theoretical) case of the current load being concentrated in the slot middle
+assert_abs_diff_eq!(slot_opening_factor(slot_pitch, Length::new::<millimeter>(0.0), 36, 1.0), 1.0, epsilon = 1e-6);
+assert_abs_diff_eq!(slot_opening_factor(slot_pitch, Length::new::<millimeter>(0.0), 36, 10.0), 1.0, epsilon = 1e-6);
+
+// Special case of the current load being distributed along the entire slot pitch
+assert_abs_diff_eq!(slot_opening_factor(slot_pitch, slot_pitch, 36, 1.0), 1.0, epsilon = 1e-6);
+assert_abs_diff_eq!(slot_opening_factor(slot_pitch, slot_pitch, 36, 10.0), 1.0, epsilon = 1e-6);
+
+// Slot opening of 2 mm
+assert_abs_diff_eq!(slot_opening_factor(slot_pitch, Length::new::<millimeter>(2.0), 36, 1.0), 1.0, epsilon = 1e-6);
+assert_abs_diff_eq!(slot_opening_factor(slot_pitch, Length::new::<millimeter>(2.0), 36, 10.0), 1.0, epsilon = 1e-6);
+```
+ */
+pub fn slot_opening_factor<I: Into<f64>>(
+    slot_pitch: Length,
+    slot_opening_width: Length,
+    slots: u16,
+    mech_ordinal: I,
+) -> f64 {
+    let mech_ordinal: f64 = mech_ordinal.into();
+    let k = mech_ordinal * (slot_opening_width / slot_pitch).get::<ratio>() * PI / f64::from(slots);
+
+    // Avoid division of 0/0. This is physically correct, see [1], eq. (1.2.63).
+    if k == 0.0 {
+        return 1.0;
+    } else {
+        return k.sin() / k;
+    }
 }
 
-/**
-Helper function to combine stator and rotor segment_chain to a shape
- */
+/// Helper function to combine stator and rotor segment_chain into a shape.
 fn combine_air_gap_and_yoke_to_shape(
     air_gap: Polysegment,
     yoke: Polysegment,

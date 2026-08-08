@@ -65,9 +65,10 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     /// slice.
     /// - The iterator should return `n`
     /// [`PositionedMagnetShape`](crate::magnets::PositionedMagnetShape)
-    /// elements, where `n` is the sum of
-    /// `magnet_assembly.num_tangential() * (1 + split) * core.poles()` for all
-    /// [`FluxBarrier::magnet_assemblies`] of `self`.
+    /// elements, where `n` is
+    /// `magnets_per_pole * (1 + split) * core.poles()`. `magnets_per_pole` is
+    /// the sum of the number of magnets of all magnet assemblies (as returned
+    /// from [`FluxBarrier::magnet_assemblies`]).
     /// - The shapes must not overlap each other or the
     /// [`core.shape()`](CoreExt::Shape). This can be checked using
     /// [`CoreExt::assembly_check`].
@@ -116,14 +117,20 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     fn combine(&mut self, core: CoreRef<'_>) -> Result<Vec<Contour>, Error>;
 
     /**
-    Returns all different magnet assemblies which are placed within the flux
+    Returns all magnet assemblies of a single pole placed within the flux
     barrier.
 
     A flux barrier may be able to contain magnets of one or even multiple types
     (e.g. two different shapes of
     [`BlockMagnet`](stem_magnet::block::BlockMagnet)s) which are part of
-    [`MagnetAssembly`](s). This method returns a slice view of all those
-    assemblies.
+    [`MagnetAssembly`](s). This method returns a slice view of all assemblies
+    for a single pole. The total number of magnets per pole is therefore
+    `self.magnet_assemblies(core).iter().map(|m|m.num_magnets()).sum()`. If a
+    magnet of an assembly is used multiple times within the cross section,
+    [`MagnetAssembly::num_tangential`] should be set to the times of occurences.
+    For example, [`MagnetAssembly::num_tangential`] is 2 for a
+    [`V1rFluxBarrier`], but 1 for a [`Star1FluxBarrier`]. The number of axial
+    subdivisions depends entirely on the flux barrier implementation.
 
     The [`FluxBarrier::interior_magnets`] returns an iterator over the shapes
     of all interior magnets within `self`. By indexing into this slice with
@@ -140,8 +147,80 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     If the flux barrier does not hold magnets
     ([`FluxBarrier::interior_magnets`] returns an empty iterator), this method
     can be implemented by simply returning an empty slice.
+
+    # Examples
+
+    ```
+    use std::f64::consts::FRAC_PI_2;
+    use std::sync::Arc;
+
+    use stem_core::prelude::*;
+
+    let star1 = Star1FluxBarrier {
+        magnet_space_width: Length::new::<millimeter>(10.0),
+        glue_gap: Length::new::<millimeter>(0.2),
+        magnet_material: Some(Arc::new(Material::default())),
+        cache: None,
+        air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
+        yoke_leakage_path_width: Length::new::<millimeter>(1.0),
+        relief_path_air_gap_width: Length::new::<millimeter>(5.0),
+        magnet_space_height_or_relief_path_width: Star1HeightSplit::ReliefPathWidth(Length::new::<
+            millimeter,
+        >(2.0)),
+    };
+    let star1_core: RotCore = RotCoreBuilder {
+        air_gap_radius: Length::new::<millimeter>(55.0),
+        yoke_radius: Length::new::<millimeter>(18.0),
+        axial_length: Length::new::<millimeter>(165.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 2,
+        skew_angle: 0.0,
+        air_gap: Box::new(PlainAirGap::default()),
+        flux_barrier: Some(Box::new(star1)),
+    }
+    .try_into()
+    .unwrap();
+
+    let v1r = V1rFluxBarrier {
+        yoke_distance: Length::new::<millimeter>(4.5),
+        relief_path_air_gap_width: Length::new::<millimeter>(3.5),
+        relief_path_length: Length::new::<millimeter>(1.33),
+        relief_path_width: Length::new::<millimeter>(4.0),
+        opening_angle: FRAC_PI_2,
+        magnet_space_width: Length::new::<millimeter>(10.0),
+        magnet_space_height: Length::new::<millimeter>(20.0),
+        glue_gap: Length::new::<millimeter>(0.2),
+        leakage_path_width: Length::new::<millimeter>(1.0),
+        magnet_material: Some(Arc::new(Material::default())),
+        cache: None,
+    };
+    let v1r_core: RotCore = RotCoreBuilder {
+        air_gap_radius: Length::new::<millimeter>(55.0),
+        yoke_radius: Length::new::<millimeter>(18.0),
+        axial_length: Length::new::<millimeter>(165.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 2,
+        skew_angle: 0.0,
+        air_gap: Box::new(PlainAirGap::default()),
+        flux_barrier: Some(Box::new(v1r)),
+    }
+    .try_into()
+    .unwrap();
+
+    let star1 = star1_core.flux_barrier().as_ref().expect("has_magnet");
+    let sum_star1_mags: usize = star1.magnet_assemblies(star1_core.as_core_ref()).iter().map(|m|m.num_magnets()).sum();
+    assert_eq!(sum_star1_mags, 1);
+
+    let v1r = v1r_core.flux_barrier().as_ref().expect("has_magnet");
+    let sum_v1r_mags: usize = v1r.magnet_assemblies(v1r_core.as_core_ref()).iter().map(|m|m.num_magnets()).sum();
+    assert_eq!(sum_v1r_mags, 2);
+    ```
      */
-    fn magnet_assemblies(&self, _core: CoreRef<'_>) -> &[MagnetAssembly];
+    fn magnet_assemblies(&self, core: CoreRef<'_>) -> &[MagnetAssembly];
 }
 
 dyn_clone::clone_trait_object!(FluxBarrier);

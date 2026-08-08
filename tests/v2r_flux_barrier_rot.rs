@@ -163,6 +163,14 @@ fn test_slotted_core_180deg() {
             });
         };
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
+
+        assert_eq!(
+            2,
+            core.interior_magnet_assemblies()
+                .iter()
+                .map(|m| m.num_magnets())
+                .sum::<usize>()
+        );
     }
 }
 

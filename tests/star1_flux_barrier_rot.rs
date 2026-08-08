@@ -243,6 +243,14 @@ fn plain_inner_with_relief_path() {
             });
         };
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
+
+        assert_eq!(
+            1,
+            core.interior_magnet_assemblies()
+                .iter()
+                .map(|m| m.num_magnets())
+                .sum::<usize>()
+        );
     }
 }
 

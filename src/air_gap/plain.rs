@@ -206,4 +206,14 @@ impl AirGap for PlainAirGap {
         };
         return Ok(shape);
     }
+
+    fn slot_opening_factor(&self, core: CoreRef<'_>, mech_ordinal: i32) -> f64 {
+        let slot_pitch = core.slot_pitch();
+        return super::slot_opening_factor(
+            slot_pitch,
+            slot_pitch * self.winding_coverage,
+            self.slots,
+            mech_ordinal,
+        );
+    }
 }

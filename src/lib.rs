@@ -23,6 +23,13 @@ pub const GRAY: planar_geo::draw::Color = planar_geo::draw::Color {
     a: 1.0,
 };
 
+#[doc(hidden)]
+pub use stem_magnet;
+#[doc(hidden)]
+pub use stem_magnet::stem_material;
+#[doc(hidden)]
+pub use stem_slot;
+
 pub mod prelude {
     pub use crate::magnets::*;
     pub use crate::winding_zones::*;
@@ -46,6 +53,9 @@ pub mod prelude {
     pub use stem_magnet::bread_loaf::BreadLoafMagnet;
     #[doc(hidden)]
     pub use stem_magnet::magnet::Magnet;
+
+    #[doc(hidden)]
+    pub use stem_material;
 
     // Prevent rustdoc from documenting
     #[doc(hidden)]

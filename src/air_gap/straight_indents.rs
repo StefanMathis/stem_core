@@ -390,6 +390,10 @@ impl AirGap for StraightIndentsAirGap {
             CoreRef::Rot(rot_core) => self.shape_rot(rot_core),
         }
     }
+
+    fn slot_opening_factor(&self, _core: CoreRef<'_>, _mech_ordinal: i32) -> f64 {
+        0.0
+    }
 }
 
 #[derive(Debug, Clone)]
