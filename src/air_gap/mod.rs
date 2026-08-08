@@ -186,6 +186,8 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// [`Error::IncompatibleToRotCore`], where the `&'static str` represents
     /// the type name.
     ///
+    /// TODO: Explain why &mut
+    ///
     /// TODO: Example for successfull and failing combination
     /// TODO: Slotted core image (linear core?)
     fn combine(&mut self, core: CoreRef<'_>) -> Result<Shape, Error>;
