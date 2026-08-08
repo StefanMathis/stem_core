@@ -7,6 +7,7 @@ pub mod core;
 pub mod flux_barrier;
 
 pub use stem_magnet;
+pub use stem_magnet::stem_material;
 pub use stem_slot;
 pub use stem_slot::planar_geo;
 
@@ -22,13 +23,6 @@ pub const GRAY: planar_geo::draw::Color = planar_geo::draw::Color {
     b: 0.5,
     a: 1.0,
 };
-
-#[doc(hidden)]
-pub use stem_magnet;
-#[doc(hidden)]
-pub use stem_magnet::stem_material;
-#[doc(hidden)]
-pub use stem_slot;
 
 pub mod prelude {
     pub use crate::magnets::*;
