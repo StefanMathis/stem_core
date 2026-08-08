@@ -246,7 +246,7 @@ fn test_plot_assembly() {
         };
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
 
-        approx::assert_abs_diff_eq!(core.slot_opening_factor(1), 0.8, epsilon = 1e-6);
+        approx::assert_abs_diff_eq!(core.slot_opening_factor(1), 0.9997075, epsilon = 1e-6);
     }
 }
 

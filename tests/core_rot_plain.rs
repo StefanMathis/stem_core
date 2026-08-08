@@ -60,7 +60,7 @@ fn test_read_core_properties() {
     );
     assert_eq!(core.pole_pairs(), 5);
     assert_eq!(core.slots(), 12);
-    approx::assert_abs_diff_eq!(core.slot_opening_factor(1), 0.8, epsilon = 1e-6);
+    approx::assert_abs_diff_eq!(core.slot_opening_factor(1), 0.9886159, epsilon = 1e-6);
 }
 
 #[test]

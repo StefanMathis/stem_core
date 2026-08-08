@@ -344,17 +344,43 @@ use stem_core::prelude::*;
 
 let slot_pitch = Length::new::<millimeter>(10.0);
 
-// Special (theoretical) case of the current load being concentrated in the slot middle
-assert_abs_diff_eq!(slot_opening_factor(slot_pitch, Length::new::<millimeter>(0.0), 36, 1.0), 1.0, epsilon = 1e-6);
-assert_abs_diff_eq!(slot_opening_factor(slot_pitch, Length::new::<millimeter>(0.0), 36, 10.0), 1.0, epsilon = 1e-6);
+// Special (theoretical) case of the current load being concentrated in the slot
+// middle
+assert_abs_diff_eq!(
+    slot_opening_factor(slot_pitch, Length::new::<millimeter>(0.0), 36, 1),
+    1.0,
+    epsilon = 1e-6
+);
+assert_abs_diff_eq!(
+    slot_opening_factor(slot_pitch, Length::new::<millimeter>(0.0), 36, 10),
+    1.0,
+    epsilon = 1e-6
+);
 
-// Special case of the current load being distributed along the entire slot pitch
-assert_abs_diff_eq!(slot_opening_factor(slot_pitch, slot_pitch, 36, 1.0), 1.0, epsilon = 1e-6);
-assert_abs_diff_eq!(slot_opening_factor(slot_pitch, slot_pitch, 36, 10.0), 1.0, epsilon = 1e-6);
+// Special case of the current load being distributed along the entire slot
+// pitch
+assert_abs_diff_eq!(
+    slot_opening_factor(slot_pitch, slot_pitch, 36, 1),
+    0.998731,
+    epsilon = 1e-6
+);
+assert_abs_diff_eq!(
+    slot_opening_factor(slot_pitch, slot_pitch, 36, 10),
+    0.877822,
+    epsilon = 1e-6
+);
 
 // Slot opening of 2 mm
-assert_abs_diff_eq!(slot_opening_factor(slot_pitch, Length::new::<millimeter>(2.0), 36, 1.0), 1.0, epsilon = 1e-6);
-assert_abs_diff_eq!(slot_opening_factor(slot_pitch, Length::new::<millimeter>(2.0), 36, 10.0), 1.0, epsilon = 1e-6);
+assert_abs_diff_eq!(
+    slot_opening_factor(slot_pitch, Length::new::<millimeter>(2.0), 36, 1),
+    0.9999492,
+    epsilon = 1e-6
+);
+assert_abs_diff_eq!(
+    slot_opening_factor(slot_pitch, Length::new::<millimeter>(2.0), 36, 10),
+    0.9949307,
+    epsilon = 1e-6
+);
 ```
  */
 pub fn slot_opening_factor<I: Into<f64>>(

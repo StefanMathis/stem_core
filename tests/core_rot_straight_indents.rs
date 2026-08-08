@@ -172,6 +172,53 @@ fn create_core(
 }
 
 #[test]
+fn test_assembly_check_block() {
+    let air_gap = StraightIndentsAirGap::new(
+        1.try_into().unwrap(),
+        Length::new::<millimeter>(20.5),
+        Length::new::<millimeter>(2.0),
+        3,
+    );
+    let core: RotCore = RotCoreBuilder {
+        air_gap_radius: Length::new::<millimeter>(55.0),
+        yoke_radius: Length::new::<millimeter>(18.0),
+        axial_length: Length::new::<millimeter>(165.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 2,
+        skew_angle: 0.0,
+        air_gap: Box::new(air_gap),
+        flux_barrier: None,
+    }
+    .try_into()
+    .expect("valid");
+    let magnet = BlockMagnet::new(
+        core.axial_length(),
+        Length::new::<millimeter>(20.0),
+        Length::new::<millimeter>(4.0),
+        Length::new::<millimeter>(1.0),
+        Arc::new(Material::default()),
+    )
+    .expect("valid");
+    let assembly = MagnetAssembly::new(
+        magnet,
+        1.try_into().expect("valid"),
+        3.try_into().expect("valid"),
+    );
+
+    assert!(
+        core.assembly_check(
+            &CoilLayout::SingleFilled,
+            Some(&assembly),
+            DEFAULT_EPSILON,
+            DEFAULT_MAX_RELATIVE
+        )
+        .is_ok()
+    );
+}
+
+#[test]
 fn test_assembly_check_inner() {
     let magnet = BreadLoafMagnet::new(
         Length::new::<millimeter>(165.0),

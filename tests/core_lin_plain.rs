@@ -33,8 +33,8 @@ fn test_properties() {
     approx::assert_abs_diff_eq!(core.tooth_height().get::<meter>(), 0.0);
     approx::assert_abs_diff_eq!(core.teeth_mass().get::<gram>(), 0.0);
     approx::assert_abs_diff_eq!(core.tooth_mass().get::<gram>(), 0.0);
-    approx::assert_abs_diff_eq!(core.slot_opening_factor(1), 0.8, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(core.slot_opening_factor(10), 0.8, epsilon = 1e-6);
+    approx::assert_abs_diff_eq!(core.slot_opening_factor(1), 0.994412, epsilon = 1e-6);
+    approx::assert_abs_diff_eq!(core.slot_opening_factor(10), 0.527081, epsilon = 1e-6);
 }
 
 #[test]
