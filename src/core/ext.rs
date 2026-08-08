@@ -1247,7 +1247,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// .try_into()
     /// .unwrap();
     ///
-    /// assert_abs_diff_eq!(core.mass_interior_magnets().get::<kilogram>(), 0.478546, epsilon=1e-6);
+    /// assert_abs_diff_eq!(core.mass_interior_magnets().get::<kilogram>(), 0.264, epsilon=1e-6);
     /// ```
     fn mass_interior_magnets(&self) -> Mass {
         let mass_per_pole: Mass = self
@@ -1346,18 +1346,18 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         material: Arc::new(Material::default()),
         pole_pairs: 2,
         skew_angle: 0.0,
-        air_gap: Box::new(PlainAirGap::default()),
-        flux_barrier: Some(Box::new(fb)),
+        air_gap: Box::new(air_gap),
+        flux_barrier: None,
     }
     .try_into()
     .unwrap();
 
     // First electrical / second mechanical harmonic
-    assert_abs_diff_eq!(core.air_gap().slot_opening_factor(core.as_core_ref(), 2), 0.212, epsilon = 1e-6);
+    assert_abs_diff_eq!(core.air_gap().slot_opening_factor(core.as_core_ref(), 2), 0.996754, epsilon = 1e-6);
 
     // Superharmonics produced by the winding like the electrical 5th and 7th one.
-    assert_abs_diff_eq!(core.slot_opening_factor(10), 0.212, epsilon = 1e-6);
-    assert_abs_diff_eq!(core.slot_opening_factor(14), 0.212, epsilon = 1e-6);
+    assert_abs_diff_eq!(core.slot_opening_factor(10), 0.920725, epsilon = 1e-6);
+    assert_abs_diff_eq!(core.slot_opening_factor(14), 0.848221, epsilon = 1e-6);
     ```
      */
     fn slot_opening_factor(&self, mech_ordinal: i32) -> f64 {

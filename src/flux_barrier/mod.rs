@@ -211,11 +211,13 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     .try_into()
     .unwrap();
 
-    let star1 = star1_core.flux_barrier().as_ref().expect("has_magnet");
+    let binding = star1_core.flux_barrier();
+    let star1 = binding.as_ref().expect("has flux barrier");
     let sum_star1_mags: usize = star1.magnet_assemblies(star1_core.as_core_ref()).iter().map(|m|m.num_magnets()).sum();
     assert_eq!(sum_star1_mags, 1);
 
-    let v1r = v1r_core.flux_barrier().as_ref().expect("has_magnet");
+    let binding = v1r_core.flux_barrier();
+    let v1r = binding.as_ref().expect("has flux barrier");
     let sum_v1r_mags: usize = v1r.magnet_assemblies(v1r_core.as_core_ref()).iter().map(|m|m.num_magnets()).sum();
     assert_eq!(sum_v1r_mags, 2);
     ```

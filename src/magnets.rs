@@ -274,6 +274,8 @@ impl Iterator for Magnets {
 }
 
 /// Assumptions: shapes are as required by Magnet trait
+/// TODO: Explain that this can deal with negative radii (as might be reported
+/// from some magnets such as ArcSegmentMagnet to signal convex / concave)
 pub fn pole_coverage_angle<'a, I: Iterator<Item = &'a Shape> + Clone>(
     magnet_shapes: I,
     radius: f64,

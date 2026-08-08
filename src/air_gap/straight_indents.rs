@@ -7,8 +7,8 @@ use crate::{magnets::PositionedMagnetShape, planar_geo};
 use compare_variables::compare_variables;
 use num::Integer;
 use planar_geo::prelude::*;
-use stem_magnet::assembly::MagnetAssembly;
-use stem_slot::{coil_layout::CoilLayout, prelude::stem_material::prelude::*};
+use stem_magnet::prelude::*;
+use stem_slot::coil_layout::CoilLayout;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -123,25 +123,13 @@ impl StraightIndentsAirGap {
     ///
     /// TODO: Drawing
     pub fn indent_corner_radius(&self, air_gap_radius: Length, is_outer: bool) -> Length {
-        // Read out available local information and assign shorter variable
-        // names to improve readability
-        let indent_width = self.indent_width.get::<meter>();
-        let indent_depth = if is_outer {
-            self.indent_depth.get::<meter>()
-        } else {
-            -self.indent_depth.get::<meter>()
-        };
-        let ag_radius = air_gap_radius.get::<meter>();
+        use uom::typenum::P2;
 
-        // Half the opening angle of the indent, measured from the connection of
-        // the indent extrusion to the indent center at air gap radius
-        let alpha = (0.5 * indent_width / ag_radius).asin();
-        let k = indent_depth + ag_radius * alpha.cos();
+        let indent_center_radius = self.indent_center_radius(air_gap_radius, is_outer);
 
-        // Radius at the indent_center
-        let indent_corner_radius = ((0.5 * indent_width).powi(2) + k.powi(2)).sqrt();
-
-        return Length::new::<meter>(indent_corner_radius);
+        // Use the Pythagorean theorem to determine the indent corner radius
+        return (indent_center_radius.powi(P2::new()) + (0.5 * self.indent_width).powi(P2::new()))
+            .sqrt();
     }
 
     /// Returns the core shape for a linear core, if the combination of `self`
@@ -302,8 +290,6 @@ impl AirGap for StraightIndentsAirGap {
         core: CoreRef<'_>,
         split: bool,
     ) -> Magnets {
-        let magnet_width = magnet_assembly.magnet().width();
-        let gap_between_partial_magnets = self.indent_width - magnet_width;
         let num_tangential = magnet_assembly.num_tangential();
         let mut magnet_shapes: Vec<PositionedMagnetShape> = if split {
             magnet_assembly
@@ -327,10 +313,7 @@ impl AirGap for StraightIndentsAirGap {
 
         match core {
             CoreRef::Lin(lin_core) => {
-                let magnet_coverage =
-                    BoundingBox::from_bounded_entities(magnet_shapes.iter().map(|p| &p.shape))
-                        .map(|m| m.width() + gap_between_partial_magnets.get::<meter>())
-                        .unwrap_or(0.0);
+                let magnet_coverage = self.indent_width.get::<meter>();
 
                 magnet_shapes.iter_mut().for_each(|s| {
                     s.line_reflection([0.0, 0.0], [1.0, 0.0]);
@@ -349,13 +332,13 @@ impl AirGap for StraightIndentsAirGap {
             CoreRef::Rot(rot_core) => {
                 let indent_center_radius =
                     self.indent_center_radius(rot_core.air_gap_radius(), rot_core.is_outer());
+                let indent_corner_radius =
+                    self.indent_corner_radius(rot_core.air_gap_radius(), rot_core.is_outer());
 
-                // Needs to be done before rotating the magnet shapes!
-                let magnet_coverage = crate::magnets::pole_coverage_angle(
-                    magnet_shapes.iter().map(|p| &p.shape),
-                    indent_center_radius.get::<meter>(),
-                    gap_between_partial_magnets,
-                );
+                let magnet_coverage = 2.0
+                    * (self.indent_width / (2.0 * indent_corner_radius))
+                        .get::<ratio>()
+                        .asin();
 
                 if rot_core.is_outer() {
                     for s in magnet_shapes.iter_mut() {

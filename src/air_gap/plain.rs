@@ -96,7 +96,7 @@ impl Default for PlainAirGap {
             air_gap_winding_height: Length::new::<meter>(0.0),
             winding_coverage: 0.0,
             num_segments: 1,
-            slots: 0,
+            slots: 1,
             starts_in_slot_middle: true,
         }
     }
