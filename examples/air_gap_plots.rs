@@ -335,6 +335,115 @@ fn plot_slotted() -> Result<(), Box<dyn std::error::Error>> {
 
         return Ok(());
     })?;
+
+    // =========================================================================
+
+    let distance = 0.01;
+
+    let slot: SemiTrapezoidSlot = SemiTrapezoidWidthsAndHeightsBuilder {
+        bottom_width: Length::new::<millimeter>(6.76),
+        bottom_side_width: Length::new::<millimeter>(6.76),
+        top_side_width: Length::new::<millimeter>(8.0),
+        top_width: Length::new::<millimeter>(1.5),
+        opening_width: Length::new::<millimeter>(1.5),
+        bottom_height: Length::new::<millimeter>(0.0),
+        side_height: Length::new::<millimeter>(6.79 - 0.75 - 0.5),
+        top_height: Length::new::<millimeter>(0.5),
+        opening_height: Length::new::<millimeter>(0.75),
+        bottom_radius: Length::new::<millimeter>(0.0),
+        bottom_side_radius: Length::new::<millimeter>(0.0),
+        top_radius: Length::new::<millimeter>(0.0),
+        top_side_radius: Length::new::<millimeter>(0.0),
+        opening_radius: Length::new::<millimeter>(0.0),
+        consider_tooth_tip_leakage: true,
+    }
+    .try_into()
+    .expect("valid slot");
+
+    let air_gap = SlottedAirGap::new(9, false, CarterFactorModel::Bin12, Box::new(slot.clone()));
+    let lin_core_tooth_middle: LinCore = LinCoreBuilder {
+        height: Length::new::<millimeter>(20.0),
+        width: Length::new::<millimeter>(120.0),
+        axial_length: Length::new::<millimeter>(100.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        skew_angle: 0.0,
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 3,
+        air_gap: Box::new(air_gap),
+        flux_barrier: None,
+    }
+    .try_into()?;
+
+    let air_gap: SlottedAirGap =
+        SlottedAirGap::new(9, true, CarterFactorModel::Bin12, Box::new(slot.clone()));
+    let lin_core_slot_middle: LinCore = LinCoreBuilder {
+        height: Length::new::<millimeter>(20.0),
+        width: Length::new::<millimeter>(120.0),
+        axial_length: Length::new::<millimeter>(100.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        skew_angle: 0.0,
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 3,
+        air_gap: Box::new(air_gap),
+        flux_barrier: None,
+    }
+    .try_into()?;
+
+    let fp = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(&format!(
+        "docs/img/lin_slotted_core_slot_vs_tooth_middle.svg"
+    ));
+
+    let width = lin_core_tooth_middle.width().get::<meter>();
+    let xshift = width + distance;
+    let height = lin_core_tooth_middle.height().get::<meter>();
+    let delta = 0.001;
+    let bb = BoundingBox::new(-delta, xshift + width + delta, -delta, 1.4 * height + delta);
+
+    let view = Viewport::from_bounding_box(&bb, SideLength::Long(800));
+    view.write_to_file(&fp, |cr| {
+        cr.set_source_rgb(1.0, 1.0, 1.0);
+        cr.paint()?;
+
+        lin_core_tooth_middle.drawable().draw(cr)?;
+        let text = Text {
+            text: "starts_in_slot_middle = false".to_string(),
+            anchor: Anchor::Center,
+            fixed_anchor_offset: [0.0, 0.0],
+            scaled_anchor_offset: [0.5 * width, 1.2 * height],
+            color: Color {
+                r: 0.0,
+                g: 0.0,
+                b: 0.0,
+                a: 1.0,
+            },
+            font_size: 12.0,
+            angle: 0.0,
+        };
+        text.draw(cr)?;
+
+        cr.translate(xshift, 0.0);
+        lin_core_slot_middle.drawable().draw(cr)?;
+        let text = Text {
+            text: "starts_in_slot_middle = true".to_string(),
+            anchor: Anchor::Center,
+            fixed_anchor_offset: [0.0, 0.0],
+            scaled_anchor_offset: [0.5 * width, 1.2 * height],
+            color: Color {
+                r: 0.0,
+                g: 0.0,
+                b: 0.0,
+                a: 1.0,
+            },
+            font_size: 12.0,
+            angle: 0.0,
+        };
+        text.draw(cr)?;
+
+        return Ok(());
+    })?;
+
     return Ok(());
 }
 

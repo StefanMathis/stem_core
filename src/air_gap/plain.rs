@@ -5,7 +5,7 @@ contour as shown in the image below.
 #![cfg_attr(feature = "doc-images", doc = "")]
 #![cfg_attr(
     feature = "doc-images",
-    doc = "![Slotted linear and rotary core][lin_and_rot_core_plain.svg]"
+    doc = "![Plain linear and rotary core][lin_and_rot_core_plain.svg]"
 )]
 #![cfg_attr(feature = "doc-images",
 cfg_attr(all(),
@@ -373,7 +373,7 @@ impl PlainAirGap {
     #[doc = ""]
     #[cfg_attr(
         feature = "doc-images",
-        doc = "![Air gap winding dimensions][cad_plain_air_gap_winding]"
+        doc = "![Effect of the starts_in_slot_middle parameter][cad_plain_air_gap_winding]"
     )]
     #[cfg_attr(
         feature = "doc-images",
@@ -387,12 +387,15 @@ impl PlainAirGap {
         doc = "**Doc images not enabled**. Compile docs with
         `cargo doc --features 'doc-images'` and Rust version >= 1.54."
     )]
-    /// If the "slot" can not be separated horizontally (e.g. in case of a
-    /// ([`CoilLayout::Single`])), the layers will protrude outside the air gap.
-    /// This is obviously not desired, which is why this parameter should
-    /// generally only be `true` for coil layouts which can be separated
-    /// horizontally ([`CoilLayout::DoubleHorizontal`],
-    /// [`CoilLayout::Quadruple`]).
+    ///
+    /// If the "slot" cannot be separated horizontally (e.g. in case of a
+    /// ([`CoilLayout::Single`])), the layers will protrude outside the air gap
+    /// for a linear core. This is obviously not desirable, which is why
+    /// this parameter should generally only be `true` for coil layouts
+    /// which can be separated horizontally
+    /// ([`CoilLayout::DoubleHorizontal`], [`CoilLayout::Quadruple`]).
+    /// For a rotary core, this is not the case, as there the parameter only
+    /// influences whether the first slot is positioned on the x-axis or not.
     pub fn starts_in_slot_middle(&self) -> bool {
         return self.starts_in_slot_middle;
     }

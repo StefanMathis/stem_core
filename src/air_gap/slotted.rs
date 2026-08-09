@@ -1,3 +1,31 @@
+/*!
+This module provides the [`SlottedAirGap`] for creating a "slotted" air gap with
+[`Slot`]s inserted into the air gap surface.
+ */
+#![cfg_attr(feature = "doc-images", doc = "")]
+#![cfg_attr(
+    feature = "doc-images",
+    doc = "![Slotted linear and rotary core][lin_and_rot_core_slotted.svg]"
+)]
+#![cfg_attr(feature = "doc-images",
+cfg_attr(all(),
+doc = ::embed_doc_image::embed_image!("lin_and_rot_core_slotted.svg", "docs/img/lin_and_rot_core_slotted.svg"),
+))]
+#![cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/*!
+This struct implements the [`AirGap`] trait and can therefore be used to build
+magnetic cores. See the struct docstring for more.
+
+The [`CarterFactorModel`] enables the usage of different algorithms for
+calculating the [`carter_factor`](AirGap::carter_factor) of a core. It is used
+as an argument when creating a [`SlottedAirGap`].
+*/
+
+use std::f64::consts::FRAC_2_PI;
+
 use crate::planar_geo;
 use planar_geo::prelude::*;
 use stem_magnet::assembly::MagnetAssembly;
@@ -17,39 +45,99 @@ use crate::{
     winding_zones::{WindingZones, WindingZonesEqSpaced},
 };
 
-/// Carter factor models for CoreRotSlotted and CoreLinSlotted from a variety of
-/// literature sources. The explanation of those models can be found in the
-/// literature overview
+/// An enum providing different models for calculating the
+/// [`carter_factor`](CoreExt::carter_factor) of a [`SlottedAirGap`].
+///
+/// The _Carter factor_ `kc` describes the effect of non-smooth (e.g. slotted)
+/// air gaps contours on the magnetic resistance / reluctance of the air gap.
+/// The magnetically effective air gap width can be calculated as
+/// kc_stator_core * kc_rotor_core * geometric_air_gap_width` with both factors
+/// being equal to or larger than 1.
+///
+/// This enum provides multiple different models to calculate `k_c` which are
+/// described in the variant docstrings. These models are implemented in the
+/// [`CarterFactorModel::eval`] method, which in turn is used inside
+/// [`SlottedAirGap::carter_factor`]. The "best" model depends heavily on the
+/// particular use case, hence it is recommended to try out different models and
+/// see which one delivers the most realistic results.
+///
+/// Additional models may be added in future releases. Therefore, users should
+/// not rely on this enum being exhaustive when matching against it. For
+/// calculating the Carter factor, use [CarterFactorModel::eval] rather than
+/// reproducing the model-specific calculations.
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum CarterFactorModel {
+    /// Carter factor model from Binder, Andreas: Elektrische Maschinen und
+    /// Antriebe (2012), Springer-Verlag, Berlin Heidelberg, section 3.6:
+    ///
+    /// `k_c = slot_pitch / (slot_pitch - air_gap_width * zeta)` (3.6-1)
+    ///
+    /// with `zeta = 2 / pi * (h * arctan(h/2) - ln(1+(h/2)²))` (3.6-2)
+    /// and `h = slot_opening_width / air_gap_width`.
     Bin12,
+    /// Carter factor model from Müller, G., Vogt, K. and Ponick, B.: Berechnung
+    /// elektrischer Maschinen, 6th edition, Wiley-VCH, 2008, section 2.3.2.2:
+    ///
+    /// `k_c = slot_pitch / (slot_pitch - slot_opening_width * gamma)` (2.3.19)
+    ///
+    /// with `gamma = 1 / (1 + 5 * air_gap_width / slot_opening_width)`
+    /// (2.3.20).
     MVP08,
-    PS62,
 }
 
 impl CarterFactorModel {
-    pub fn carter_factor(
+    /// Calculates the Carter factor `kc` using one of the
+    /// [`CarterFactorModel`]s.
+    ///
+    /// The `air_gap_width` is the geometric distance between stator and rotor
+    /// core. If stator and rotor are rotary cores, this is simply the absolute
+    /// difference between their respective
+    /// [`air_gap_radii`](crate::core::RotCore::air_gap_radius). The other
+    /// arguments describe the air gap geometry; they are described in
+    /// detail within the docstrings of the following methods:
+    /// - `slot_opening_width`: [`Slot::opening_width`]
+    /// - `slot_pitch`: [`CoreExt::slot_pitch`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use approx::assert_abs_diff_eq;
+    ///
+    /// use stem_core::prelude::*;
+    ///
+    /// // A fairly small slot opening
+    /// let air_gap_width = Length::new::<millimeter>(1.0);
+    /// let slot_opening_width = Length::new::<millimeter>(2.0);
+    /// let slot_pitch = Length::new::<millimeter>(10.0);
+    ///
+    /// assert_abs_diff_eq!(CarterFactorModel::Bin12.eval(air_gap_width, slot_opening_width, slot_pitch), 1.059179, epsilon = 1e-6);
+    /// assert_abs_diff_eq!(CarterFactorModel::MVP08.eval(air_gap_width, slot_opening_width, slot_pitch), 1.060606, epsilon = 1e-6);
+    ///
+    /// // A large slot opening (open slot)
+    /// let air_gap_width = Length::new::<millimeter>(1.0);
+    /// let slot_opening_width = Length::new::<millimeter>(5.0);
+    /// let slot_pitch = Length::new::<millimeter>(10.0);
+    ///
+    /// assert_abs_diff_eq!(CarterFactorModel::Bin12.eval(air_gap_width, slot_opening_width, slot_pitch), 1.338269, epsilon = 1e-6);
+    /// assert_abs_diff_eq!(CarterFactorModel::MVP08.eval(air_gap_width, slot_opening_width, slot_pitch), 1.333333, epsilon = 1e-6);
+    /// ```
+    pub fn eval(
         &self,
-        air_gap_length: Length,
-        opening_width: Length,
+        air_gap_width: Length,
+        slot_opening_width: Length,
         slot_pitch: Length,
     ) -> f64 {
         match self {
             Self::Bin12 => {
-                let val = f64::from(opening_width / air_gap_length);
-                let gamma = val.powi(2) / (5.0 + val);
-                return f64::from(slot_pitch / (slot_pitch - gamma * air_gap_length));
+                let h = f64::from(slot_opening_width / air_gap_width);
+                let zeta = FRAC_2_PI * (h * (0.5 * h).atan() - (1.0 + 0.25 * h.powi(2)).ln());
+                return f64::from(slot_pitch / (slot_pitch - zeta * air_gap_width));
             }
             Self::MVP08 => {
-                let gamma = opening_width / (5.0 * air_gap_length + opening_width);
-                return f64::from(slot_pitch / (slot_pitch - gamma * air_gap_length));
-            }
-            Self::PS62 => {
-                return f64::from(
-                    (slot_pitch + 10.0 * air_gap_length)
-                        / (slot_pitch - opening_width + 10.0 * air_gap_length),
-                );
+                let gamma = slot_opening_width / (slot_opening_width + 5.0 * air_gap_width);
+                return f64::from(slot_pitch / (slot_pitch - gamma * slot_opening_width));
             }
         }
     }
@@ -81,13 +169,54 @@ TODO
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SlottedAirGap {
-    slots: u16,
-    starts_in_slot_middle: bool,
-    carter_factor_model: CarterFactorModel,
-    slot: Box<dyn Slot>, // Slot of the core
+    /// Number of slots of the air gap.
+    pub slots: u16,
+    /// Whether the air gap surface starts in the middle of a slot or inbetween
+    /// two slots.
+    ///
+    /// The image below shows the influence of this parameter on the core shape
+    /// for a linear core:
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![Effect of the starts_in_slot_middle parameter][lin_slotted_core_slot_vs_tooth_middle]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image(
+            "lin_slotted_core_slot_vs_tooth_middle",
+            "docs/img/lin_slotted_core_slot_vs_tooth_middle.svg"
+        )
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    ///
+    /// If a [`CoilLayout`] cannot be separated horizontally (e.g. in case of a
+    /// ([`CoilLayout::Single`])), the layers will protrude outside the air gap
+    /// for a linear core. This is obviously not desirable, which is why
+    /// this parameter should generally only be `true` for coil layouts
+    /// which can be separated horizontally
+    /// ([`CoilLayout::DoubleHorizontal`], [`CoilLayout::Quadruple`]).
+    /// For a rotary core, this is not the case, as there the parameter only
+    /// influences whether the first slot is positioned on the x-axis or not.
+    pub starts_in_slot_middle: bool,
+    /// The model used in the implementation of [`AirGap::carter_factor`]. See
+    /// the docstrings of that method and of [`CarterFactorModel`] itself for
+    /// more.
+    pub carter_factor_model: CarterFactorModel,
+    /// The [`Slot`] of the slotted air gap. Its [`outline`](Slot::outline) is
+    /// used to create the core shape.
+    pub slot: Box<dyn Slot>,
 }
 
 impl SlottedAirGap {
+    /// Creates a new [`SlottedAirGap`].
+    ///
+    /// This is a convenience alternative to using the native struct constructor
+    /// directly. See the documentation for the struct fields for details.
     pub fn new(
         slots: u16,
         starts_in_slot_middle: bool,
@@ -102,14 +231,12 @@ impl SlottedAirGap {
         };
     }
 
-    pub fn starts_in_slot_middle(&self) -> bool {
-        return self.starts_in_slot_middle;
-    }
-
-    pub fn carter_factor_model(&self) -> &CarterFactorModel {
-        return &self.carter_factor_model;
-    }
-
+    /// Returns a reference to the
+    /// [`SlottedAirGap::slot`](struct.SlottedAirGap.html#structfield.slot)
+    /// field.
+    ///
+    /// This is a convenience method to get a reference to the [`Slot`] trait
+    /// object.
     pub fn slot(&self) -> &dyn Slot {
         return &*self.slot;
     }
@@ -314,7 +441,7 @@ impl AirGap for SlottedAirGap {
                 core.slots(),
                 &*self.slot,
                 coil_layout,
-                self.starts_in_slot_middle(),
+                self.starts_in_slot_middle,
                 true,
             )),
             CoreRef::Rot(rot) => WindingZones::WindingZonesEqSpacedRot(WindingZonesEqSpaced::<
@@ -325,7 +452,7 @@ impl AirGap for SlottedAirGap {
                 core.slots(),
                 &*self.slot,
                 coil_layout,
-                self.starts_in_slot_middle(),
+                self.starts_in_slot_middle,
                 rot.is_outer(),
             )),
         }
@@ -380,7 +507,7 @@ impl AirGap for SlottedAirGap {
     }
 
     fn carter_factor(&self, core: CoreRef<'_>, air_gap_length: Length) -> f64 {
-        return self.carter_factor_model().carter_factor(
+        return self.carter_factor_model.eval(
             air_gap_length,
             self.slot().opening_width(),
             core.slot_pitch(),

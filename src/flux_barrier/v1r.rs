@@ -304,11 +304,7 @@ impl V1rFluxBarrier {
                 crate::flux_barrier::closest_slot_bottom_middle_rot(middle, &core, ags);
             closest_slot_bottom.rotate([0.0, 0.0], -rotate_to_core_coords);
 
-            let offset_tooth = if ags.starts_in_slot_middle() {
-                0.0
-            } else {
-                0.5
-            };
+            let offset_tooth = if ags.starts_in_slot_middle { 0.0 } else { 0.5 };
             let slot_angle = std::f64::consts::TAU / core.slots() as f64
                 * (slot as f64 + offset_tooth)
                 - rotate_to_core_coords;

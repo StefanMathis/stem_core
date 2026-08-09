@@ -924,7 +924,7 @@ fn test_carter_factor() {
         epsilon = 0.001
     );
 
-    let core = create_outer_core_from_phd(CarterFactorModel::PS62);
+    let core = create_outer_core_from_phd(CarterFactorModel::Bin12);
     approx::assert_abs_diff_eq!(
         core.carter_factor(Length::new::<millimeter>(1.0)),
         1.113640,
@@ -934,7 +934,7 @@ fn test_carter_factor() {
 
 #[test]
 fn test_current_displacement_coefficients() {
-    let core = create_outer_core_from_phd(CarterFactorModel::PS62);
+    let core = create_outer_core_from_phd(CarterFactorModel::Bin12);
 
     let coeffs = core.current_displacement_coefficients().eval(
         Frequency::new::<uom::si::frequency::hertz>(200.0),

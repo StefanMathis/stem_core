@@ -305,7 +305,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
      */
     fn slot_opening_factor(&self, core: CoreRef<'_>, mech_ordinal: i32) -> f64;
 
-    /// Returns the carter factor of `self` for the given `core`.
+    /// Returns the Carter factor of `self` for the given `core`.
     ///
     /// This method implements
     /// [`CoreExt::carter_factor`](crate::core::CoreExt::carter_factor) for the

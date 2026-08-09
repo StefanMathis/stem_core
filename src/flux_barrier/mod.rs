@@ -258,7 +258,7 @@ pub(crate) fn closest_slot_bottom_middle_rot(
     use stem_magnet::planar_geo::Transformation;
     use uom::si::length::meter;
 
-    let offset_slot = if air_gap.starts_in_slot_middle() {
+    let offset_slot = if air_gap.starts_in_slot_middle {
         0.0
     } else {
         0.5

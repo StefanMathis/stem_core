@@ -814,15 +814,15 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     }
 
     /**
-    Returns the carter factor of `self`.
+    Returns the Carter factor of `self`.
 
-    The _carter factor_ `kc `describes the effect of non-smooth (e.g. slotted)
+    The _Carter factor_ `kc` describes the effect of non-smooth (e.g. slotted)
     air gaps contours on the magnetic resistance / reluctance of the air gap.
     The magnetically effective air gap width can be calculated as
     `kc_stator_core * kc_rotor_core * geometric_air_gap_width` with both factors
     being equal to or larger than 1.
 
-    The exact implementation of the carter factor calculation depends on the
+    The exact implementation of the Carter factor calculation depends on the
     [`AirGap`] itself, hence this method forwards to [`AirGap::carter_factor`],
     using `self` as the second argument and `air_gap_length` as the third. See
     the docstring of [`AirGap::carter_factor`] for details and examples.
