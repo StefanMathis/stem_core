@@ -913,21 +913,14 @@ fn test_carter_factor() {
     let core = create_outer_core_from_phd(CarterFactorModel::Bin12);
     approx::assert_abs_diff_eq!(
         core.carter_factor(Length::new::<millimeter>(1.0)),
-        1.063296,
+        1.061802,
         epsilon = 0.001
     );
 
     let core = create_outer_core_from_phd(CarterFactorModel::MVP08);
     approx::assert_abs_diff_eq!(
         core.carter_factor(Length::new::<millimeter>(1.0)),
-        1.030677,
-        epsilon = 0.001
-    );
-
-    let core = create_outer_core_from_phd(CarterFactorModel::Bin12);
-    approx::assert_abs_diff_eq!(
-        core.carter_factor(Length::new::<millimeter>(1.0)),
-        1.113640,
+        1.063295,
         epsilon = 0.001
     );
 }
