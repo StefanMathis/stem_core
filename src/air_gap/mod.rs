@@ -1,3 +1,25 @@
+/*!
+This module defines the [`AirGap`] trait used to customize the air gap contour
+of magnetic cores such as [`LinCore`](crate::core::LinCore) and
+[`RotCore`](crate::core::RotCore).
+
+Besides the aforementioned trait, this module also reexports some implementors
+of the [`AirGap`] trait as well as auxiliary types and functions:
+- [`PlainAirGap`] (reexported from the [`plain`] module) defines a smooth air
+gap contour.
+- [`SlottedAirGap`] (reexported from the [`slotted`] module) uses [`Slot`] trait
+objects to define a grooved ("slotted") air gap. The module also provides the
+[`CarterFactorModel`] enum which is used when creating a [`SlottedAirGap`].
+- [`StraightIndentsAirGap`] "flattens" the core at its poles to provide mounting
+points for magnets with a straight surface such as
+[`BlockMagnet`](stem_magnet::block::BlockMagnet)s. These mounting points can be
+raised or sunken into the core surface. [`AirGapPolygonBuilder`] is a helper
+struct to easily create a polygonal rotary air gap surface from a
+[`StraightIndentsAirGap`].
+
+See the [trait documentation](AirGap) for details.
+ */
+
 use std::f64::consts::PI;
 
 use dyn_clone::DynClone;
