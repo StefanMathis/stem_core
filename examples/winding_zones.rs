@@ -10,7 +10,7 @@ use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let air_gap =
-        PlainAirGap::new(Length::new::<millimeter>(4.0), 0.8, 1, 24, false).expect("valid");
+        PlainAirGap::new(0, Length::new::<millimeter>(4.0), 0.8, 24, false).expect("valid");
     let core_plain: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(55.0),
         yoke_radius: Length::new::<millimeter>(18.0),

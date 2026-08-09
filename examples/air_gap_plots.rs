@@ -184,6 +184,63 @@ fn plot_plain() -> Result<(), Box<dyn std::error::Error>> {
 
         return Ok(());
     })?;
+
+    // =========================================================================
+    // Plot with air gap winding and surface magnets
+
+    let ag = PlainAirGap::new(0, Length::new::<millimeter>(3.0), 0.8, 12, true)?;
+    let rot_core: RotCore = RotCoreBuilder {
+        air_gap_radius: Length::new::<millimeter>(40.0),
+        yoke_radius: Length::new::<millimeter>(19.0),
+        axial_length: Length::new::<millimeter>(165.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 3,
+        skew_angle: 0.0,
+        air_gap: Box::new(ag),
+        flux_barrier: None,
+    }
+    .try_into()?;
+
+    let magnet = ArcParallelMagnet::with_const_thickness(
+        rot_core.axial_length(),
+        rot_core.air_gap_radius(),
+        SideHeightOrThickness::Thickness(Length::new::<millimeter>(4.0)),
+        AngleOrWidth::Angle(0.3 * std::f64::consts::FRAC_PI_2),
+        Arc::new(Material::default()),
+    )?;
+    let mag_assembly = MagnetAssembly::new(magnet, 1.try_into()?, 2.try_into()?);
+
+    let ag_radius = rot_core.air_gap_radius().get::<meter>();
+    let bb = BoundingBox::new(
+        -(ag_radius + 0.005),
+        3.0 * ag_radius + 2.0 * distance + 0.005,
+        -(ag_radius + 0.005),
+        ag_radius + 0.005,
+    );
+
+    let fp = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join(&format!("docs/img/magnets_and_winding_plain.svg"));
+
+    let view = Viewport::from_bounding_box(&bb, SideLength::Long(800));
+    view.write_to_file(&fp, |cr| {
+        cr.set_source_rgb(1.0, 1.0, 1.0);
+        cr.paint()?;
+
+        rot_core.drawable().draw(cr)?;
+        for w in rot_core.winding_zones(&CoilLayout::Single) {
+            w.into_drawable().draw(cr)?;
+        }
+
+        cr.translate(distance + 2.0 * ag_radius, 0.0);
+        rot_core.drawable().draw(cr)?;
+        for m in rot_core.surface_magnets(&mag_assembly, true) {
+            m.into_drawable().draw(cr)?;
+        }
+
+        return Ok(());
+    })?;
     return Ok(());
 }
 

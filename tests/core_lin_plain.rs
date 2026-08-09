@@ -6,7 +6,7 @@ use stem_core::{magnets::PositionedMagnetShape, prelude::*};
 
 #[test]
 fn test_properties() {
-    let air_gap = PlainAirGap::new(Length::new::<millimeter>(10.0), 0.7, 1, 12, false).unwrap();
+    let air_gap = PlainAirGap::new(1, Length::new::<millimeter>(10.0), 0.7, 12, false).unwrap();
 
     let core = LinCore::try_from(LinCoreBuilder {
         height: Length::new::<millimeter>(25.0),
@@ -39,7 +39,7 @@ fn test_properties() {
 
 #[test]
 fn test_current_displacement_coefficients() {
-    let air_gap = PlainAirGap::new(Length::new::<millimeter>(10.0), 0.7, 1, 12, false).unwrap();
+    let air_gap = PlainAirGap::new(1, Length::new::<millimeter>(10.0), 0.7, 12, false).unwrap();
 
     let core = LinCore::try_from(LinCoreBuilder {
         height: Length::new::<millimeter>(25.0),
@@ -66,7 +66,7 @@ fn test_current_displacement_coefficients() {
 
 #[test]
 fn test_failed_creating_core() {
-    let air_gap = PlainAirGap::new(Length::new::<millimeter>(0.0), 1.0, 1, 12, true).unwrap();
+    let air_gap = PlainAirGap::new(1, Length::new::<millimeter>(0.0), 1.0, 12, true).unwrap();
 
     // Fails because the iron fill factor is not between 0 and 1
     assert!(
@@ -105,7 +105,7 @@ fn test_failed_creating_core() {
 
 #[test]
 fn test_pole_coverage() {
-    let air_gap = PlainAirGap::new(Length::new::<millimeter>(0.0), 1.0, 1, 12, true).unwrap();
+    let air_gap = PlainAirGap::new(1, Length::new::<millimeter>(0.0), 1.0, 12, true).unwrap();
 
     let core = LinCore::try_from(LinCoreBuilder {
         height: Length::new::<millimeter>(25.0),
@@ -138,7 +138,7 @@ fn test_pole_coverage() {
 
 #[test]
 fn test_plot_core() {
-    let air_gap = PlainAirGap::new(Length::new::<millimeter>(10.0), 0.7, 1, 12, false).unwrap();
+    let air_gap = PlainAirGap::new(1, Length::new::<millimeter>(10.0), 0.7, 12, false).unwrap();
 
     let core = LinCore::try_from(LinCoreBuilder {
         height: Length::new::<millimeter>(25.0),
@@ -170,7 +170,7 @@ fn test_plot_core() {
 
 #[test]
 fn test_plot_air_gap_winding() {
-    let air_gap = PlainAirGap::new(Length::new::<millimeter>(10.0), 0.7, 1, 12, false).unwrap();
+    let air_gap = PlainAirGap::new(1, Length::new::<millimeter>(10.0), 0.7, 12, false).unwrap();
 
     let core = LinCore::try_from(LinCoreBuilder {
         height: Length::new::<millimeter>(25.0),
@@ -256,7 +256,7 @@ fn test_plot_air_gap_winding() {
 
 #[test]
 fn test_plot_air_gap_winding_slot_middle() {
-    let air_gap = PlainAirGap::new(Length::new::<millimeter>(10.0), 0.9, 1, 12, true).unwrap();
+    let air_gap = PlainAirGap::new(1, Length::new::<millimeter>(10.0), 0.9, 12, true).unwrap();
 
     let core = LinCore::try_from(LinCoreBuilder {
         height: Length::new::<millimeter>(25.0),
@@ -324,7 +324,7 @@ fn test_plot_air_gap_winding_slot_middle() {
 
 #[test]
 fn test_plot_air_gap_winding_zero_coverage() {
-    let air_gap = PlainAirGap::new(Length::new::<millimeter>(10.0), 0.0, 1, 12, true).unwrap();
+    let air_gap = PlainAirGap::new(1, Length::new::<millimeter>(10.0), 0.0, 12, true).unwrap();
 
     let core = LinCore::try_from(LinCoreBuilder {
         height: Length::new::<millimeter>(25.0),
@@ -370,7 +370,7 @@ fn test_plot_air_gap_winding_zero_coverage() {
 
 #[test]
 fn test_plot_air_gap_surface_magnets() {
-    let air_gap = PlainAirGap::new(Length::new::<millimeter>(10.0), 0.0, 1, 12, true).unwrap();
+    let air_gap = PlainAirGap::new(1, Length::new::<millimeter>(10.0), 0.0, 12, true).unwrap();
 
     let core = LinCore::try_from(LinCoreBuilder {
         height: Length::new::<millimeter>(25.0),

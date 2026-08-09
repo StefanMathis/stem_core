@@ -355,7 +355,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     use stem_core::prelude::*;
 
     // 80 % of a slot pitch is covered by coils
-    let air_gap = PlainAirGap::new(Length::new::<millimeter>(0.0), 0.8, 1, 36, true).unwrap();
+    let air_gap = PlainAirGap::new(0, Length::new::<millimeter>(1.0), 0.8, 36, true).unwrap();
     let core: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(55.0),
         yoke_radius: Length::new::<millimeter>(18.0),

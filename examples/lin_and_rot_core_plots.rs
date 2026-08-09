@@ -166,14 +166,8 @@ fn plot_lin_core_air_gap_and_slotted_winding() -> Result<(), Box<dyn std::error:
     let height = 0.018;
     let air_gap_height = 0.005;
 
-    let plain_air_gap = PlainAirGap::new(
-        Length::new::<meter>(air_gap_height),
-        0.8,
-        1.try_into()?,
-        12,
-        false,
-    )
-    .expect("valid inputs");
+    let plain_air_gap = PlainAirGap::new(0, Length::new::<meter>(air_gap_height), 0.8, 12, false)
+        .expect("valid inputs");
 
     let plain_lin_core: LinCore = LinCoreBuilder {
         height: Length::new::<meter>(height),

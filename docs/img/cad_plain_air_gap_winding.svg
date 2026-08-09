@@ -1,0 +1,698 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="408.164mm" height="171.45mm"
+ viewBox="0 0 1157 486"
+ xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  version="1.2" baseProfile="tiny">
+<title>Qt SVG Document</title>
+<desc>Generated with Qt</desc>
+<defs>
+</defs>
+<g fill="none" stroke="black" stroke-width="1" fill-rule="evenodd" stroke-linecap="square" stroke-linejoin="bevel" >
+
+<g fill="#ffffff" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Ubuntu Sans" font-size="11" font-weight="400" font-style="normal" 
+>
+<rect x="0" y="0" width="1157" height="486"/>
+</g>
+
+<g fill="none" stroke="#000000" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" transform="matrix(1,0,0,1,0,0)"
+font-family="Ubuntu Sans" font-size="11" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1042,388 1051,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1042,371 1068,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1046,357 1085,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1063,357 1103,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1081,357 1120,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1098,357 1121,380 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1115,357 1121,362 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="998,396 1003,391 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="981,396 1003,374 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="963,396 998,361 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="946,396 985,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="946,396 985,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="929,396 968,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="925,383 951,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="925,365 933,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="998,361 1003,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="846,382 860,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="846,365 877,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="855,357 895,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="873,357 912,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="890,357 925,392 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="907,357 925,374 " />
+</g>
+
+<g fill="#000000" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Ubuntu Sans" font-size="11" font-weight="400" font-style="normal" 
+>
+<circle cx="925" cy="357" r="0.5"/>
+</g>
+
+<g fill="none" stroke="#000000" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" transform="matrix(1,0,0,1,0,0)"
+font-family="Ubuntu Sans" font-size="11" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="non-scaling-stroke" points="790,396 807,379 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="773,396 807,362 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="756,396 795,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="738,396 777,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="729,388 760,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="729,371 743,357 " />
+</g>
+
+<g fill="#000000" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Ubuntu Sans" font-size="11" font-weight="400" font-style="normal" 
+>
+<circle cx="513" cy="396" r="0.5"/>
+</g>
+
+<g fill="none" stroke="#000000" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" transform="matrix(1,0,0,1,0,0)"
+font-family="Ubuntu Sans" font-size="11" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="non-scaling-stroke" points="496,396 513,379 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="478,396 513,361 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="461,396 500,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="444,396 483,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="435,388 466,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="435,370 448,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="357,395 358,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="357,378 375,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="357,360 392,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="371,357 410,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="388,357 427,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="405,357 435,387 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="422,357 435,369 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="305,396 317,384 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="288,396 314,370 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="288,396 314,370 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="271,396 306,361 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="253,396 293,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="239,393 275,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="239,376 258,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="239,358 241,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="314,370 317,367 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="314,370 317,367 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="306,361 310,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="161,389 167,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="161,372 185,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="163,357 202,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="180,357 219,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="197,357 237,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="215,357 239,381 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="232,357 239,364 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="141,396 533,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="239,396 161,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="161,396 161,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="161,357 239,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="239,357 239,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="239,396 317,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="317,396 317,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="317,357 239,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="239,357 239,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="357,396 435,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="435,396 435,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="435,357 357,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="357,357 357,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="435,396 513,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="513,396 513,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="513,357 435,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="435,357 435,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="729,396 1121,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="729,396 807,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="807,396 807,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="807,357 729,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="729,357 729,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="846,396 925,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="925,396 925,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="925,357 846,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="846,357 846,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="925,396 1003,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1003,396 1003,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1003,357 925,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="925,357 925,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1121,396 1042,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1042,396 1042,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1042,357 1121,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1121,357 1121,396 " />
+</g>
+
+<g fill="none" stroke="#0000ff" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" transform="matrix(1,0,0,1,0,0)"
+font-family="Ubuntu Sans" font-size="11" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="non-scaling-stroke" points="43,318 43,435 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="18,344 18,339 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="21,336 19,336 18,337 18,339 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="21,336 31,336 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="31,336 31,341 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="24,341 25,343 26,344 27,345 29,344 30,343 31,342 31,341 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="24,341 24,336 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="31,329 18,329 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="12,329 11,329 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="31,323 18,323 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="18,323 18,316 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="18,316 20,316 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="37,310 37,286 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="37,278 37,274 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="37,274 37,272 36,271 34,271 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="34,271 18,271 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="18,271 18,276 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="18,276 18,278 19,279 21,279 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="21,279 28,279 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="28,279 29,279 30,278 31,276 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="31,276 31,271 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="18,263 18,259 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="21,255 19,256 18,257 18,258 18,259 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="21,255 31,255 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="31,255 31,261 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="24,261 25,262 26,264 27,264 29,264 30,263 31,261 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="24,261 24,255 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="37,249 18,249 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="18,249 18,243 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="21,240 19,240 18,242 18,243 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="21,240 28,240 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="31,243 30,242 29,241 28,240 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="31,243 31,249 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="37,234 37,210 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="18,203 31,200 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="31,200 22,197 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="22,197 31,193 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="31,193 18,190 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="31,183 18,183 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="12,183 11,183 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="31,177 18,177 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="18,177 18,172 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="21,168 19,169 18,170 18,171 18,172 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="21,168 31,168 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="11,153 31,153 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="31,153 31,158 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="28,162 29,161 30,160 31,159 31,158 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="28,162 21,162 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="18,158 18,160 19,161 21,162 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="18,158 18,153 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="31,146 18,146 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="12,146 11,146 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="31,140 18,140 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="18,140 18,134 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="21,131 19,132 18,133 18,134 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="21,131 31,131 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="37,124 37,119 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="37,119 37,118 36,117 34,116 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="34,116 18,116 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="18,116 18,121 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="18,121 18,123 19,124 21,125 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="21,125 28,125 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="28,125 29,124 30,123 31,122 31,121 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="31,121 31,116 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="37,109 37,86 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="31,79 11,79 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="18,79 18,74 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="21,70 19,71 18,72 18,73 18,74 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="21,70 31,70 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="31,55 31,60 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="28,64 29,63 30,62 31,61 31,60 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="28,64 22,64 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="22,55 20,55 19,57 18,59 18,61 19,62 20,63 22,64 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="22,55 24,55 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="24,55 24,64 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="31,48 18,48 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="12,48 11,48 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="37,41 37,37 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="37,37 37,35 36,34 34,33 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="34,33 18,33 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="18,33 18,39 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="18,39 18,40 19,41 21,42 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="21,42 28,42 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="28,42 29,42 30,40 31,39 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="31,39 31,33 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="31,27 11,27 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="18,27 18,21 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="21,18 19,18 18,20 18,21 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="21,18 31,18 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="31,9 11,9 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="18,11 18,5 " />
+</g>
+
+<g fill="#0000ff" fill-opacity="1" stroke="#0000ff" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" transform="matrix(1,0,0,1,0,0)"
+font-family="Ubuntu Sans" font-size="11" font-weight="400" font-style="normal" 
+>
+<path vector-effect="non-scaling-stroke" fill-rule="evenodd" d="M43,357 L40,337 L46,337 L43,357"/>
+</g>
+
+<g fill="#0000ff" fill-opacity="1" stroke="#0000ff" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" transform="matrix(1,0,0,1,0,0)"
+font-family="Ubuntu Sans" font-size="11" font-weight="400" font-style="normal" 
+>
+<path vector-effect="non-scaling-stroke" fill-rule="evenodd" d="M43,396 L46,416 L40,416 L43,396"/>
+</g>
+
+<g fill="none" stroke="#0000ff" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" transform="matrix(1,0,0,1,0,0)"
+font-family="Ubuntu Sans" font-size="11" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="non-scaling-stroke" points="161,357 19,357 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="161,396 19,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="141,249 337,249 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="169,236 171,236 173,237 175,237 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="175,237 177,236 178,236 178,234 178,233 177,232 176,232 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="176,232 171,229 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="172,224 171,224 170,225 169,226 170,228 170,229 171,229 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="177,225 175,224 173,224 172,224 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="185,217 185,235 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="185,235 185,236 186,236 187,237 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="193,232 194,234 195,236 197,237 199,237 200,236 202,234 202,232 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="193,232 193,228 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="202,228 202,226 200,225 198,224 196,224 195,225 194,226 193,228 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="202,228 202,232 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="211,237 211,217 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="208,224 215,224 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="222,243 246,243 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="252,243 252,224 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="252,224 257,224 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="261,227 260,225 259,224 258,224 257,224 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="261,227 261,234 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="257,237 259,236 260,235 261,234 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="257,237 252,237 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="267,237 267,224 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="267,218 267,217 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="276,237 276,217 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="274,224 280,224 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="293,224 290,224 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="290,224 289,224 287,225 287,227 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="287,227 287,234 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="287,234 287,235 288,236 290,237 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="290,237 293,237 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="300,237 300,217 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="300,224 305,224 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="309,227 308,225 307,224 306,224 305,224 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="309,227 309,237 " />
+</g>
+
+<g fill="#0000ff" fill-opacity="1" stroke="#0000ff" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" transform="matrix(1,0,0,1,0,0)"
+font-family="Ubuntu Sans" font-size="11" font-weight="400" font-style="normal" 
+>
+<path vector-effect="non-scaling-stroke" fill-rule="evenodd" d="M141,249 L161,246 L161,252 L141,249"/>
+</g>
+
+<g fill="#0000ff" fill-opacity="1" stroke="#0000ff" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" transform="matrix(1,0,0,1,0,0)"
+font-family="Ubuntu Sans" font-size="11" font-weight="400" font-style="normal" 
+>
+<path vector-effect="non-scaling-stroke" fill-rule="evenodd" d="M337,249 L317,252 L317,246 L337,249"/>
+</g>
+
+<g fill="none" stroke="#0000ff" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" transform="matrix(1,0,0,1,0,0)"
+font-family="Ubuntu Sans" font-size="11" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="non-scaling-stroke" points="141,396 141,225 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="337,396 337,225 " />
+</g>
+
+<g fill="none" stroke="#000000" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" transform="matrix(1,0,0,1,0,0)"
+font-family="Ubuntu Sans" font-size="11" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="non-scaling-stroke" points="533,445 141,445 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="533,396 533,445 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="141,445 141,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1121,445 729,445 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1121,396 1121,445 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="729,445 729,396 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="719,473 721,474 723,474 725,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="725,474 726,474 727,473 728,472 728,471 727,470 726,469 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="726,469 721,467 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="722,461 720,462 719,463 719,464 719,465 720,466 721,467 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="727,462 725,462 723,461 722,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="736,474 736,455 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="734,461 741,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="748,461 753,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="756,465 756,463 755,462 753,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="756,465 756,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="756,474 751,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="751,468 749,468 748,469 747,471 748,473 749,474 750,474 751,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="751,468 756,468 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="763,474 763,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="763,461 769,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="769,461 769,464 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="778,474 778,455 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="776,461 782,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="789,473 791,474 793,474 795,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="795,474 796,474 797,473 797,472 797,471 796,470 796,469 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="796,469 790,467 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="791,461 790,462 789,463 789,464 789,465 790,466 790,467 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="796,462 794,462 793,461 791,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="804,481 828,481 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="834,474 834,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="834,456 834,455 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="841,474 841,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="841,461 846,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="850,465 849,463 848,462 847,461 846,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="850,465 850,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="856,481 880,481 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="887,473 889,474 891,474 893,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="893,474 894,474 895,473 895,472 895,471 894,470 894,469 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="894,469 888,467 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="889,461 888,462 887,463 887,464 887,465 888,466 888,467 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="894,462 892,462 890,461 889,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="902,455 902,472 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="902,472 902,473 903,474 904,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="911,470 911,472 912,474 914,474 916,474 918,473 919,472 919,470 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="911,470 911,466 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="919,466 919,464 918,462 916,461 914,462 912,462 911,464 911,466 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="919,466 919,470 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="928,474 928,455 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="926,461 932,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="939,481 963,481 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="976,474 976,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="969,474 969,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="969,461 979,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="983,465 982,463 981,462 979,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="983,465 983,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="989,474 989,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="989,456 989,455 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1004,455 1004,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1004,474 999,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="996,471 996,473 997,474 999,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="996,471 996,465 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="999,461 997,462 996,463 996,464 996,465 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="999,461 1004,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1020,455 1020,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1020,474 1014,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1011,471 1011,473 1012,474 1014,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1011,471 1011,465 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1014,461 1013,462 1011,463 1011,464 1011,465 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1014,461 1020,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1026,455 1026,472 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1026,472 1026,473 1027,474 1028,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1043,474 1038,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1035,471 1035,473 1036,474 1038,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1035,471 1035,466 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1043,466 1043,464 1042,462 1040,461 1038,462 1036,462 1035,464 1035,466 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1043,466 1043,468 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1043,468 1035,468 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1065,471 1073,471 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1065,465 1073,465 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1097,474 1097,455 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1095,461 1101,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1108,474 1108,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1108,461 1114,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1114,461 1114,464 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1121,461 1121,471 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1121,471 1121,473 1122,474 1124,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1124,474 1129,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1129,474 1129,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1145,474 1139,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1136,471 1136,473 1138,474 1139,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1136,471 1136,466 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1145,466 1144,464 1143,462 1141,461 1139,462 1137,462 1136,464 1136,466 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1145,466 1145,468 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="1145,468 1136,468 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="121,473 123,474 125,474 127,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="127,474 129,474 130,473 130,472 130,471 129,470 129,469 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="129,469 123,467 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="124,461 123,462 122,463 121,464 122,465 122,466 123,467 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="129,462 127,462 125,461 124,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="139,474 139,455 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="137,461 143,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="151,461 155,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="158,465 158,463 157,462 155,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="158,465 158,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="158,474 153,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="153,468 151,468 150,469 150,471 150,473 151,474 153,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="153,468 158,468 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="165,474 165,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="165,461 171,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="171,461 171,464 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="180,474 180,455 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="178,461 185,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="191,473 193,474 195,474 197,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="197,474 198,474 199,473 200,472 200,471 199,470 198,469 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="198,469 193,467 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="194,461 192,462 192,463 191,464 191,465 192,466 193,467 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="199,462 197,462 195,461 194,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="206,481 230,481 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="237,474 237,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="237,456 237,455 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="243,474 243,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="243,461 249,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="252,465 252,463 251,462 249,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="252,465 252,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="259,481 283,481 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="289,473 291,474 293,474 295,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="295,474 296,474 297,473 298,472 298,471 297,470 296,469 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="296,469 291,467 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="292,461 290,462 289,463 289,464 289,465 290,466 291,467 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="297,462 295,462 293,461 292,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="304,455 304,472 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="304,472 305,473 305,474 306,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="313,470 313,472 315,474 317,474 319,474 320,473 321,472 322,470 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="313,470 313,466 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="322,466 321,464 320,462 318,461 316,462 314,462 313,464 313,466 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="322,466 322,470 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="330,474 330,455 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="328,461 335,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="341,481 365,481 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="378,474 378,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="372,474 372,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="372,461 382,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="385,465 384,463 383,462 382,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="385,465 385,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="391,474 391,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="391,456 391,455 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="407,455 407,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="407,474 401,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="398,471 398,473 399,474 401,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="398,471 398,465 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="401,461 400,462 398,463 398,464 398,465 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="401,461 407,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="422,455 422,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="422,474 416,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="413,471 414,473 415,474 416,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="413,471 413,465 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="416,461 415,462 414,463 413,464 413,465 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="416,461 422,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="428,455 428,472 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="428,472 429,473 429,474 430,474 431,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="446,474 440,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="437,471 438,473 439,474 440,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="437,471 437,466 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="446,466 445,464 444,462 442,461 440,462 439,462 437,464 437,466 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="446,466 446,468 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="446,468 437,468 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="467,471 476,471 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="467,465 476,465 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="499,474 499,458 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="502,455 501,455 500,456 499,458 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="502,455 504,455 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="497,461 504,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="511,461 515,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="519,465 518,463 517,462 516,461 515,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="519,465 519,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="519,474 513,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="513,468 512,468 511,469 510,471 510,473 511,474 513,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="513,468 519,468 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="525,455 525,472 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="525,472 526,473 526,474 527,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="534,473 536,474 538,474 540,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="540,474 541,474 542,473 543,472 542,471 542,470 541,469 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="541,469 536,467 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="537,461 535,462 534,463 534,464 534,465 535,466 536,467 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="542,462 540,462 538,461 537,461 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="558,474 552,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="549,471 550,473 551,474 552,474 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="549,471 549,466 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="558,466 557,464 556,462 554,461 552,462 551,462 550,464 549,466 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="558,466 558,468 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="558,468 549,468 " />
+</g>
+
+<g fill="none" stroke="#0000ff" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" transform="matrix(1,0,0,1,0,0)"
+font-family="Ubuntu Sans" font-size="11" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="non-scaling-stroke" points="161,318 317,318 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="166,304 168,305 170,305 172,305 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="172,305 173,305 174,304 175,303 174,302 174,301 173,300 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="173,300 168,298 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="169,292 167,293 166,294 166,295 166,296 167,297 168,298 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="174,293 172,293 170,292 169,292 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="181,286 181,303 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="181,303 182,304 182,305 183,305 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="190,301 190,303 192,305 194,305 195,305 197,304 198,303 199,301 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="190,301 190,297 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="199,297 198,295 197,293 195,292 193,292 191,293 190,295 190,297 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="199,297 199,301 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="207,305 207,286 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="205,292 212,292 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="218,312 242,312 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="249,292 252,305 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="252,305 255,297 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="255,297 259,305 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="259,305 262,292 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="268,305 268,292 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="268,287 268,286 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="284,286 284,305 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="284,305 278,305 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="275,302 275,304 276,305 278,305 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="275,302 275,296 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="278,292 277,293 275,294 275,295 275,296 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="278,292 284,292 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="292,305 292,286 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="290,292 297,292 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="303,305 303,286 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="303,292 309,292 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="312,296 312,294 310,293 309,292 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="312,296 312,305 " />
+</g>
+
+<g fill="#0000ff" fill-opacity="1" stroke="#0000ff" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" transform="matrix(1,0,0,1,0,0)"
+font-family="Ubuntu Sans" font-size="11" font-weight="400" font-style="normal" 
+>
+<path vector-effect="non-scaling-stroke" fill-rule="evenodd" d="M161,318 L180,314 L180,321 L161,318"/>
+</g>
+
+<g fill="#0000ff" fill-opacity="1" stroke="#0000ff" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" transform="matrix(1,0,0,1,0,0)"
+font-family="Ubuntu Sans" font-size="11" font-weight="400" font-style="normal" 
+>
+<path vector-effect="non-scaling-stroke" fill-rule="evenodd" d="M317,318 L298,321 L298,314 L317,318"/>
+</g>
+
+<g fill="none" stroke="#0000ff" stroke-opacity="1" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" transform="matrix(1,0,0,1,0,0)"
+font-family="Ubuntu Sans" font-size="11" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="non-scaling-stroke" points="161,357 161,293 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="317,357 317,293 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="141,128 144,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="144,141 148,133 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="148,133 151,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="151,141 154,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="161,141 161,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="161,123 161,122 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="167,141 167,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="167,128 173,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="176,132 175,130 174,129 173,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="176,132 176,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="191,122 191,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="191,141 186,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="182,138 183,140 184,141 185,141 186,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="182,138 182,132 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="186,128 184,129 183,130 182,131 182,132 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="186,128 191,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="198,141 198,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="198,123 198,122 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="204,141 204,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="204,128 210,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="213,132 212,130 211,129 210,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="213,132 213,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="220,148 225,148 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="225,148 226,147 228,146 228,145 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="228,145 228,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="228,128 223,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="223,128 221,129 220,130 219,131 219,132 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="219,132 219,138 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="219,138 220,140 221,141 222,141 223,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="223,141 228,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="235,148 259,148 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="272,128 268,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="268,128 267,129 266,130 265,131 265,132 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="265,132 265,138 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="265,138 266,140 267,141 268,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="268,141 272,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="278,137 279,139 280,140 282,141 284,141 285,140 287,139 287,137 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="278,137 278,133 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="287,133 286,131 285,129 283,128 281,128 280,129 278,131 278,133 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="287,133 287,137 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="293,128 298,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="298,141 302,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="317,141 312,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="309,138 309,140 310,141 312,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="309,138 309,133 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="317,133 317,131 316,129 314,128 312,128 310,129 309,131 309,133 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="317,133 317,135 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="317,135 309,135 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="324,141 324,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="324,128 330,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="330,128 330,130 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="338,128 342,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="346,132 345,130 344,129 343,128 342,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="346,132 346,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="346,141 340,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="340,135 339,135 337,136 337,138 337,139 338,141 340,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="340,135 346,135 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="353,148 358,148 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="358,148 359,147 360,146 361,145 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="361,145 361,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="361,128 355,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="355,128 354,129 353,130 352,131 352,132 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="352,132 352,138 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="352,138 353,140 354,141 355,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="355,141 361,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="376,141 371,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="367,138 368,140 369,141 370,141 371,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="367,138 367,133 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="376,133 376,131 374,129 373,128 371,128 369,129 368,131 367,133 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="376,133 376,135 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="376,135 367,135 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="397,138 406,138 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="397,132 406,132 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="427,140 429,141 431,141 433,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="433,141 435,141 436,140 436,139 436,137 435,136 434,136 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="434,136 429,133 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="430,128 429,129 428,129 427,131 428,132 428,133 429,133 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="435,129 433,129 431,128 430,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="443,122 443,139 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="443,139 443,140 444,141 445,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="451,137 452,139 453,140 455,141 457,141 459,140 460,139 460,137 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="451,137 451,133 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="460,133 460,131 458,129 456,128 454,128 453,129 452,131 451,133 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="460,133 460,137 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="469,141 469,122 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="466,128 473,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="480,148 504,148 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="510,128 513,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="513,141 517,133 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="517,133 520,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="520,141 523,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="530,141 530,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="530,123 530,122 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="545,122 545,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="545,141 539,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="536,138 537,140 538,141 539,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="536,138 536,132 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="539,128 538,129 537,130 536,131 536,132 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="539,128 545,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="554,141 554,122 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="551,128 558,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="564,141 564,122 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="564,128 570,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="573,132 573,130 572,129 570,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="573,132 573,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="594,141 603,122 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="624,140 626,141 628,141 630,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="630,141 632,141 633,140 633,139 633,137 632,136 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="632,136 626,133 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="627,128 626,129 625,129 624,131 625,132 625,133 626,133 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="632,129 630,129 628,128 627,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="640,122 640,139 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="640,139 640,140 641,141 642,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="648,137 649,139 650,140 652,141 654,141 656,140 657,139 657,137 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="648,137 648,133 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="657,133 657,131 655,129 653,128 652,128 650,129 649,131 648,133 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="657,133 657,137 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="666,141 666,122 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="664,128 670,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="677,148 701,148 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="707,148 707,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="707,128 713,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="716,132 715,130 714,129 713,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="716,132 716,138 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="713,141 714,141 715,140 716,138 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="713,141 707,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="722,141 722,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="722,123 722,122 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="731,141 731,122 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="729,128 735,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="748,128 745,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="745,128 744,129 742,130 742,131 742,132 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="742,132 742,138 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="742,138 742,140 743,141 745,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="745,141 748,141 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="755,141 755,122 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="755,128 760,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="764,132 763,130 762,129 761,128 760,128 " />
+<polyline fill="none" vector-effect="non-scaling-stroke" points="764,132 764,141 " />
+</g>
+</g>
+</svg>

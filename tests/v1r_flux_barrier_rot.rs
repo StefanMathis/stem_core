@@ -314,14 +314,8 @@ fn test_plain_core_90deg_open() {
         cache: None,
     };
 
-    let air_gap = PlainAirGap::new(
-        Length::new::<meter>(0.0),
-        1.0,
-        1.try_into().unwrap(),
-        28,
-        true,
-    )
-    .expect("valid data");
+    let air_gap =
+        PlainAirGap::new(1, Length::new::<meter>(0.0), 1.0, 28, true).expect("valid data");
     let core: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(54.4),
         yoke_radius: Length::new::<millimeter>(19.0),

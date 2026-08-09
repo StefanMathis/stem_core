@@ -6,14 +6,7 @@ use stem_core::prelude::*;
 use stem_slot::semi_trapezoid::SemiTrapezoidWidthsAndHeightsBuilder;
 
 fn create_plain_inner_core(flux_barrier: Option<Star1FluxBarrier>) -> RotCore {
-    let air_gap = PlainAirGap::new(
-        Length::new::<millimeter>(10.0),
-        0.7,
-        1.try_into().unwrap(),
-        12,
-        false,
-    )
-    .unwrap();
+    let air_gap = PlainAirGap::new(1, Length::new::<millimeter>(10.0), 0.7, 12, false).unwrap();
 
     let flux_barrier: Option<Box<dyn FluxBarrier>> = flux_barrier
         .map(Box::new)
@@ -36,14 +29,7 @@ fn create_plain_inner_core(flux_barrier: Option<Star1FluxBarrier>) -> RotCore {
 }
 
 fn create_plain_outer_core(flux_barrier: Option<Star1FluxBarrier>) -> RotCore {
-    let air_gap = PlainAirGap::new(
-        Length::new::<millimeter>(10.0),
-        0.7,
-        1.try_into().unwrap(),
-        12,
-        false,
-    )
-    .unwrap();
+    let air_gap = PlainAirGap::new(1, Length::new::<millimeter>(10.0), 0.7, 12, false).unwrap();
 
     let flux_barrier: Option<Box<dyn FluxBarrier>> = flux_barrier
         .map(Box::new)
