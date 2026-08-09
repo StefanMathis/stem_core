@@ -55,6 +55,29 @@ impl CarterFactorModel {
     }
 }
 
+/**
+
+*/
+#[doc = ""]
+#[cfg_attr(
+    feature = "doc-images",
+    doc = "![Linear and rotary core with a slotted air gap][lin_and_rot_core_slotted]"
+)]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image(
+        "lin_and_rot_core_slotted",
+        "docs/img/lin_and_rot_core_slotted.svg"
+    )
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/**
+TODO
+ */
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SlottedAirGap {

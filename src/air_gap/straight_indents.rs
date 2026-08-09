@@ -21,6 +21,29 @@ use crate::{
     winding_zones::{WindingZones, WindingZonesEqSpaced},
 };
 
+/**
+
+*/
+#[doc = ""]
+#[cfg_attr(
+    feature = "doc-images",
+    doc = "![Linear and rotary core with a straight indents air gap][lin_and_rot_core_straight_indents]"
+)]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image(
+        "lin_and_rot_core_straight_indents",
+        "docs/img/lin_and_rot_core_straight_indents.svg"
+    )
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/**
+TODO
+ */
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(deny_unknown_fields))]

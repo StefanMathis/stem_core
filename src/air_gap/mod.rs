@@ -24,11 +24,33 @@ be used standalone, but instead are called from the corresponding [`CoreExt`]
 methods, using core.air_gap() as first, core as second arg. Hence, these methods
 basically implement the [`CoreExt`] methods.
 
+None of the methods are meant to be called by user code. Instead, all methods
+except combine are used to implement the [CoreExt] methods of the same name
+Examples are just here to demonstrate how the methods work
+
+. combine
+is used in LinCore::new / RotCore::new to create the core shape and to check
+the general compatibility of air gap and core.
+
 See docstring of CoreExt for in-depth discussion.
 
 Comment to architecture: Instead of having a RotCoreSlotted or a RotCorePlain,
 keep variants in check through composition
  */
+#[doc = ""]
+#[cfg_attr(feature = "doc-images", doc = "![Main dimensions][cad_lin_core_dims]")]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image("cad_lin_core_dims", "docs/img/cad_lin_core_dims.svg")
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/**
+
+*/
 #[cfg_attr(feature = "serde", typetag::serde)]
 pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// Returns the discretization / number of segments of the core.
@@ -169,16 +191,17 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// Combines `self` with the `core` and returns the resulting cross-section
     /// shape.
     ///
-    /// This method is used when creating a [`LinCore`] / [`RotCore`] out of a
-    /// [`LinCoreBuilder`] / [`RotCoreBuilder`]. It therefore functions as a
-    /// general hook to check the compatibility of the [`AirGap`] with the core.
-    /// For example, when combining an [`SlottedAirGap`] with a [`LinCore`], the
-    /// latter must be high enough to accomodate the slot (otherwise the shape
-    /// creation will fail). But even if the shape creation succeeds, an
-    /// [`AirGap`] might still be incompatible to a core: If for example the
+    /// This method is used inside [`LinCore::new`] / [`RotCore::new`] to
+    /// generate the core shape. It therefore functions as a general hook to
+    /// check the compatibility of the [`AirGap`] with the core. For example,
+    /// when combining an [`SlottedAirGap`] with a [`LinCore`], the
+    /// latter must be high enough to accomodate the slot. But even if the shape
+    /// creation succeeds, an [`AirGap`] might still be incompatible to a
+    /// core: If for example the
     /// [`air_gap_winding_height`](PlainAirGap::air_gap_winding_height) of a
     /// [`PlainAirGap`] is larger than inner air gap radius of a [`RotCore`],
-    /// the winding does not fit inside the core.
+    /// the winding does not fit inside the core. Invariants like these can also
+    /// be checked within this method.
     ///
     /// Some implementors of [`AirGap`] might also be generally incompatible to
     /// either a [`LinCore`] or a [`RotCore`]. In this case, this method should
@@ -186,10 +209,68 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// [`Error::IncompatibleToRotCore`], where the `&'static str` represents
     /// the type name.
     ///
-    /// TODO: Explain why &mut
+    /// It might be useful to cache data created during the combination within
+    /// `self` (e.g. geometric data which is expensive to calculate but useful
+    /// for other [`AirGap`] methods). Therefore, this method takes a
+    /// `&mut self` reference so that data can be stored within `self`.
     ///
-    /// TODO: Example for successfull and failing combination
-    /// TODO: Slotted core image (linear core?)
+    /// # Examples
+    ///
+    /// The following examples shows how [`AirGap::combine`] is used within
+    /// [`LinCore::new`] / [`RotCore::new`] on a principal level.
+    ///
+    /// ```
+    /// use std::sync::Arc;
+    ///
+    /// use stem_core::prelude::*;
+    ///
+    /// fn fake_new(mut air_gap: Box<dyn AirGap>) -> Result<LinCore, stem_core::error::Error> {
+    ///     // Create the core with a placeholder air gap (will be replaced
+    ///     // after a successfull combine call). In the actual implementation,
+    ///     // the LinCore struct is assembled directly from the LinCoreBuilder
+    ///     // fields instead of using try_into.
+    ///     let core: LinCore = LinCoreBuilder {
+    ///         height: Length::new::<millimeter>(20.0),
+    ///         width: Length::new::<millimeter>(100.0),
+    ///         axial_length: Length::new::<millimeter>(100.0),
+    ///         axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///         skew_angle: 0.0,
+    ///         iron_fill_factor: 1.0,
+    ///         material: Arc::new(Material::default()),
+    ///         pole_pairs: 2,
+    ///         air_gap: Box::new(PlainAirGap::default()),
+    ///         flux_barrier: None,
+    ///     }.try_into()?;
+    ///
+    ///     // In the real new method, the shape is cached within LinCore
+    ///     let _shape = air_gap.combine(core.as_core_ref())?;
+    ///     
+    ///     return Ok(core);
+    /// }
+    ///
+    /// // Air gap which is compatible to the core because its indents have
+    /// // a length of 20 mm, there is one of them per pole and the core has
+    /// // four poles -> all indents cover 80 mm in total, which is smaller than
+    /// // the core width of 100 mm
+    /// let comp_ag = StraightIndentsAirGap::new(
+    ///     1.try_into().expect("is not zero"),
+    ///     Length::new::<millimeter>(20.0),
+    ///     Length::new::<millimeter>(2.0),
+    ///     1,
+    /// );
+    /// assert!(fake_new(Box::new(comp_ag)).is_ok());
+    ///
+    /// // Air gap is not compatible because it has two indents per pole, but
+    /// // the indent length is still 20 mm -> All indents cover 160 mm in total,
+    /// // which is larger than the core width of 100 mm.
+    /// let comp_ag = StraightIndentsAirGap::new(
+    ///     1.try_into().expect("is not zero"),
+    ///     Length::new::<millimeter>(20.0),
+    ///     Length::new::<millimeter>(2.0),
+    ///     2,
+    /// );
+    /// assert!(fake_new(Box::new(comp_ag)).is_err());
+    /// ```
     fn combine(&mut self, core: CoreRef<'_>) -> Result<Shape, Error>;
 
     /**
