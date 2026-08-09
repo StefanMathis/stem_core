@@ -344,7 +344,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     the axial coil overhang. The ASCII art below visualizes it with equal signs
     (=). If = equals one mm, the return value of `axial_coil_overhang` would be
     3 mm.
-    ```ignore
+    ```text
          ┌──────┐
     ┌──==│      │=──┐
     │    │ Core │   │ <-- Coil
@@ -1356,8 +1356,9 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     gap, analytical methods assume that the whole electric loading produced by
     a particular slot is concentrated in its center at the air gap. For real
     core and winding geometries, this is obviously not the case. For the example
-    of a [`SlottedAirGap`], the electric loading is distributed along the slot,
-    opening whereas a wound [`PlainAirGap`] distributes the load along the
+    of a [`SlottedAirGap`](crate::air_gap::SlottedAirGap), the electric loading
+    is distributed along the slot openings whereas a wound
+    [`PlainAirGap`](crate::air_gap::PlainAirGap) distributes the load along the
     entire air gap surface covered by coils. For further information, see
     standard electric machines literature like e.g.
     [\[1\]](#air_gap_slot_opening_factor_1), section 1.2.3.3.
@@ -1629,8 +1630,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     }
 
     /**
-    Returns [`CoreExt::shape`] wrapped in a
-    [`DrawableCow`](planar_geo::draw::DrawableCow).
+    Returns [`CoreExt::shape`] wrapped in a [`DrawableCow`].
 
     This is a convenience function to simplify drawing the [`Shape`] of `self`.
      */

@@ -33,12 +33,12 @@ pub enum Error {
     /// Failed to create a core geometry due to the contained error.
     GeometryError(planar_geo::error::Error),
     /// A [`AirGap`](crate::air_gap::AirGap) or
-    /// [`FluxBarrier`](crate::flux_barrier::FluxBarrier) is not compatible to
-    /// a linear core. The string holds the type name (e.g. "PlainAirGap").
+    /// [`FluxBarrier`] is not compatible to a linear core. The string holds the
+    /// type name (e.g. "PlainAirGap").
     IncompatibleToLinCore(&'static str),
     /// A [`AirGap`](crate::air_gap::AirGap) or
-    /// [`FluxBarrier`](crate::flux_barrier::FluxBarrier) is not compatible to
-    /// a rotary core. The string holds the type name (e.g. "PlainAirGap").
+    /// [`FluxBarrier`] is not compatible to a rotary core. The string holds the
+    /// type name (e.g. "PlainAirGap").
     IncompatibleToRotCore(&'static str),
     /// Fallback variant for arbitrary other errors (e.g. from custom
     /// [`AirGap`](crate::air_gap::AirGap) or [`FluxBarrier`] implementations).

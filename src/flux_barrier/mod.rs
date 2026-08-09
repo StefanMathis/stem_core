@@ -90,24 +90,39 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     /// The [`crate::magnets`] module contains some predefined iterators
     /// to simplify the implementation of this method, see e.g. the source code
     /// of [`Star1FluxBarrier::interior_magnets`] for an example.
-    fn interior_magnets(&self, core: CoreRef<'_>, split: bool) -> Magnets;
+    fn interior_magnets(&self, _core: CoreRef<'_>, _split: bool) -> Magnets {
+        // Dummy implementation, to be overwritten.
+        return crate::magnets::EvenlyDistributedMagnets::<true>::new(
+            0,
+            Length::new::<meter>(0.0),
+            Vec::new(),
+            0.0,
+            0,
+        )
+        .into();
+    }
 
     /// Combines `self` with the `core` and returns the resulting cross-section
     /// shape.
     ///
-    /// This method is used when creating a [`LinCore`] / [`RotCore`] out of a
-    /// [`LinCoreBuilder`] / [`RotCoreBuilder`]. It therefore functions as a
-    /// general hook to check the compatibility of the [`AirGap`] with the core.
-    /// For example, when combining an [`SlottedAirGap`] with a [`LinCore`], the
-    /// latter must be high enough to accomodate the slot (otherwise the shape
-    /// creation will fail). But even if the shape creation succeeds, an
-    /// [`AirGap`] might still be incompatible to a core: If for example the
+    /// This method is used when creating a [`LinCore`](crate::core::LinCore) /
+    /// [`RotCore`](crate::core::RotCore) out of a
+    /// [`LinCoreBuilder`](crate::core::LinCoreBuilder) /
+    /// [`RotCoreBuilder`](crate::core::RotCoreBuilder). It therefore functions
+    /// as a general hook to check the compatibility of the [`AirGap`] with
+    /// the core. For example, when combining an [`SlottedAirGap`] with a
+    /// [`LinCore`](crate::core::LinCore), the latter must be high enough to
+    /// accomodate the slot (otherwise the shape creation will fail). But
+    /// even if the shape creation succeeds, an [`AirGap`] might still be
+    /// incompatible to a core: If for example the
     /// [`air_gap_winding_height`](PlainAirGap::air_gap_winding_height) of a
-    /// [`PlainAirGap`] is larger than inner air gap radius of a [`RotCore`],
-    /// the winding does not fit inside the core.
+    /// [`PlainAirGap`] is larger than inner air gap radius of a
+    /// [`RotCore`](crate::core::RotCore), the winding does not fit inside
+    /// the core.
     ///
     /// Some implementors of [`AirGap`] might also be generally incompatible to
-    /// either a [`LinCore`] or a [`RotCore`]. In this case, this method should
+    /// either a [`LinCore`](crate::core::LinCore) or a
+    /// [`RotCore`](crate::core::RotCore). In this case, this method should
     /// return [`Error::IncompatibleToLinCore`] or
     /// [`Error::IncompatibleToRotCore`], where the `&'static str` represents
     /// the type name.
@@ -121,10 +136,9 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     barrier.
 
     A flux barrier may be able to contain magnets of one or even multiple types
-    (e.g. two different shapes of
-    [`BlockMagnet`](stem_magnet::block::BlockMagnet)s) which are part of
-    [`MagnetAssembly`](s). This method returns a slice view of all assemblies
-    for a single pole. The total number of magnets per pole is therefore
+    which are part of [`MagnetAssemblies`](MagnetAssembly). This method returns
+    a slice view of all assemblies for a single pole. The total number of
+    magnets per pole is therefore
     `self.magnet_assemblies(core).iter().map(|m|m.num_magnets()).sum()`. If a
     magnet of an assembly is used multiple times within the cross section,
     [`MagnetAssembly::num_tangential`] should be set to the times of occurences.
@@ -140,13 +154,15 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     `PositionedMagnetShape::magnet_idx` of a returned shape is 1, that shape
     belongs to the second magnet assembly in the slice. This can e.g. be used to
     calculate the total mass of all interior magnets (see source code of
-    [`CoreExt::mass_interior_magnets`]). When implementing [`FluxBarrier`] for
-    an external type, this relation needs to be uphold, because otherwise these
-    calculations will return wrong results.
+    [`CoreExt::mass_interior_magnets`](crate::core::CoreExt::mass_interior_magnets)
+    ). When implementing [`FluxBarrier`] for an external type, this relation
+    needs to be uphold, because otherwise these calculations will return wrong
+    results.
 
     If the flux barrier does not hold magnets
-    ([`FluxBarrier::interior_magnets`] returns an empty iterator), this method
-    can be implemented by simply returning an empty slice.
+    ([`FluxBarrier::interior_magnets`](crate::core::CoreExt::interior_magnets)
+    returns an empty iterator), this method can be implemented by simply
+    returning an empty slice.
 
     # Examples
 

@@ -52,7 +52,7 @@ sealed [`CoreExt`] trait provides a common interface for both [`LinCore`] and
 # Windable cores
 
 A core is called _windable_ if its [`AirGap`](crate::air_gap::AirGap) contour
-allows for a winding to be mounted (see [`CoreExt::windable`]). The following
+allows for a winding to be mounted (see [`CoreExt::is_windable`]). The following
 image shows two different examples: One with a
 [`PlainAirGap`](crate::air_gap::PlainAirGap), where the winding is mounted
 directly on the core / in the air gap, and one with a

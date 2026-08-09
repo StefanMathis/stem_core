@@ -5,7 +5,12 @@ use planar_geo::{polysegment::Polysegment, shape::Shape};
 use stem_magnet::assembly::MagnetAssembly;
 use stem_slot::prelude::*;
 
-use crate::{core::CoreRef, error::Error, magnets::Magnets, winding_zones::WindingZones};
+use crate::{
+    core::CoreRef,
+    error::Error,
+    magnets::Magnets,
+    winding_zones::{WindingZones, WindingZonesEqSpaced},
+};
 
 pub mod plain;
 pub mod slotted;
@@ -45,8 +50,9 @@ air gap width is, whether the core has [`Slot`]s and so on. Please see the
 individual trait methods for more information.
 
 The trait methods are not meant to be called by user code. Instead, all of them
-(except [`AirGap::combine`]) are used to implement the [`CoreExt`] methods of
-the same name. For example, the [`CoreExt::slots`] method is implemented like
+(except [`AirGap::combine`]) are used to implement the
+[`CoreExt`](crate::core::CoreExt) methods of the same name. For example, the
+[`CoreExt::slots`](crate::core::CoreExt::slots) method is implemented like
 this:
 
 ```ignore
@@ -55,10 +61,11 @@ fn slots(&self) -> u16 {
 }
 ```
 
-Generally speaking, the documentation of the [`CoreExt`] method therefors
-focusses on the _usage_ of that specific method, whereas the [`AirGap`] method
-docstring explains how to _implement_ it for custom air gap types. If the latter
-have examples, they are just there to show how the method is supposed to work.
+Generally speaking, the documentation of the [`CoreExt`](crate::core::CoreExt)
+method therefors focuses on the _usage_ of that specific method, whereas the
+[`AirGap`] method docstring explains how to _implement_ it for custom air gap
+types. If the latter have examples, they are just there to show how the method
+is supposed to work.
 
 The [`AirGap::combine`] method is used in
 [`LinCore::new`](crate::core::LinCore::new) and
@@ -167,9 +174,10 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
 
     /// Returns the discretization / number of segments of the core.
     ///
-    /// This method implements [`CoreExt::num_segments`]. Depending on `self`, a
-    /// core may be composed of multiple individual segments  against each
-    /// other as defined by the
+    /// This method implements
+    /// [`CoreExt::num_segments`](crate::core::CoreExt::num_segments). Depending
+    /// on `self`, a core may be composed of multiple individual segments
+    /// against each other as defined by the
     /// [`CoreExt::skew_angle`](crate::core::CoreExt::skew_angle). This affects
     /// the [`skew_factor`](crate::core::skew_factor) of the core, which can be
     /// used to suppress/ unwanted magnetic harmonics.  See the
@@ -187,131 +195,25 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// [`StraightIndentsAirGap`], this is ensured by the constructor.
     fn num_segments(&self, core: CoreRef<'_>) -> usize;
 
-    /// Returns an iterator over the surface magnet shapes for the given
-    /// `magnet_assembly` and `core`.
-    ///
-    /// This method implements [`CoreExt::surface_magnets`] for the different
-    /// possible air gap types. For example, for a [`PlainAirGap`] and a rotary
-    /// core, the magnets are arranged on the circular air gap surface of the
-    /// core, whereas they are positioned in the indent middle for a
-    /// [`StraightIndentsAirGap`].
-    #[doc = ""]
-    #[cfg_attr(
-        feature = "doc-images",
-        doc = "![Surface magnets for a plain and an indent air gap][surface_magnets]"
-    )]
-    #[cfg_attr(
-        feature = "doc-images",
-        embed_doc_image::embed_doc_image("surface_magnets", "docs/img/surface_magnets.svg")
-    )]
-    #[cfg_attr(
-        not(feature = "doc-images"),
-        doc = "**Doc images not enabled**. Compile docs with
-        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
-    )]
-    /// _This image was produced with `examples/surface_magnets.rs`._
-    ///
-    /// When implementing this method for custom [`AirGap`]s, the following
-    /// rules should be followed:
-    /// - If no magnets can be placed on the air gap surface, an empty iterator
-    /// should be returned (for example
-    /// `Magnets::Other(Box::new([].into_iter()))`.
-    /// - The iterator should return `n`
-    /// [`PositionedMagnetShape`](crate::magnets::PositionedMagnetShape)
-    /// elements, where `magnet_assembly.num_tangential() * (1 + split) *
-    /// core.poles()`.
-    /// - The shapes must not overlap each other or the
-    /// [`core.shape()`](CoreExt::Shape). This can be checked using
-    /// [`CoreExt::assembly_check`].
-    /// - Although not strictly required by [`CoreExt::assembly_check`], the
-    /// magnet shapes should not "hover" over the core shape, but instead be
-    /// attached to it.
-    /// - Since there is only one type of magnet assembly located on the air gap
-    /// surface by definition,
-    /// [`PositionedMagnetShape::magnet_idx`](crate::magnets::PositionedMagnetShape::magnet_idx)
-    /// should always be zero.
-    /// - If `split` is true, each magnet should be separated in its north and
-    /// south shape using
-    /// [`Magnet::north_south_shapes`](stem_magnet::magnet::Magnet::north_south_shapes).
-    /// Otherwise, the whole magnet shape should be returned. When returning the
-    /// shapes for a negative pole, the shapes need to be adjusted for polarity
-    /// (see [`PositionedMagnetShape::is_north`](crate::magnets::PositionedMagnetShape::is_north)).
-    ///
-    /// The [`crate::magnets`] module contains some predefined iterators
-    /// to simplify the implementation of this method, see e.g. the source code
-    /// of [`PlainAirGap::surface_magnets`] for an example.
-    fn surface_magnets(
-        &self,
-        magnet_assembly: &MagnetAssembly,
-        core: CoreRef<'_>,
-        split: bool,
-    ) -> Magnets;
-
-    /// Returns an iterator over the
-    /// [`PositionedZoneContour`](core::winding_zones::PositionedZoneContour)s
-    /// for the given `coil_layout`.
-    ///
-    /// This method implements [`CoreExt::winding_zones`] for the different
-    /// possible air gap types. For example, for a [`PlainAirGap`], the winding
-    /// zone contours are located inside the air gap itself, whereas those
-    /// of a [`SlottedAirGap`] are situated within the slots as shown in the
-    /// image below:
-    #[doc = ""]
-    #[cfg_attr(
-        feature = "doc-images",
-        doc = "![Winding zones for a slotted and a plain air gap][winding_zones]"
-    )]
-    #[cfg_attr(
-        feature = "doc-images",
-        embed_doc_image::embed_doc_image("winding_zones", "docs/img/winding_zones.svg")
-    )]
-    #[cfg_attr(
-        not(feature = "doc-images"),
-        doc = "**Doc images not enabled**. Compile docs with
-        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
-    )]
-    /// _This image was produced with `examples/winding_zones.rs`._
-    ///
-    /// When implementing this method for custom [`AirGap`]s, the following
-    /// rules should be followed:
-    /// - If the core is not windable, an empty iterator should be returned
-    /// (which can for example be constructed from
-    /// [`WindingZonesEqSpaced::no_slots`](crate::magnets::WindingZonesEqSpaced)).
-    /// - The iterator should return `n`
-    /// [`PositionedZoneContour`](core::winding_zones::PositionedZoneContour)
-    /// elements, where `n = coil_layout.layers() * self.slots()`
-    /// - Each element should have a unique [`Zone`](core::winding_zones::Zone)
-    /// index. In sum, all returned elements should cover all possible layer
-    /// / slot combinations resulting from `coil_layout` and `self.slots()`.
-    /// - The zones must not overlap each other or the
-    /// [`core.shape()`](CoreExt::Shape). This can be checked using
-    /// [`CoreExt::assembly_check`].
-    /// - Although not strictly required by [`CoreExt::assembly_check`], the
-    /// zone contours should not "hover" over the core shape, but instead be
-    /// attached to it.
-    ///
-    /// The [`crate::winding_zones`] module contains some predefined iterators
-    /// to simplify the implementation of this method, see e.g. the source code
-    /// of [`PlainAirGap::winding_zones`] for an example.
-    fn winding_zones(&self, core: CoreRef<'_>, coil_layout: &CoilLayout) -> WindingZones;
-
     /// Returns the number of slots.
     ///
-    /// This method implements [`CoreExt::slots`]. If the number of slots is
-    /// zero, slot is not windable. This number corresponds to the "slots"
-    /// property of a winding, not necessarily to a physical [`Slot`]. For
-    /// example, a plain air gap has no slot, but still can be windable.
+    /// This method implements [`CoreExt::slots`](crate::core::CoreExt::slots).
+    /// If the number of slots is zero, slot is not windable. This number
+    /// corresponds to the "slots" property of a winding, not necessarily to
+    /// a physical [`Slot`]. For example, a plain air gap has no slot, but
+    /// still can be windable.
     fn slots(&self, core: CoreRef<'_>) -> u16;
 
     /**
     Returns the slot opening factor for the harmonic with the specified
     `mech_ordinal`.
 
-    This method implements [`CoreExt::slot_opening_factor`]. When determining
-    the electric loading / induction distribution along the air gap, analytical
-    methods assume that the whole electric loading produced by a particular slot
-    is concentrated in its center at the air gap. For real core and winding
-    geometries, this is obviously not the case. For the example of a
+    This method implements
+    [`CoreExt::slot_opening_factor`](crate::core::CoreExt::slot_opening_factor).
+    When determining the electric loading / induction distribution along the air
+    gap, analytical methods assume that the whole electric loading produced by a
+    particular slot is concentrated in its center at the air gap. For real core
+    and winding geometries, this is obviously not the case. For the example of a
     [`SlottedAirGap`], the electric loading is distributed along the slot,
     opening whereas a wound [`PlainAirGap`] distributes the load along the
     entire air gap surface covered by coils. For further information, see
@@ -383,30 +285,160 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
 
     /// Returns the carter factor of `self` for the given `core`.
     ///
-    /// This method implements [`CoreExt::carter_factor`] for the different
-    /// possible air gap types. If the air gap contour is (approximately) smooth
-    /// or the air gap cannot be wound in the first place, this method should
-    /// simply return 1 for any input. Otherwise, the returned value can depend
-    /// on core geometry and air gap width, see for example
-    /// [`CarterFactorModel`]. It should be equal to or larger than 1 to
-    /// represent the virtual "increase" of the `air_gap_width` due to the
-    /// non-smooth surface.
+    /// This method implements
+    /// [`CoreExt::carter_factor`](crate::core::CoreExt::carter_factor) for the
+    /// different possible air gap types. If the air gap contour is
+    /// (approximately) smooth or the air gap cannot be wound in the first
+    /// place, this method should simply return 1 for any input. Otherwise,
+    /// the returned value can depend on core geometry and air gap width,
+    /// see for example [`CarterFactorModel`]. It should be equal to or
+    /// larger than 1 to represent the virtual "increase" of the
+    /// `air_gap_width` due to the non-smooth surface.
     fn carter_factor(&self, core: CoreRef<'_>, air_gap_width: Length) -> f64;
 
     /// Returns a reference to the [`Slot`] of the air gap, if it has one.
     ///
-    /// This method implements [`CoreExt::slot`].
+    /// This method implements [`CoreExt::slot`](crate::core::CoreExt::slot).
     fn slot(&self, _core: CoreRef<'_>) -> Option<&dyn Slot>;
+
+    /// Returns an iterator over the surface magnet shapes for the given
+    /// `magnet_assembly` and `core`.
+    ///
+    /// This method implements
+    /// [`CoreExt::surface_magnets`](crate::core::CoreExt::surface_magnets) for
+    /// the different possible air gap types. For example, for a
+    /// [`PlainAirGap`] and a rotary core, the magnets are arranged on the
+    /// circular air gap surface of the core, whereas they are positioned in
+    /// the indent middle for a [`StraightIndentsAirGap`].
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![Surface magnets for a plain and an indent air gap][surface_magnets]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image("surface_magnets", "docs/img/surface_magnets.svg")
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    /// _This image was produced with `examples/surface_magnets.rs`._
+    ///
+    /// When implementing this method for custom [`AirGap`]s, the following
+    /// rules should be followed:
+    /// - If no magnets can be placed on the air gap surface, an empty iterator
+    /// should be returned (for example
+    /// `Magnets::Other(Box::new([].into_iter()))`.
+    /// - The iterator should return `n`
+    /// [`PositionedMagnetShape`](crate::magnets::PositionedMagnetShape)
+    /// elements, where `magnet_assembly.num_tangential() * (1 + split) *
+    /// core.poles()`.
+    /// - The shapes must not overlap each other or the
+    /// [`core.shape()`](CoreExt::Shape). This can be checked using
+    /// [`CoreExt::assembly_check`].
+    /// - Although not strictly required by [`CoreExt::assembly_check`], the
+    /// magnet shapes should not "hover" over the core shape, but instead be
+    /// attached to it.
+    /// - Since there is only one type of magnet assembly located on the air gap
+    /// surface by definition,
+    /// [`PositionedMagnetShape::magnet_idx`](crate::magnets::PositionedMagnetShape::magnet_idx)
+    /// should always be zero.
+    /// - If `split` is true, each magnet should be separated in its north and
+    /// south shape using
+    /// [`Magnet::north_south_shapes`](stem_magnet::magnet::Magnet::north_south_shapes).
+    /// Otherwise, the whole magnet shape should be returned. When returning the
+    /// shapes for a negative pole, the shapes need to be adjusted for polarity
+    /// (see [`PositionedMagnetShape::is_north`](crate::magnets::PositionedMagnetShape::is_north)).
+    ///
+    /// The [`crate::magnets`] module contains some predefined iterators
+    /// to simplify the implementation of this method, see e.g. the source code
+    /// of [`PlainAirGap::surface_magnets`] for an example.
+    fn surface_magnets(
+        &self,
+        magnet_assembly: &MagnetAssembly,
+        _core: CoreRef<'_>,
+        split: bool,
+    ) -> Magnets {
+        // Dummy implementation, to be overwritten.
+        return crate::magnets::EvenlyDistributedMagnets::<true>::from_magnet_assembly(
+            0,
+            Length::new::<millimeter>(0.0),
+            magnet_assembly,
+            split,
+            true,
+        )
+        .into();
+    }
+
+    /// Returns an iterator over the
+    /// [`PositionedZoneContour`](core::winding_zones::PositionedZoneContour)s
+    /// for the given `coil_layout`.
+    ///
+    /// This method implements
+    /// [`CoreExt::winding_zones`](crate::core::CoreExt::winding_zones) for the
+    /// different possible air gap types. For example, for a
+    /// [`PlainAirGap`], the winding zone contours are located inside the
+    /// air gap itself, whereas those of a [`SlottedAirGap`] are situated
+    /// within the slots as shown in the image below:
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![Winding zones for a slotted and a plain air gap][winding_zones]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image("winding_zones", "docs/img/winding_zones.svg")
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    /// _This image was produced with `examples/winding_zones.rs`._
+    ///
+    /// When implementing this method for custom [`AirGap`]s, the following
+    /// rules should be followed:
+    /// - If the core is not windable, an empty iterator should be returned
+    /// (which can for example be constructed from
+    /// [`WindingZonesEqSpaced::no_slots`](crate::magnets::WindingZonesEqSpaced)).
+    /// - The iterator should return `n`
+    /// [`PositionedZoneContour`](core::winding_zones::PositionedZoneContour)
+    /// elements, where `n = coil_layout.layers() * self.slots()`
+    /// - Each element should have a unique [`Zone`](core::winding_zones::Zone)
+    /// index. In sum, all returned elements should cover all possible layer
+    /// / slot combinations resulting from `coil_layout` and `self.slots()`.
+    /// - The zones must not overlap each other or the
+    /// [`core.shape()`](CoreExt::Shape). This can be checked using
+    /// [`CoreExt::assembly_check`].
+    /// - Although not strictly required by [`CoreExt::assembly_check`], the
+    /// zone contours should not "hover" over the core shape, but instead be
+    /// attached to it.
+    ///
+    /// The [`crate::winding_zones`] module contains some predefined iterators
+    /// to simplify the implementation of this method, see e.g. the source code
+    /// of [`PlainAirGap::winding_zones`] for an example.
+    fn winding_zones(&self, _core: CoreRef<'_>, _coil_layout: &CoilLayout) -> WindingZones {
+        // Dummy implementation, to be overwritten.
+        WindingZones::WindingZonesEqSpacedLin(WindingZonesEqSpaced::<
+            planar_geo::prelude::Contour,
+            true,
+        >::no_slots())
+        .into()
+    }
 
     /// Returns the tooth height of the core.
     ///
-    /// This method implements [`CoreExt::tooth_height`] for the different
-    /// possible air gap types. The default implementation returns
+    /// This method implements
+    /// [`CoreExt::tooth_height`](crate::core::CoreExt::tooth_height) for the
+    /// different possible air gap types. The default implementation returns
     /// [`Slot::height`] for [`AirGap::slot`], if the latter is `Some`, and
     /// a length of zero meter otherwise. If a particular [`AirGap`] implementor
     /// defines the tooth height differently, this method can be overwritten.
     ///
-    /// See [`CoreExt::tooth_height`] for examples.
+    /// See [`CoreExt::tooth_height`](crate::core::CoreExt::tooth_height) for
+    /// examples.
     fn tooth_height(&self, core: CoreRef<'_>) -> Length {
         self.slot(core)
             .map_or(Length::new::<meter>(0.0), |s| s.height())
@@ -414,16 +446,19 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
 
     /// Returns the tooth width at a specific height, measured from the air gap.
     ///
-    /// This method implements [`CoreExt::tooth_width_at`] for the different
-    /// possible air gap types. If [`AirGap::slot`] is `None`, the default
-    /// implementation returns a length of zero meter. If a slot does in fact
-    /// exist, its width at the given `height` is calculated using
-    /// [`Slot::width_at`] and the resulting value is then used to determine the
-    /// tooth width, i.e. the width of the space between two slots at that
-    /// particular `height`. If a particular [`AirGap`] implementor
-    /// defines the tooth width differently, this method can be overwritten.
+    /// This method implements
+    /// [`CoreExt::tooth_width_at`](crate::core::CoreExt::tooth_width_at) for
+    /// the different possible air gap types. If [`AirGap::slot`] is `None`,
+    /// the default implementation returns a length of zero meter. If a slot
+    /// does in fact exist, its width at the given `height` is calculated
+    /// using [`Slot::width_at`] and the resulting value is then used to
+    /// determine the tooth width, i.e. the width of the space between two
+    /// slots at that particular `height`. If a particular [`AirGap`]
+    /// implementor defines the tooth width differently, this method can be
+    /// overwritten.
     ///
-    /// See [`CoreExt::tooth_width_at`] for examples.
+    /// See [`CoreExt::tooth_width_at`](crate::core::CoreExt::tooth_width_at)
+    /// for examples.
     fn tooth_width_at(&self, core: CoreRef<'_>, height: Length) -> Length {
         let slot = match self.slot(core) {
             Some(s) => s,
@@ -461,12 +496,14 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// Returns a calculator for determining the current displacement
     /// coefficients for different current frequencies.
     ///
-    /// This method implements [`CoreExt::current_displacement_coefficients`].
-    /// If an air gap supports windings created from massive conductors (e.g.
-    /// squirrel cage windings), the latter may be subject to non-negligible
-    /// current displacement affecting both the effective electrical resistance
-    /// and inductance. See [`CurrentDisplacementCalculator`] for a detailed
-    /// explanation of the effect and its calculation.
+    /// This method implements
+    /// [`CoreExt::current_displacement_coefficients`](crate::core::CoreExt::current_displacement_coefficients).
+    /// If an air gap supports windings created from massive conductors
+    /// (e.g. squirrel cage windings), the latter may be subject to
+    /// non-negligible current displacement affecting both the effective
+    /// electrical resistance and inductance. See
+    /// [`CurrentDisplacementCalculator`] for a detailed explanation of the
+    /// effect and its calculation.
     ///
     /// This method is only used in the special case where the conductor is
     /// (partially) surrounded by the core (currently only the case for a

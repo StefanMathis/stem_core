@@ -11,10 +11,10 @@ pub struct PositionedMagnetShape {
     /**
     A [`FluxBarrier`](crate::flux_barrier::FluxBarrier) can have multiple types
     of magnets. A slice of all the magnet types can be retrieved with the
-    [`FluxBarrier::magnets`](crate::flux_barrier::FluxBarrier::magnets) method.
-    This index can be used for retrieving the magnet type of `self` from that
-    list. If the [`PositionedMagnetShape`] was created from an iterator over the
-    surface magnets, this value is simply 0.
+    [`FluxBarrier::magnet_assemblies`](crate::flux_barrier::FluxBarrier::magnet_assemblies)
+    method. This index can be used for retrieving the magnet type of `self` from
+    that list. If the [`PositionedMagnetShape`] was created from an iterator
+    over the surface magnets, this value is simply 0.
     */
     pub magnet_idx: usize,
 }
