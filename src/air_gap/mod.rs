@@ -16,26 +16,12 @@ pub use slotted::{CarterFactorModel, SlottedAirGap};
 pub use straight_indents::{AirGapPolygonBuilder, StraightIndentsAirGap};
 
 /**
-Trait object changes air gap contour: Comparison image of same core with PlainAirGap,
-SlottedAirGap and StraightIndentsAirGap.
+A trait to define the air gap contour of a magnetic core.
 
-TODO: Explain that all methods which take a core as second arg are not meant to
-be used standalone, but instead are called from the corresponding [`CoreExt`]
-methods, using core.air_gap() as first, core as second arg. Hence, these methods
-basically implement the [`CoreExt`] methods.
-
-None of the methods are meant to be called by user code. Instead, all methods
-except combine are used to implement the [CoreExt] methods of the same name
-Examples are just here to demonstrate how the methods work
-
-. combine
-is used in LinCore::new / RotCore::new to create the core shape and to check
-the general compatibility of air gap and core.
-
-See docstring of CoreExt for in-depth discussion.
-
-Comment to architecture: Instead of having a RotCoreSlotted or a RotCorePlain,
-keep variants in check through composition
+This trait is used to create the `air_gap` trait objects for the core
+builder structs [`LinCoreBuilder`](crate::core::LinCoreBuilder) and
+[`RotCoreBuilder`](crate::core::RotCoreBuilder). The following image shows three
+different cores where all parameters except for `air_gap` are identical:
  */
 #[doc = ""]
 #[cfg_attr(feature = "doc-images", doc = "![Main dimensions][cad_lin_core_dims]")]
@@ -49,14 +35,141 @@ keep variants in check through composition
     `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
 /**
+_This image was produced with `examples/air_gap_plots.rs`. From left to right:
+a [`PlainAirGap`], a [`SlottedAirGap`] and a [`StraightIndentsAirGap`]._
 
-*/
+Besides the visual appearance, the air gap defines many more important features
+of the core via the [`AirGap`] trait methods: Whether a winding or air gap
+surface magnets can be mounted on the core, how large the magnetically effective
+air gap width is, whether the core has [`Slot`]s and so on. Please see the
+individual trait methods for more information.
+
+The trait methods are not meant to be called by user code. Instead, all of them
+(except [`AirGap::combine`]) are used to implement the [`CoreExt`] methods of
+the same name. For example, the [`CoreExt::slots`] method is implemented like
+this:
+
+```ignore
+fn slots(&self) -> u16 {
+    return self.air_gap().slots(self.as_core_ref());
+}
+```
+
+Generally speaking, the documentation of the [`CoreExt`] method therefors
+focusses on the _usage_ of that specific method, whereas the [`AirGap`] method
+docstring explains how to _implement_ it for custom air gap types. If the latter
+have examples, they are just there to show how the method is supposed to work.
+
+The [`AirGap::combine`] method is used in
+[`LinCore::new`](crate::core::LinCore::new) and
+[`RotCore::new`](crate::core::RotCore::new) to create the core shape and to
+determine whether an air gap is compatible to the core at all. See the trait
+method documentation for examples.
+
+This design pattern replaces an earlier one where types like `RotCorePlain`
+and `LinCoreSlotted` existed, which was clearly OOP-inspired. This older pattern
+had the general issue that each new air gap shape required defining two new
+types (one for a linear and one for a rotary core) and that it was difficult to
+share code between those. The new pattern follows the "composition over
+inheritance" philosophy of Rust, by treating the air gap as a property of the
+core.
+ */
 #[cfg_attr(feature = "serde", typetag::serde)]
 pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
+    /// Combines `self` with the `core` and returns the resulting cross-section
+    /// shape.
+    ///
+    /// This method is used inside [`LinCore::new`](crate::core::LinCore::new) /
+    /// [`RotCore::new`](crate::core::RotCore::new) to generate the core
+    /// shape. It therefore functions as a general hook to
+    /// check the compatibility of the [`AirGap`] with the core. For example,
+    /// when combining an [`SlottedAirGap`] with a
+    /// [`LinCore`](crate::core::LinCore), the latter must be high enough to
+    /// accomodate the slot. But even if the shape creation succeeds, an
+    /// [`AirGap`] might still be incompatible to a core: If for example the
+    /// [`air_gap_winding_height`](PlainAirGap::air_gap_winding_height) of a
+    /// [`PlainAirGap`] is larger than inner air gap radius of a
+    /// [`RotCore`](crate::core::RotCore), the winding does not fit inside
+    /// the core. Invariants like these can also be checked within this
+    /// method.
+    ///
+    /// Some implementors of [`AirGap`] might also be generally incompatible to
+    /// either a [`LinCore`](crate::core::LinCore) or a
+    /// [`RotCore`](crate::core::RotCore). In this case, this method should
+    /// return [`Error::IncompatibleToLinCore`] or
+    /// [`Error::IncompatibleToRotCore`], where the `&'static str` represents
+    /// the type name.
+    ///
+    /// It might be useful to cache data created during the combination within
+    /// `self` (e.g. geometric data which is expensive to calculate but useful
+    /// for other [`AirGap`] methods). Therefore, this method takes a
+    /// `&mut self` reference so that data can be stored within `self`.
+    ///
+    /// # Examples
+    ///
+    /// The following examples shows how [`AirGap::combine`] is used within
+    /// [`LinCore::new`](crate::core::LinCore::new) /
+    /// [`RotCore::new`](crate::core::RotCore::new) on a principal level.
+    ///
+    /// ```
+    /// use std::sync::Arc;
+    ///
+    /// use stem_core::prelude::*;
+    ///
+    /// fn fake_new(mut air_gap: Box<dyn AirGap>) -> Result<LinCore, stem_core::error::Error> {
+    ///     // Create the core with a placeholder air gap (will be replaced
+    ///     // after a successfull combine call). In the actual implementation,
+    ///     // the LinCore struct is assembled directly from the LinCoreBuilder
+    ///     // fields instead of using try_into.
+    ///     let core: LinCore = LinCoreBuilder {
+    ///         height: Length::new::<millimeter>(20.0),
+    ///         width: Length::new::<millimeter>(100.0),
+    ///         axial_length: Length::new::<millimeter>(100.0),
+    ///         axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///         skew_angle: 0.0,
+    ///         iron_fill_factor: 1.0,
+    ///         material: Arc::new(Material::default()),
+    ///         pole_pairs: 2,
+    ///         air_gap: Box::new(PlainAirGap::default()),
+    ///         flux_barrier: None,
+    ///     }.try_into()?;
+    ///
+    ///     // In the real new method, the shape is cached within LinCore
+    ///     let _shape = air_gap.combine(core.as_core_ref())?;
+    ///     
+    ///     return Ok(core);
+    /// }
+    ///
+    /// // Air gap which is compatible to the core because its indents have
+    /// // a length of 20 mm, there is one of them per pole and the core has
+    /// // four poles -> all indents cover 80 mm in total, which is smaller than
+    /// // the core width of 100 mm
+    /// let comp_ag = StraightIndentsAirGap::new(
+    ///     1.try_into().expect("is not zero"),
+    ///     Length::new::<millimeter>(20.0),
+    ///     Length::new::<millimeter>(2.0),
+    ///     1,
+    /// );
+    /// assert!(fake_new(Box::new(comp_ag)).is_ok());
+    ///
+    /// // Air gap is not compatible because it has two indents per pole, but
+    /// // the indent length is still 20 mm -> All indents cover 160 mm in total,
+    /// // which is larger than the core width of 100 mm.
+    /// let comp_ag = StraightIndentsAirGap::new(
+    ///     1.try_into().expect("is not zero"),
+    ///     Length::new::<millimeter>(20.0),
+    ///     Length::new::<millimeter>(2.0),
+    ///     2,
+    /// );
+    /// assert!(fake_new(Box::new(comp_ag)).is_err());
+    /// ```
+    fn combine(&mut self, core: CoreRef<'_>) -> Result<Shape, Error>;
+
     /// Returns the discretization / number of segments of the core.
     ///
-    /// Depending on `self`, a core may be composed of multiple
-    /// individual segments  against each other as defined by the
+    /// This method implements [`CoreExt::num_segments`]. Depending on `self`, a
+    /// core may be composed of multiple individual segments  against each
+    /// other as defined by the
     /// [`CoreExt::skew_angle`](crate::core::CoreExt::skew_angle). This affects
     /// the [`skew_factor`](crate::core::skew_factor) of the core, which can be
     /// used to suppress/ unwanted magnetic harmonics.  See the
@@ -182,106 +295,24 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// of [`PlainAirGap::winding_zones`] for an example.
     fn winding_zones(&self, core: CoreRef<'_>, coil_layout: &CoilLayout) -> WindingZones;
 
-    /// Return the number of slots. If zero, slot is not windable. This number
-    /// corresponds to the "slots" property of a winding, not necessarily to a
-    /// physical [`Slot`]. For example, a plain air gap has no slot, but still
-    /// can be windable.
+    /// Returns the number of slots.
+    ///
+    /// This method implements [`CoreExt::slots`]. If the number of slots is
+    /// zero, slot is not windable. This number corresponds to the "slots"
+    /// property of a winding, not necessarily to a physical [`Slot`]. For
+    /// example, a plain air gap has no slot, but still can be windable.
     fn slots(&self, core: CoreRef<'_>) -> u16;
-
-    /// Combines `self` with the `core` and returns the resulting cross-section
-    /// shape.
-    ///
-    /// This method is used inside [`LinCore::new`] / [`RotCore::new`] to
-    /// generate the core shape. It therefore functions as a general hook to
-    /// check the compatibility of the [`AirGap`] with the core. For example,
-    /// when combining an [`SlottedAirGap`] with a [`LinCore`], the
-    /// latter must be high enough to accomodate the slot. But even if the shape
-    /// creation succeeds, an [`AirGap`] might still be incompatible to a
-    /// core: If for example the
-    /// [`air_gap_winding_height`](PlainAirGap::air_gap_winding_height) of a
-    /// [`PlainAirGap`] is larger than inner air gap radius of a [`RotCore`],
-    /// the winding does not fit inside the core. Invariants like these can also
-    /// be checked within this method.
-    ///
-    /// Some implementors of [`AirGap`] might also be generally incompatible to
-    /// either a [`LinCore`] or a [`RotCore`]. In this case, this method should
-    /// return [`Error::IncompatibleToLinCore`] or
-    /// [`Error::IncompatibleToRotCore`], where the `&'static str` represents
-    /// the type name.
-    ///
-    /// It might be useful to cache data created during the combination within
-    /// `self` (e.g. geometric data which is expensive to calculate but useful
-    /// for other [`AirGap`] methods). Therefore, this method takes a
-    /// `&mut self` reference so that data can be stored within `self`.
-    ///
-    /// # Examples
-    ///
-    /// The following examples shows how [`AirGap::combine`] is used within
-    /// [`LinCore::new`] / [`RotCore::new`] on a principal level.
-    ///
-    /// ```
-    /// use std::sync::Arc;
-    ///
-    /// use stem_core::prelude::*;
-    ///
-    /// fn fake_new(mut air_gap: Box<dyn AirGap>) -> Result<LinCore, stem_core::error::Error> {
-    ///     // Create the core with a placeholder air gap (will be replaced
-    ///     // after a successfull combine call). In the actual implementation,
-    ///     // the LinCore struct is assembled directly from the LinCoreBuilder
-    ///     // fields instead of using try_into.
-    ///     let core: LinCore = LinCoreBuilder {
-    ///         height: Length::new::<millimeter>(20.0),
-    ///         width: Length::new::<millimeter>(100.0),
-    ///         axial_length: Length::new::<millimeter>(100.0),
-    ///         axial_coil_overhang: Length::new::<millimeter>(0.0),
-    ///         skew_angle: 0.0,
-    ///         iron_fill_factor: 1.0,
-    ///         material: Arc::new(Material::default()),
-    ///         pole_pairs: 2,
-    ///         air_gap: Box::new(PlainAirGap::default()),
-    ///         flux_barrier: None,
-    ///     }.try_into()?;
-    ///
-    ///     // In the real new method, the shape is cached within LinCore
-    ///     let _shape = air_gap.combine(core.as_core_ref())?;
-    ///     
-    ///     return Ok(core);
-    /// }
-    ///
-    /// // Air gap which is compatible to the core because its indents have
-    /// // a length of 20 mm, there is one of them per pole and the core has
-    /// // four poles -> all indents cover 80 mm in total, which is smaller than
-    /// // the core width of 100 mm
-    /// let comp_ag = StraightIndentsAirGap::new(
-    ///     1.try_into().expect("is not zero"),
-    ///     Length::new::<millimeter>(20.0),
-    ///     Length::new::<millimeter>(2.0),
-    ///     1,
-    /// );
-    /// assert!(fake_new(Box::new(comp_ag)).is_ok());
-    ///
-    /// // Air gap is not compatible because it has two indents per pole, but
-    /// // the indent length is still 20 mm -> All indents cover 160 mm in total,
-    /// // which is larger than the core width of 100 mm.
-    /// let comp_ag = StraightIndentsAirGap::new(
-    ///     1.try_into().expect("is not zero"),
-    ///     Length::new::<millimeter>(20.0),
-    ///     Length::new::<millimeter>(2.0),
-    ///     2,
-    /// );
-    /// assert!(fake_new(Box::new(comp_ag)).is_err());
-    /// ```
-    fn combine(&mut self, core: CoreRef<'_>) -> Result<Shape, Error>;
 
     /**
     Returns the slot opening factor for the harmonic with the specified
     `mech_ordinal`.
 
-    When determining the electric loading / induction distribution along the air
-    gap, analytical methods assume that the whole electric loading produced by
-    a particular slot is concentrated in its center at the air gap. For real
-    core and winding geometries, this is obviously not the case. For the example
-    of a [`SlottedAirGap`], the electric loading is distributed along the slot,
+    This method implements [`CoreExt::slot_opening_factor`]. When determining
+    the electric loading / induction distribution along the air gap, analytical
+    methods assume that the whole electric loading produced by a particular slot
+    is concentrated in its center at the air gap. For real core and winding
+    geometries, this is obviously not the case. For the example of a
+    [`SlottedAirGap`], the electric loading is distributed along the slot,
     opening whereas a wound [`PlainAirGap`] distributes the load along the
     entire air gap surface covered by coils. For further information, see
     standard electric machines literature like e.g.
@@ -363,6 +394,8 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     fn carter_factor(&self, core: CoreRef<'_>, air_gap_width: Length) -> f64;
 
     /// Returns a reference to the [`Slot`] of the air gap, if it has one.
+    ///
+    /// This method implements [`CoreExt::slot`].
     fn slot(&self, _core: CoreRef<'_>) -> Option<&dyn Slot>;
 
     /// Returns the tooth height of the core.
