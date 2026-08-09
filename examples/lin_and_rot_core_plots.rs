@@ -37,8 +37,7 @@ fn plot_lin_core() -> Result<(), Box<dyn std::error::Error>> {
         opening_radius: Length::new::<millimeter>(0.0),
         consider_tooth_tip_leakage: true,
     }
-    .try_into()
-    .unwrap();
+    .try_into()?;
 
     let air_gap = SlottedAirGap::new(12, false, CarterFactorModel::Bin12, Box::new(slot.clone()));
     let flux_barrier = Star1FluxBarrier {
@@ -113,8 +112,7 @@ fn plot_rot_core() -> Result<(), Box<dyn std::error::Error>> {
         air_gap: Box::new(air_gap_plain),
         flux_barrier: Some(Box::new(flux_barrier)),
     }
-    .try_into()
-    .unwrap();
+    .try_into()?;
 
     let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
         bottom_width: Length::new::<millimeter>(9.0),
@@ -127,8 +125,7 @@ fn plot_rot_core() -> Result<(), Box<dyn std::error::Error>> {
         opening_radius: Length::new::<millimeter>(0.0),
         consider_tooth_tip_leakage: true,
     }
-    .try_into()
-    .unwrap();
+    .try_into()?;
 
     let air_gap_slotted = SlottedAirGap::new(36, false, CarterFactorModel::Bin12, Box::new(slot));
 
@@ -144,8 +141,7 @@ fn plot_rot_core() -> Result<(), Box<dyn std::error::Error>> {
         air_gap: Box::new(air_gap_slotted),
         flux_barrier: None,
     }
-    .try_into()
-    .unwrap();
+    .try_into()?;
 
     let fp = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(&format!("docs/img/rot_core.svg"));
 
@@ -210,8 +206,7 @@ fn plot_lin_core_air_gap_and_slotted_winding() -> Result<(), Box<dyn std::error:
         opening_radius: Length::new::<millimeter>(0.0),
         consider_tooth_tip_leakage: true,
     }
-    .try_into()
-    .unwrap();
+    .try_into()?;
 
     let air_gap = SlottedAirGap::new(12, false, CarterFactorModel::Bin12, Box::new(slot.clone()));
 
@@ -291,8 +286,7 @@ fn plot_lin_and_rot_core_surface_magnets() -> Result<(), Box<dyn std::error::Err
         air_gap: Box::new(PlainAirGap::default()),
         flux_barrier: None,
     }
-    .try_into()
-    .unwrap();
+    .try_into()?;
 
     let fp = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join(&format!("docs/img/lin_and_rot_core_surface_magnets.svg"));
@@ -400,8 +394,7 @@ fn plot_lin_and_rot_core_interior_magnets() -> Result<(), Box<dyn std::error::Er
         air_gap: Box::new(PlainAirGap::default()),
         flux_barrier: Some(Box::new(fb.clone())),
     }
-    .try_into()
-    .unwrap();
+    .try_into()?;
 
     let fp = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join(&format!("docs/img/lin_and_rot_core_interior_magnets.svg"));
