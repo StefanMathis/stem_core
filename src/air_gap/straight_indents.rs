@@ -160,8 +160,8 @@ impl StraightIndentsAirGap {
         let mut offset = 0.5 * (width_per_pole - total_indent_width);
         for _ in 0..poles {
             ps.extend_back([offset, 0.0]);
-            ps.extend_back([offset, -indent_depth]);
-            ps.extend_back([offset + total_indent_width, -indent_depth]);
+            ps.extend_back([offset, indent_depth]);
+            ps.extend_back([offset + total_indent_width, indent_depth]);
             ps.extend_back([offset + total_indent_width, 0.0]);
             offset += width_per_pole;
         }
@@ -317,7 +317,7 @@ impl AirGap for StraightIndentsAirGap {
 
                 magnet_shapes.iter_mut().for_each(|s| {
                     s.line_reflection([0.0, 0.0], [1.0, 0.0]);
-                    s.translate([0.0, -self.indent_depth.get::<meter>()]);
+                    s.translate([0.0, self.indent_depth.get::<meter>()]);
                 });
 
                 return EvenlyDistributedMagnets::<true>::new(
