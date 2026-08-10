@@ -253,7 +253,7 @@ fn plot_slotted() -> Result<(), Box<dyn std::error::Error>> {
         bottom_side_width: Length::new::<millimeter>(6.76),
         top_side_width: Length::new::<millimeter>(8.0),
         top_width: Length::new::<millimeter>(1.5),
-        opening_width: Length::new::<millimeter>(1.5),
+        opening_width: Length::new::<millimeter>(0.0),
         bottom_height: Length::new::<millimeter>(0.0),
         side_height: Length::new::<millimeter>(6.79 - 0.75 - 0.5),
         top_height: Length::new::<millimeter>(0.5),
@@ -268,7 +268,7 @@ fn plot_slotted() -> Result<(), Box<dyn std::error::Error>> {
     .try_into()
     .expect("valid slot");
 
-    let air_gap = SlottedAirGap::new(12, false, CarterFactorModel::Bin12, Box::new(slot.clone()));
+    let air_gap = SlottedAirGap::new(12, false, CarterFactorModel::Bin12, Box::new(slot));
 
     let lin_core: LinCore = LinCoreBuilder {
         height: Length::new::<millimeter>(20.0),
@@ -283,6 +283,26 @@ fn plot_slotted() -> Result<(), Box<dyn std::error::Error>> {
         flux_barrier: None,
     }
     .try_into()?;
+
+    let slot: SemiTrapezoidSlot = SemiTrapezoidWidthsAndHeightsBuilder {
+        bottom_width: Length::new::<millimeter>(6.76),
+        bottom_side_width: Length::new::<millimeter>(6.76),
+        top_side_width: Length::new::<millimeter>(8.0),
+        top_width: Length::new::<millimeter>(1.5),
+        opening_width: Length::new::<millimeter>(1.5),
+        bottom_height: Length::new::<millimeter>(0.0),
+        side_height: Length::new::<millimeter>(6.79 - 0.75 - 0.5),
+        top_height: Length::new::<millimeter>(0.5),
+        opening_height: Length::new::<millimeter>(0.75),
+        bottom_radius: Length::new::<millimeter>(0.0),
+        bottom_side_radius: Length::new::<millimeter>(0.0),
+        top_radius: Length::new::<millimeter>(0.0),
+        top_side_radius: Length::new::<millimeter>(0.0),
+        opening_radius: Length::new::<millimeter>(0.0),
+        consider_tooth_tip_leakage: true,
+    }
+    .try_into()
+    .expect("valid slot");
 
     let air_gap = SlottedAirGap::new(15, false, CarterFactorModel::Bin12, Box::new(slot));
     let rot_core: RotCore = RotCoreBuilder {

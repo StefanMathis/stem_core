@@ -144,7 +144,16 @@ impl CarterFactorModel {
 }
 
 /**
+An air gap with grooves / slots for winding coils.
 
+This air gap is defined by its
+[`SlottedAirGap::slot`](struct.SlottedAirGap.html#structfield.slot), which is
+placed [`slots`](struct.SlottedAirGap.html#structfield.slots) times along the
+air gap length. If the slot [`is_open`](Slot::is_open), the air gap contour
+features the [`Slot::outline`] as grooves, otherwise the air gap contour itself
+is smooth and the slots are holes placed under the contour. The image below
+shows both cases: On the left a linear core with closed slots and on the right
+a rotary core with open slots.
 */
 #[doc = ""]
 #[cfg_attr(
@@ -164,12 +173,46 @@ impl CarterFactorModel {
     `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
 /**
-TODO
+
+_This image was produced with `examples/air_gap_plots.rs`._
+
+Slotted cores are _the_ standard core type when a winding should be mounted.
+There are several reasons for that:
+- The air gap width can be kept small, increasing flux linkage and therefore
+machine efficiency.
+- In contrast to a [`PlainAirGap`](crate::air_gap::PlainAirGap), winding and
+surface magnets can be mounted at the same time, because they aren't competing
+for space inside the air gap.
+- The slot functions as a container for the winding coils, it is not necessary
+to introduce further fixation.
+
+One disadvantage - especially for open slots - is the introduction of additional
+magnetic harmonics (see [`SlottingOrdinals`](crate::core::SlottingOrdinals)) due
+to the non-smoothness of the air gap. Even for closed slots, this is still an
+issue, because the small bridge between slot and air gap tends to saturate,
+making the air gap non-smooth from a magnetic perspective. This non-smoothness
+also leads to a larger effective air gap, which has to be reflected by the
+[`carter_factor`](CoreExt::carter_factor). For this reason, [`SlottedAirGap`]
+requires a [`CarterFactorModel`] to consider this effect. See its docstring for
+details.
+
+A [`SlottedAirGap`] cannot be segmented (because this would introduce sudden
+"jumps" in the coils), but can be continuously skewed. Therefore its
+[`AirGap::num_segments`] implementation simply returns 0.
+
+If the slots are filled with massive conductors like in the case of a squirrel
+cage winding, the resulting self-inductance due to the core material surrounding
+the coils can lead to noticeable current displacement effects. Hence,
+[`AirGap::current_displacement_coefficients`] forwards to
+[`Slot::current_displacement_coefficients`].
  */
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SlottedAirGap {
-    /// Number of slots of the air gap.
+    /// Number of slots of the air gap, i.e. how many times the
+    /// [`Slot::outline`] of the
+    /// [`SlottedAirGap::slot`](struct.SlottedAirGap.html#structfield.slot)
+    /// field is placed along the [`CoreExt::air_gap_length`].
     pub slots: u16,
     /// Whether the air gap surface starts in the middle of a slot or inbetween
     /// two slots.

@@ -1429,6 +1429,15 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// Returns the current displacement coefficients for a winding mounted on
     /// `self`.
     ///
+    /// If a winding with massive conductors is mounted on the core, like for
+    /// example a squirrel-cage winding, the resulting current displacement
+    /// effects can lead to a notable increase in the effective coil resistance
+    /// and to a decrease of the self-inductance. This effect is modelled via
+    /// the [`CurrentDisplacementCalculator`] from the [stem_slot] crate. If the
+    /// winding has distributed conductors, the current displacement effects can
+    /// usually be neglected. This method assumes massive conductors and a
+    /// single-layer winding and should not be used for other winding types.
+    ///
     /// This method forwards to [`AirGap::current_displacement_coefficients`],
     /// using `self` as the second argument. If the
     /// [`air_gap`](CoreExt::air_gap) is a
