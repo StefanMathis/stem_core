@@ -1,3 +1,27 @@
+/*!
+This module provides the [`StraightIndentsAirGap`] struct which represents an
+air gap with straight indents, possibly sunken into or extruded from the core.
+Additionally, the module contains the [`PolygonAirGapBuilder`] builder struct
+which can be used to create [`StraightIndentsAirGap`]s with a polygon shape.
+ */
+#![cfg_attr(feature = "doc-images", doc = "")]
+#![cfg_attr(
+    feature = "doc-images",
+    doc = "![Linear and rotary core with a straight indents air gap][lin_and_rot_core_straight_indents.svg]"
+)]
+#![cfg_attr(feature = "doc-images",
+cfg_attr(all(),
+doc = ::embed_doc_image::embed_image!("lin_and_rot_core_straight_indents.svg", "docs/img/lin_and_rot_core_straight_indents.svg"),
+))]
+#![cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/*!
+[`StraightIndentsAirGap`] implements the [`AirGap`] trait and can therefore be
+used to build magnetic cores. See the struct docstring for more.
+*/
+
 use std::{
     f64::consts::{FRAC_PI_2, PI, TAU},
     num::NonZero,
@@ -737,7 +761,21 @@ impl AirGap for StraightIndentsAirGap {
 }
 
 /**
+A builder struct for a [`StraightIndentsAirGap`].
 
+This builder struct is meant to be used for creating [`StraightIndentsAirGap`]s
+used to create [`RotCore`]s where the air gap contour is a regular polygon. The
+number of sides is defined as 2 times [`PolygonAirGapBuilder::pole_pairs`] times
+[`PolygonAirGapBuilder::indents_per_pole`], and the
+[`PolygonAirGapBuilder::air_gap_radius`] is the circumradius of the polygon:
+
+`indent_width = 2 * air_gap_radius * sin(PI / (2 * pole_pairs * indents_per_pole * ))`
+
+The [`indent_depth`](StraightIndentsAirGap::indent_depth) is always zero,
+meaning that [`StraightIndentsAirGap::indent_corner_radius`] equals the
+[`PolygonAirGapBuilder::air_gap_radius`] / circumradius of the polygon. The
+following image shows the resulting air gap contours for an outer and an inner
+core    respectively:
 */
 #[doc = ""]
 #[cfg_attr(
@@ -757,14 +795,54 @@ impl AirGap for StraightIndentsAirGap {
 
 _This image was produced with `examples/air_gap_plots.rs`._
 
+A [`PolygonAirGapBuilder`] can be fallibly converted into a
+[`StraightIndentsAirGap`] with [`TryFrom`] / [`TryInto`]:
+
+```
+use approx::assert_abs_diff_eq;
+use stem_core::prelude::*;
+
+let builder = PolygonAirGapBuilder {
+    num_segments: 2.try_into().expect("not zero"),
+    indents_per_pole: 2,
+    pole_pairs: 3,
+    air_gap_radius: Length::new::<millimeter>(60.0),
+};
+
+let ag = StraightIndentsAirGap::try_from(builder).expect("valid data");
+assert_abs_diff_eq!(ag.indent_width().get::<millimeter>(), 1.0, 1e-3);
+```
+The conversion fails if the calculated `indent_width` is negative (i.e.
+[`PolygonAirGapBuilder::air_gap_radius`] is negative).
+
+As shown in the docstring of [`StraightIndentsAirGap`], it is also possible to
+deserialize a [`StraightIndentsAirGap`] directly from the serialized
+representation of this struct.
 */
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub struct PolygonAirGapBuilder {
+    /// Number of segments of the resulting core. See
+    /// [`StraightIndentsAirGap::num_segments`].
     pub num_segments: NonZero<usize>,
+    /// Number of indents per pole (see
+    /// [`StraightIndentsAirGap::indents_per_pole`]).
+    ///
+    /// The number of sides of the regular polygon is `2 * pole_pairs *
+    /// indents_per_pole`.
     pub indents_per_pole: usize,
+    /// Number of pole pairs of the core.
+    ///
+    /// The number of sides of the regular polygon is `2 * pole_pairs *
+    /// indents_per_pole`.
     pub pole_pairs: u16,
+    /// Circumradius of the polygon.
+    ///
+    /// This value should be equal to the [`RotCore::air_gap_radius`] of the
+    /// resulting core to create the regular polygon air gap contour. It must
+    /// be positive, otherwise the conversion into a [`StraightIndentsAirGap`]
+    /// will fail.
     #[serde(deserialize_with = "deserialize_quantity")]
     pub air_gap_radius: Length,
 }
