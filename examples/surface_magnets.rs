@@ -37,7 +37,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Length::new::<millimeter>(20.5),
         Length::new::<millimeter>(2.0),
         3,
-    );
+    )
+    .expect("valid inputs");
     let core_straight_indents: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(55.0),
         yoke_radius: Length::new::<millimeter>(18.0),

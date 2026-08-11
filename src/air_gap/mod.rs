@@ -13,7 +13,7 @@ objects to define a grooved ("slotted") air gap. The module also provides the
 - [`StraightIndentsAirGap`] "flattens" the core at its poles to provide mounting
 points for magnets with a straight surface such as
 [`BlockMagnet`](stem_magnet::block::BlockMagnet)s. These mounting points can be
-raised or sunken into the core surface. [`AirGapPolygonBuilder`] is a helper
+raised or sunken into the core surface. [`PolygonAirGapBuilder`] is a helper
 struct to easily create a polygonal rotary air gap surface from a
 [`StraightIndentsAirGap`].
 
@@ -40,7 +40,7 @@ pub mod straight_indents;
 
 pub use plain::PlainAirGap;
 pub use slotted::{CarterFactorModel, SlottedAirGap};
-pub use straight_indents::{AirGapPolygonBuilder, StraightIndentsAirGap};
+pub use straight_indents::{PolygonAirGapBuilder, StraightIndentsAirGap};
 
 /**
 A trait to define the air gap contour of a magnetic core.
@@ -178,7 +178,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     ///     Length::new::<millimeter>(20.0),
     ///     Length::new::<millimeter>(2.0),
     ///     1,
-    /// );
+    /// ).expect("valid data");
     /// assert!(fake_new(Box::new(comp_ag)).is_ok());
     ///
     /// // Air gap is not compatible because it has two indents per pole, but
@@ -189,7 +189,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     ///     Length::new::<millimeter>(20.0),
     ///     Length::new::<millimeter>(2.0),
     ///     2,
-    /// );
+    /// ).expect("valid data");
     /// assert!(fake_new(Box::new(comp_ag)).is_err());
     /// ```
     fn combine(&mut self, core: CoreRef<'_>) -> Result<Shape, Error>;
@@ -660,4 +660,20 @@ fn combine_air_gap_and_yoke_to_shape(
         (air_gap, yoke)
     };
     return Shape::new(vec![outer.into(), inner.into()]).map_err(From::from);
+}
+
+fn zero_length() -> Length {
+    Length::new::<meter>(0.0)
+}
+
+fn deserialize_nonnegative_length<'de, D>(deserializer: D) -> Result<Length, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value = deserialize_quantity(deserializer)?;
+    let zero_length = zero_length();
+    if let Err(err) = compare_variables::compare_variables!(value >= zero_length) {
+        return Err(serde::de::Error::custom(err));
+    }
+    Ok(value)
 }

@@ -71,7 +71,8 @@ fn plot_comparison() -> Result<(), Box<dyn std::error::Error>> {
         Length::new::<millimeter>(10.0),
         Length::new::<millimeter>(2.0),
         2,
-    );
+    )
+    .expect("valid inputs");
 
     let straight_indents_air_pap: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(40.0),
@@ -474,9 +475,10 @@ fn plot_straight_indents() -> Result<(), Box<dyn std::error::Error>> {
     let air_gap = StraightIndentsAirGap::new(
         1.try_into()?,
         Length::new::<millimeter>(10.0),
-        Length::new::<millimeter>(2.0),
+        Length::new::<millimeter>(-2.0),
         2,
-    );
+    )
+    .expect("valid inputs");
 
     let lin_core: LinCore = LinCoreBuilder {
         height: Length::new::<millimeter>(20.0),
@@ -487,10 +489,18 @@ fn plot_straight_indents() -> Result<(), Box<dyn std::error::Error>> {
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
         pole_pairs: 3,
-        air_gap: Box::new(air_gap.clone()),
+        air_gap: Box::new(air_gap),
         flux_barrier: None,
     }
     .try_into()?;
+
+    let air_gap = StraightIndentsAirGap::new(
+        1.try_into()?,
+        Length::new::<millimeter>(10.0),
+        Length::new::<millimeter>(2.0),
+        2,
+    )
+    .expect("valid inputs");
 
     let rot_core: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(40.0),
@@ -542,5 +552,78 @@ fn plot_straight_indents() -> Result<(), Box<dyn std::error::Error>> {
 
         return Ok(());
     })?;
+
+    // =========================================================================
+
+    let inner_radius = Length::new::<millimeter>(40.0);
+    let outer_radius = Length::new::<millimeter>(60.0);
+
+    let air_gap: StraightIndentsAirGap = PolygonAirGapBuilder {
+        num_segments: 2.try_into().expect("valid inputs"),
+        indents_per_pole: 2,
+        pole_pairs: 3,
+        air_gap_radius: outer_radius,
+    }
+    .try_into()?;
+
+    let inner_core: RotCore = RotCoreBuilder {
+        air_gap_radius: outer_radius,
+        yoke_radius: inner_radius,
+        axial_length: Length::new::<millimeter>(1.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 3,
+        skew_angle: 0.0,
+        air_gap: Box::new(air_gap),
+        flux_barrier: None,
+    }
+    .try_into()?;
+
+    let air_gap: StraightIndentsAirGap = PolygonAirGapBuilder {
+        num_segments: 2.try_into().expect("valid inputs"),
+        indents_per_pole: 2,
+        pole_pairs: 3,
+        air_gap_radius: inner_radius,
+    }
+    .try_into()?;
+
+    let outer_core: RotCore = RotCoreBuilder {
+        air_gap_radius: inner_radius,
+        yoke_radius: outer_radius,
+        axial_length: Length::new::<millimeter>(1.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 3,
+        skew_angle: 0.0,
+        air_gap: Box::new(air_gap),
+        flux_barrier: None,
+    }
+    .try_into()?;
+
+    let distance = 0.01;
+    let ag_radius = outer_radius.get::<meter>();
+    let bb = BoundingBox::new(
+        -(ag_radius + 0.001),
+        3.0 * ag_radius + 1.0 * distance + 0.001,
+        -(ag_radius + 0.001),
+        ag_radius + 0.001,
+    );
+
+    let fp = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(&format!("docs/img/polygon_cores.svg"));
+
+    let view = Viewport::from_bounding_box(&bb, SideLength::Long(800));
+    view.write_to_file(&fp, |cr| {
+        cr.set_source_rgb(1.0, 1.0, 1.0);
+        cr.paint()?;
+
+        inner_core.drawable().draw(cr)?;
+        cr.translate(distance + 2.0 * ag_radius, 0.0);
+        outer_core.drawable().draw(cr)?;
+
+        return Ok(());
+    })?;
+
     return Ok(());
 }

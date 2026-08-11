@@ -12,7 +12,8 @@ fn create_core(indent_width: Length, indent_depth: Length, indents_per_pole: usi
         indent_width,
         indent_depth,
         indents_per_pole.try_into().unwrap(),
-    );
+    )
+    .expect("valid inputs");
     return LinCoreBuilder {
         height: Length::new::<millimeter>(25.0),
         width: Length::new::<millimeter>(150.0),

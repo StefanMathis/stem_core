@@ -13,7 +13,8 @@ fn test_radii_calc() {
             Length::new::<millimeter>(20.0),
             Length::new::<millimeter>(0.0),
             3.try_into().unwrap(),
-        );
+        )
+        .expect("valid inputs");
 
         approx::assert_abs_diff_eq!(
             air_gap
@@ -64,14 +65,14 @@ fn test_radii_calc() {
             epsilon = 1e-4
         );
     }
-    let air_gap_radius = Length::new::<millimeter>(60.0);
     {
         let air_gap = StraightIndentsAirGap::new(
             1.try_into().unwrap(),
             Length::new::<millimeter>(20.0),
             Length::new::<millimeter>(5.0),
             3.try_into().unwrap(),
-        );
+        )
+        .expect("valid inputs");
 
         approx::assert_abs_diff_eq!(
             air_gap
@@ -109,7 +110,8 @@ fn test_radii_calc() {
             Length::new::<millimeter>(20.0),
             Length::new::<millimeter>(-5.0),
             3.try_into().unwrap(),
-        );
+        )
+        .expect("valid inputs");
 
         approx::assert_abs_diff_eq!(
             air_gap
@@ -143,6 +145,90 @@ fn test_radii_calc() {
     }
 }
 
+#[test]
+fn polygon_air_gap_builder() {
+    {
+        let str = indoc::indoc! {"
+        num_segments: 2
+        indents_per_pole: 2
+        pole_pairs: 3
+        air_gap_radius: 60 mm
+    "};
+        let air_gap: StraightIndentsAirGap = serde_yaml::from_str(&str).expect("valid inputs");
+
+        let core: RotCore = RotCoreBuilder {
+            air_gap_radius: Length::new::<millimeter>(60.0),
+            yoke_radius: Length::new::<millimeter>(80.0),
+            axial_length: Length::new::<millimeter>(1.0),
+            axial_coil_overhang: Length::new::<millimeter>(0.0),
+            iron_fill_factor: 1.0,
+            material: Arc::new(Material::default()),
+            pole_pairs: 3,
+            skew_angle: 0.0,
+            air_gap: Box::new(air_gap),
+            flux_barrier: None,
+        }
+        .try_into()
+        .expect("valid magnetic core");
+
+        let drawable = core.drawable();
+        let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
+
+        let path = std::path::Path::new(
+            "tests/img/rot_straight_indents/polygon_air_gap_builder_outer.png",
+        );
+        let callback = |path: &std::path::Path| {
+            return view.write_to_file(path, |cr| {
+                cr.set_source_rgb(1.0, 1.0, 1.0);
+                cr.paint()?;
+                drawable.draw(cr)?;
+                return Ok(());
+            });
+        };
+        assert!(compare_or_create(path, &callback, 0.98).is_ok());
+    }
+    {
+        let str = indoc::indoc! {"
+        num_segments: 2
+        indents_per_pole: 2
+        pole_pairs: 3
+        air_gap_radius: 80 mm
+    "};
+        let air_gap: StraightIndentsAirGap = serde_yaml::from_str(&str).expect("valid inputs");
+
+        let core: RotCore = RotCoreBuilder {
+            air_gap_radius: Length::new::<millimeter>(80.0),
+            yoke_radius: Length::new::<millimeter>(60.0),
+            axial_length: Length::new::<millimeter>(1.0),
+            axial_coil_overhang: Length::new::<millimeter>(0.0),
+            iron_fill_factor: 1.0,
+            material: Arc::new(Material::default()),
+            pole_pairs: 3,
+            skew_angle: 0.0,
+            air_gap: Box::new(air_gap),
+            flux_barrier: None,
+        }
+        .try_into()
+        .expect("valid magnetic core");
+
+        let drawable = core.drawable();
+        let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
+
+        let path = std::path::Path::new(
+            "tests/img/rot_straight_indents/polygon_air_gap_builder_inner.png",
+        );
+        let callback = |path: &std::path::Path| {
+            return view.write_to_file(path, |cr| {
+                cr.set_source_rgb(1.0, 1.0, 1.0);
+                cr.paint()?;
+                drawable.draw(cr)?;
+                return Ok(());
+            });
+        };
+        assert!(compare_or_create(path, &callback, 0.98).is_ok());
+    }
+}
+
 fn create_core(
     indent_width: f64,
     indent_depth: f64,
@@ -159,12 +245,15 @@ fn create_core(
         material: Arc::new(Material::default()),
         pole_pairs: 2,
         skew_angle: 0.0,
-        air_gap: Box::new(StraightIndentsAirGap::new(
-            1.try_into().unwrap(),
-            Length::new::<millimeter>(indent_width),
-            Length::new::<millimeter>(indent_depth),
-            indents_per_pole.try_into().expect("must not be zero"),
-        )),
+        air_gap: Box::new(
+            StraightIndentsAirGap::new(
+                1.try_into().unwrap(),
+                Length::new::<millimeter>(indent_width),
+                Length::new::<millimeter>(indent_depth),
+                indents_per_pole.try_into().expect("must not be zero"),
+            )
+            .expect("valid inputs"),
+        ),
         flux_barrier: None,
     }
     .try_into()
@@ -178,7 +267,8 @@ fn test_assembly_check_block() {
         Length::new::<millimeter>(20.5),
         Length::new::<millimeter>(2.0),
         3,
-    );
+    )
+    .expect("valid inputs");
     let core: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(55.0),
         yoke_radius: Length::new::<millimeter>(18.0),

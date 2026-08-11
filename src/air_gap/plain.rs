@@ -40,22 +40,6 @@ use crate::{
     winding_zones::{WindingZones, WindingZonesEqSpaced},
 };
 
-fn zero_length() -> Length {
-    Length::new::<meter>(0.0)
-}
-
-fn deserialize_air_gap_winding_height<'de, D>(deserializer: D) -> Result<Length, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let value = deserialize_quantity(deserializer)?;
-    let zero_length = zero_length();
-    if let Err(err) = compare_variables!(value >= zero_length) {
-        return Err(serde::de::Error::custom(err));
-    }
-    Ok(value)
-}
-
 fn deserialize_winding_coverage<'de, D>(deserializer: D) -> Result<f64, D::Error>
 where
     D: serde::Deserializer<'de>,
@@ -207,8 +191,8 @@ pub struct PlainAirGap {
     #[cfg_attr(
         feature = "serde",
         serde(
-            deserialize_with = "deserialize_air_gap_winding_height",
-            default = "zero_length"
+            deserialize_with = "super::deserialize_nonnegative_length",
+            default = "super::zero_length"
         )
     )]
     air_gap_winding_height: Length,
@@ -437,8 +421,9 @@ impl AirGap for PlainAirGap {
     }
 
     fn slots(&self, _: CoreRef<'_>) -> u16 {
-        let m =
-            u16::from(self.air_gap_winding_height > zero_length() && self.winding_coverage > 0.0);
+        let m = u16::from(
+            self.air_gap_winding_height > super::zero_length() && self.winding_coverage > 0.0,
+        );
         return m * self.slots;
     }
 
