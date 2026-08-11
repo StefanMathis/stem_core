@@ -332,9 +332,9 @@ impl StraightIndentsAirGap {
     ///     2.try_into().expect("not zero"),
     ///     Length::new::<millimeter>(10.0),
     ///     Length::new::<millimeter>(2.0),
-    ///     2).expect("valif inputs");
+    ///     2).expect("valid inputs");
     /// assert_abs_diff_eq!(air_gap.indent_opening_angle(Length::new::<millimeter>(60.0), true), 0.161, epsilon = 1e-3);
-    /// assert_abs_diff_eq!(air_gap.indent_opening_angle(Length::new::<millimeter>(60.0), false), 0.161, epsilon = 1e-3);
+    /// assert_abs_diff_eq!(air_gap.indent_opening_angle(Length::new::<millimeter>(60.0), false), 0.172, epsilon = 1e-3);
     /// ```
     pub fn indent_opening_angle(&self, air_gap_radius: Length, is_outer: bool) -> f64 {
         use uom::typenum::P2;
@@ -810,7 +810,7 @@ let builder = PolygonAirGapBuilder {
 };
 
 let ag = StraightIndentsAirGap::try_from(builder).expect("valid data");
-assert_abs_diff_eq!(ag.indent_width().get::<millimeter>(), 1.0, 1e-3);
+assert_abs_diff_eq!(ag.indent_width().get::<millimeter>(), 31.058, epsilon = 1e-3);
 ```
 The conversion fails if the calculated `indent_width` is negative (i.e.
 [`PolygonAirGapBuilder::air_gap_radius`] is negative).

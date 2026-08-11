@@ -146,14 +146,14 @@ fn test_radii_calc() {
 }
 
 #[test]
-fn polygon_air_gap_builder() {
+fn test_polygon_air_gap_builder() {
     {
         let str = indoc::indoc! {"
-        num_segments: 2
-        indents_per_pole: 2
-        pole_pairs: 3
-        air_gap_radius: 60 mm
-    "};
+            num_segments: 2
+            indents_per_pole: 2
+            pole_pairs: 3
+            air_gap_radius: 60 mm
+        "};
         let air_gap: StraightIndentsAirGap = serde_yaml::from_str(&str).expect("valid inputs");
 
         let core: RotCore = RotCoreBuilder {
