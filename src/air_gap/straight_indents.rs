@@ -47,7 +47,7 @@ use crate::{
 
 /**
 An air gap with straight indents for mounting magnets with planar backs like
-e.g. [`BlockMagnet`](stem_magnet::block::BlockMagnet)s.
+e.g. [`BlockMagnet`]s.
 
 This air gap features one or more indents per pole which can be used for
 mounting magnets with planar surfaces. This is especially interesting for
@@ -74,6 +74,7 @@ indent width, two indents per pole).
     `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
 /**
+
 _This image was produced with `examples/air_gap_plots.rs`._
 
 A [`StraightIndentsAirGap`] can be segmented, but not continuously skewed. It is
@@ -91,7 +92,7 @@ approximations like [`CoreExt::carter_factor`] or [`CoreExt::slotting_ordinals`]
 
 # Dimensions
 
-The following image shows the definition of the following geometric variables
+The image below shows the definition of the following geometric variables
 for the example of a [`RotCore`]. For a [`LinCore`], the geometric relations are
 much simpler and only the first two values are needed.
 - [`indent_width`](StraightIndentsAirGap::indent_width)
@@ -119,8 +120,6 @@ much simpler and only the first two values are needed.
     `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
 /**
-
-_This image was produced with `examples/air_gap_plots.rs`._
 
 # Fields
 
@@ -775,7 +774,7 @@ The [`indent_depth`](StraightIndentsAirGap::indent_depth) is always zero,
 meaning that [`StraightIndentsAirGap::indent_corner_radius`] equals the
 [`PolygonAirGapBuilder::air_gap_radius`] / circumradius of the polygon. The
 following image shows the resulting air gap contours for an outer and an inner
-core    respectively:
+core respectively:
 */
 #[doc = ""]
 #[cfg_attr(

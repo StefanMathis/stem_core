@@ -205,7 +205,27 @@ cage winding, the resulting self-inductance due to the core material surrounding
 the coils can lead to noticeable current displacement effects. Hence,
 [`AirGap::current_displacement_coefficients`] forwards to
 [`Slot::current_displacement_coefficients`].
+
+The following image shows how the [`SlottedAirGap::starts_in_slot_middle`]
+parameter changes the core geometry, using the example of a linear core.
  */
+#[doc = ""]
+#[cfg_attr(
+    feature = "doc-images",
+    doc = "![Effect of the starts_in_slot_middle parameter][lin_slotted_core_slot_vs_tooth_middle]"
+)]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image(
+        "lin_slotted_core_slot_vs_tooth_middle",
+        "docs/img/lin_slotted_core_slot_vs_tooth_middle.svg"
+    )
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SlottedAirGap {
@@ -217,26 +237,6 @@ pub struct SlottedAirGap {
     /// Whether the air gap surface starts in the middle of a slot or inbetween
     /// two slots.
     ///
-    /// The image below shows the influence of this parameter on the core shape
-    /// for a linear core:
-    #[doc = ""]
-    #[cfg_attr(
-        feature = "doc-images",
-        doc = "![Effect of the starts_in_slot_middle parameter][lin_slotted_core_slot_vs_tooth_middle]"
-    )]
-    #[cfg_attr(
-        feature = "doc-images",
-        embed_doc_image::embed_doc_image(
-            "lin_slotted_core_slot_vs_tooth_middle",
-            "docs/img/lin_slotted_core_slot_vs_tooth_middle.svg"
-        )
-    )]
-    #[cfg_attr(
-        not(feature = "doc-images"),
-        doc = "**Doc images not enabled**. Compile docs with
-        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
-    )]
-    ///
     /// If a [`CoilLayout`] cannot be separated horizontally (e.g. in case of a
     /// ([`CoilLayout::Single`])), the layers will protrude outside the air gap
     /// for a linear core. This is obviously not desirable, which is why
@@ -245,6 +245,10 @@ pub struct SlottedAirGap {
     /// ([`CoilLayout::DoubleHorizontal`], [`CoilLayout::Quadruple`]).
     /// For a rotary core, this is not the case, as there the parameter only
     /// influences whether the first slot is positioned on the x-axis or not.
+    ///
+    /// See the image in the [`SlottedAirGap`] docstring for a visualizatiom
+    /// (due to a limitation of the embed_doc_image crate, the image cannot be
+    /// included in this docstring directly).
     pub starts_in_slot_middle: bool,
     /// The model used in the implementation of [`AirGap::carter_factor`]. See
     /// the docstrings of that method and of [`CarterFactorModel`] itself for
