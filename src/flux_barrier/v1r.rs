@@ -232,11 +232,7 @@ impl V1rFluxBarrier {
             10.0 * relief_path_radius,
         )?;
 
-        let pt_corner_relief_q = match relief_path_circle.intersections_primitive(
-            &ls,
-            DEFAULT_EPSILON,
-            DEFAULT_MAX_RELATIVE,
-        ) {
+        let pt_corner_relief_q = match relief_path_circle.intersections_primitive(&ls) {
             PrimitiveIntersections::Zero => {
                 // pt_magnet_relief_q is outside the circle
                 let ls = LineSegment::from_start_angle_length(
@@ -245,11 +241,7 @@ impl V1rFluxBarrier {
                     -10.0 * relief_path_radius,
                 )?;
 
-                match relief_path_circle.intersections_primitive(
-                    &ls,
-                    DEFAULT_EPSILON,
-                    DEFAULT_MAX_RELATIVE,
-                ) {
+                match relief_path_circle.intersections_primitive(&ls) {
                     PrimitiveIntersections::Zero => pt_magnet_relief_q,
                     PrimitiveIntersections::One(i) => i,
                     PrimitiveIntersections::Two([i1, i2]) => {
@@ -331,11 +323,7 @@ impl V1rFluxBarrier {
                 angle,
                 10.0 * air_gap_radius.get::<meter>(),
             )?;
-            let start_d = match leakage_circle.intersections_primitive(
-                &ext_d_axis,
-                DEFAULT_EPSILON,
-                DEFAULT_MAX_RELATIVE,
-            ) {
+            let start_d = match leakage_circle.intersections_primitive(&ext_d_axis) {
                 PrimitiveIntersections::Zero => pt_magnet_leakage_d,
                 PrimitiveIntersections::One(i) => i,
                 PrimitiveIntersections::Two([i1, i2]) => {
@@ -355,11 +343,7 @@ impl V1rFluxBarrier {
                 angle,
                 10.0 * air_gap_radius.get::<meter>(),
             )?;
-            let start_q = match leakage_circle.intersections_primitive(
-                &ext_q_axis,
-                DEFAULT_EPSILON,
-                DEFAULT_MAX_RELATIVE,
-            ) {
+            let start_q = match leakage_circle.intersections_primitive(&ext_q_axis) {
                 PrimitiveIntersections::Zero => pt_magnet_leakage_q,
                 PrimitiveIntersections::One(i) => i,
                 PrimitiveIntersections::Two([i1, i2]) => {
@@ -595,6 +579,7 @@ impl FluxBarrier for V1rFluxBarrier {
             shapes,
             0.0,
             1,
+            core.d_axis_offset(),
         )
         .into();
     }

@@ -40,14 +40,14 @@ fn plot_lin_core() -> Result<(), Box<dyn std::error::Error>> {
     .try_into()?;
 
     let air_gap = SlottedAirGap::new(12, false, CarterFactorModel::Bin12, Box::new(slot.clone()));
-    let flux_barrier = Star1FluxBarrier {
+    let flux_barrier = Spoke1FluxBarrier {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(4.0),
         magnet_space_width: Length::new::<millimeter>(10.0),
-        magnet_space_height_or_relief_path_width: Star1HeightSplit::ReliefPathWidth(Length::new::<
-            millimeter,
-        >(2.0)),
+        magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(
+            Length::new::<millimeter>(2.0),
+        ),
         glue_gap: Length::new::<millimeter>(0.0),
         magnet_material: None,
         cache: None,
@@ -87,14 +87,14 @@ fn plot_lin_core() -> Result<(), Box<dyn std::error::Error>> {
 fn plot_rot_core() -> Result<(), Box<dyn std::error::Error>> {
     let air_gap_plain = PlainAirGap::default();
 
-    let flux_barrier = Star1FluxBarrier {
+    let flux_barrier = Spoke1FluxBarrier {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(4.0),
         magnet_space_width: Length::new::<millimeter>(10.0),
-        magnet_space_height_or_relief_path_width: Star1HeightSplit::ReliefPathWidth(Length::new::<
-            millimeter,
-        >(2.0)),
+        magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(
+            Length::new::<millimeter>(2.0),
+        ),
         glue_gap: Length::new::<millimeter>(0.0),
         magnet_material: None,
         cache: None,
@@ -349,14 +349,14 @@ fn plot_lin_and_rot_core_interior_magnets() -> Result<(), Box<dyn std::error::Er
     let distance = 0.02;
     let magnet_thickness = 0.005;
 
-    let fb = Star1FluxBarrier {
+    let fb = Spoke1FluxBarrier {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(0.0),
         magnet_space_width: Length::new::<millimeter>(10.0),
-        magnet_space_height_or_relief_path_width: Star1HeightSplit::ReliefPathWidth(Length::new::<
-            millimeter,
-        >(0.0)),
+        magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(
+            Length::new::<millimeter>(0.0),
+        ),
         glue_gap: Length::new::<millimeter>(0.5),
         magnet_material: Some(Arc::new(Material::default())),
         cache: None,

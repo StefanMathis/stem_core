@@ -106,8 +106,8 @@ fn test_slotted_core_180deg() {
             .unwrap();
 
         // Geometry comparison
-        approx::assert_abs_diff_eq!(core.pole_coverage(None), 10.0 / 14.0, epsilon = 0.0001);
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(core.pole_coverage(None), 10.0 / 14.0, epsilon = 0.0001);
+        approxim::assert_abs_diff_eq!(
             flux_barrier
                 .cache
                 .as_ref()
@@ -226,8 +226,8 @@ fn test_slotted_core_90deg() {
             .unwrap();
 
         // Geometry comparison
-        approx::assert_abs_diff_eq!(core.pole_coverage(None), 6.0 / 14.0, epsilon = 0.0001);
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(core.pole_coverage(None), 6.0 / 14.0, epsilon = 0.0001);
+        approxim::assert_abs_diff_eq!(
             flux_barrier
                 .cache
                 .as_ref()
@@ -726,7 +726,7 @@ fn test_deserialize() {
             leakage_path_width: 1 mm
             magnet_material:
     "};
-    let core: RotCore = serde_yaml::from_str(&yaml).unwrap();
+    let core: RotCore = yaml_serde::from_str(&yaml).unwrap();
 
     let drawable = core.drawable();
     let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));

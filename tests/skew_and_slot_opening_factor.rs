@@ -1,27 +1,27 @@
 use std::f64::consts::{PI, TAU};
 
-use approx::assert_abs_diff_eq;
+use approxim::assert_abs_diff_eq;
 use stem_core::air_gap::slot_opening_factor;
 use stem_core::core::ext::skew_factor;
 use stem_core::stem_material::prelude::*;
 
 #[test]
 fn test_skew_factor_no_segment() {
-    approx::assert_abs_diff_eq!(skew_factor(60, 6.0 / 180.0 * PI, 0), 0.0, epsilon = 0.0001);
-    approx::assert_abs_diff_eq!(skew_factor(30, 12.0 / 180.0 * PI, 0), 0.0, epsilon = 0.0001);
-    approx::assert_abs_diff_eq!(skew_factor(60, 12.0 / 180.0 * PI, 0), 0.0, epsilon = 0.0001);
-    approx::assert_abs_diff_eq!(skew_factor(90, 12.0 / 180.0 * PI, 0), 0.0, epsilon = 0.0001);
-    approx::assert_abs_diff_eq!(
+    approxim::assert_abs_diff_eq!(skew_factor(60, 6.0 / 180.0 * PI, 0), 0.0, epsilon = 0.0001);
+    approxim::assert_abs_diff_eq!(skew_factor(30, 12.0 / 180.0 * PI, 0), 0.0, epsilon = 0.0001);
+    approxim::assert_abs_diff_eq!(skew_factor(60, 12.0 / 180.0 * PI, 0), 0.0, epsilon = 0.0001);
+    approxim::assert_abs_diff_eq!(skew_factor(90, 12.0 / 180.0 * PI, 0), 0.0, epsilon = 0.0001);
+    approxim::assert_abs_diff_eq!(
         skew_factor(120, 12.0 / 180.0 * PI, 0),
         0.0,
         epsilon = 0.0001
     );
-    approx::assert_abs_diff_eq!(
+    approxim::assert_abs_diff_eq!(
         skew_factor(150, 12.0 / 180.0 * PI, 0),
         0.0,
         epsilon = 0.0001
     );
-    approx::assert_abs_diff_eq!(
+    approxim::assert_abs_diff_eq!(
         skew_factor(180, 12.0 / 180.0 * PI, 0),
         0.0,
         epsilon = 0.0001
@@ -44,26 +44,26 @@ fn test_skew_factor_single_segment() {
 fn test_skew_factor_multiple_segments() {
     {
         // Cogging torque supression of a 12/10 winding with staggered rotor magnets
-        approx::assert_abs_diff_eq!(skew_factor(60, 6.0 / 180.0 * PI, 3), 0.0, epsilon = 0.0001);
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(skew_factor(60, 6.0 / 180.0 * PI, 3), 0.0, epsilon = 0.0001);
+        approxim::assert_abs_diff_eq!(
             skew_factor(30, 6.0 / 180.0 * PI, 3),
             2.0 / 3.0,
             epsilon = 0.0001
         );
-        approx::assert_abs_diff_eq!(skew_factor(30, 12.0 / 180.0 * PI, 3), 0.0, epsilon = 0.0001);
-        approx::assert_abs_diff_eq!(skew_factor(60, 12.0 / 180.0 * PI, 3), 0.0, epsilon = 0.0001);
-        approx::assert_abs_diff_eq!(skew_factor(90, 12.0 / 180.0 * PI, 3), 1.0, epsilon = 0.0001);
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(skew_factor(30, 12.0 / 180.0 * PI, 3), 0.0, epsilon = 0.0001);
+        approxim::assert_abs_diff_eq!(skew_factor(60, 12.0 / 180.0 * PI, 3), 0.0, epsilon = 0.0001);
+        approxim::assert_abs_diff_eq!(skew_factor(90, 12.0 / 180.0 * PI, 3), 1.0, epsilon = 0.0001);
+        approxim::assert_abs_diff_eq!(
             skew_factor(120, 12.0 / 180.0 * PI, 3),
             0.0,
             epsilon = 0.0001
         );
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             skew_factor(150, 12.0 / 180.0 * PI, 3),
             0.0,
             epsilon = 0.0001
         );
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             skew_factor(180, 12.0 / 180.0 * PI, 3),
             1.0,
             epsilon = 0.0001
@@ -96,24 +96,24 @@ fn test_skew_factor_multiple_segments() {
         }
 
         let skew_angle = 6.0 / 180.0 * PI;
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             skew_factor(60, skew_angle, 2),
             amplitude_two_segments(skew_angle, 60),
             epsilon = 0.0001
         );
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             skew_factor(30, skew_angle, 2),
             amplitude_two_segments(skew_angle, 30),
             epsilon = 0.02
         );
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             amplitude_two_segments(skew_angle, 60),
             0.0,
             epsilon = 0.0001
         );
 
         let skew_angle = 3.0 / 180.0 * PI;
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             skew_factor(60, skew_angle, 2),
             amplitude_two_segments(skew_angle, 60),
             epsilon = 0.02

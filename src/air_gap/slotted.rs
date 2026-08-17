@@ -103,7 +103,7 @@ impl CarterFactorModel {
     /// # Examples
     ///
     /// ```
-    /// use approx::assert_abs_diff_eq;
+    /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
     ///
@@ -297,8 +297,7 @@ impl SlottedAirGap {
 
             let verts_par = [[0.0, bb.ymin() - 1.0], [0.0, bb.ymax() + 1.0]];
             let vertical_line = Polysegment::from_points(verts_par.as_slice());
-            let separated =
-                ps.intersection_cut(&vertical_line, DEFAULT_EPSILON, DEFAULT_MAX_RELATIVE);
+            let separated = ps.intersection_cut(&vertical_line);
 
             return separated.into_iter().rev().filter(|ps| !ps.is_empty());
         }
@@ -526,6 +525,7 @@ impl AirGap for SlottedAirGap {
                 magnet_assembly,
                 split,
                 true, // Value is ignored anyway if LIN = true
+                core.d_axis_offset(),
             )
             .into(),
             CoreRef::Rot(core_rot) => EvenlyDistributedMagnets::<false>::from_magnet_assembly(
@@ -534,6 +534,7 @@ impl AirGap for SlottedAirGap {
                 magnet_assembly,
                 split,
                 core_rot.is_outer(),
+                core.d_axis_offset(),
             )
             .into(),
         }

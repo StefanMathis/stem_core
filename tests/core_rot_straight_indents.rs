@@ -16,27 +16,27 @@ fn test_radii_calc() {
         )
         .expect("valid inputs");
 
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             air_gap
                 .indent_corner_radius(air_gap_radius, false)
                 .get::<meter>(),
             0.06
         );
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             air_gap
                 .indent_corner_radius(air_gap_radius, true)
                 .get::<meter>(),
             0.06
         );
 
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             air_gap
                 .indent_center_radius(air_gap_radius, false)
                 .get::<meter>(),
             0.05916,
             epsilon = 1e-4
         );
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             air_gap
                 .indent_center_radius(air_gap_radius, true)
                 .get::<meter>(),
@@ -44,7 +44,7 @@ fn test_radii_calc() {
             epsilon = 1e-4
         );
 
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             (air_gap
                 .indent_center_radius(air_gap_radius, false)
                 .get::<meter>()
@@ -54,7 +54,7 @@ fn test_radii_calc() {
             0.06,
             epsilon = 1e-4
         );
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             (air_gap
                 .indent_center_radius(air_gap_radius, true)
                 .get::<meter>()
@@ -74,14 +74,14 @@ fn test_radii_calc() {
         )
         .expect("valid inputs");
 
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             air_gap
                 .indent_corner_radius(air_gap_radius, false)
                 .get::<meter>(),
             0.05507,
             epsilon = 1e-4
         );
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             air_gap
                 .indent_corner_radius(air_gap_radius, true)
                 .get::<meter>(),
@@ -89,14 +89,14 @@ fn test_radii_calc() {
             epsilon = 1e-4
         );
 
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             air_gap
                 .indent_center_radius(air_gap_radius, false)
                 .get::<meter>(),
             0.05416,
             epsilon = 1e-4
         );
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             air_gap
                 .indent_center_radius(air_gap_radius, true)
                 .get::<meter>(),
@@ -113,14 +113,14 @@ fn test_radii_calc() {
         )
         .expect("valid inputs");
 
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             air_gap
                 .indent_corner_radius(air_gap_radius, false)
                 .get::<meter>(),
             0.06493,
             epsilon = 1e-4
         );
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             air_gap
                 .indent_corner_radius(air_gap_radius, true)
                 .get::<meter>(),
@@ -128,14 +128,14 @@ fn test_radii_calc() {
             epsilon = 1e-4
         );
 
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             air_gap
                 .indent_center_radius(air_gap_radius, false)
                 .get::<meter>(),
             0.06416,
             epsilon = 1e-4
         );
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             air_gap
                 .indent_center_radius(air_gap_radius, true)
                 .get::<meter>(),
@@ -154,7 +154,7 @@ fn test_polygon_air_gap_builder() {
             pole_pairs: 3
             air_gap_radius: 60 mm
         "};
-        let air_gap: StraightIndentsAirGap = serde_yaml::from_str(&str).expect("valid inputs");
+        let air_gap: StraightIndentsAirGap = yaml_serde::from_str(&str).expect("valid inputs");
 
         let core: RotCore = RotCoreBuilder {
             air_gap_radius: Length::new::<millimeter>(60.0),
@@ -194,7 +194,7 @@ fn test_polygon_air_gap_builder() {
         pole_pairs: 3
         air_gap_radius: 80 mm
     "};
-        let air_gap: StraightIndentsAirGap = serde_yaml::from_str(&str).expect("valid inputs");
+        let air_gap: StraightIndentsAirGap = yaml_serde::from_str(&str).expect("valid inputs");
 
         let core: RotCore = RotCoreBuilder {
             air_gap_radius: Length::new::<millimeter>(80.0),

@@ -361,7 +361,7 @@ fn test_plot_outer_core() {
         };
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
 
-        approx::assert_abs_diff_eq!(core.slot_opening_factor(1), 0.999069, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(core.slot_opening_factor(1), 0.999069, epsilon = 1e-6);
     }
 }
 
@@ -870,24 +870,24 @@ fn test_dimensions_and_mass() {
     let core = create_outer_core_from_phd(CarterFactorModel::Bin12);
 
     // Stack
-    approx::assert_abs_diff_eq!(core.axial_length().get::<meter>(), 0.165, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(core.iron_length().get::<meter>(), 0.165, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(
+    approxim::assert_abs_diff_eq!(core.axial_length().get::<meter>(), 0.165, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(core.iron_length().get::<meter>(), 0.165, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(
         core.air_gap_length().get::<meter>(),
         core.air_gap_radius().get::<meter>() * TAU,
         epsilon = 1e-6
     );
 
     // Offset
-    approx::assert_abs_diff_eq!(
+    approxim::assert_abs_diff_eq!(
         core.origin_offset_core_to_slot().get::<meter>(),
         0.05499,
         epsilon = 1e-3
     );
 
     // Check the tooth dimensions (values taken from [Mat19])
-    approx::assert_abs_diff_eq!(core.tooth_height().get::<meter>(), 17.75e-3, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(
+    approxim::assert_abs_diff_eq!(core.tooth_height().get::<meter>(), 17.75e-3, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(
         core.tooth_width_at(Length::new::<millimeter>(5.0))
             .get::<meter>(),
         0.003514,
@@ -895,30 +895,30 @@ fn test_dimensions_and_mass() {
     );
 
     // Check the mass of yoke and teeth
-    approx::assert_abs_diff_eq!(
+    approxim::assert_abs_diff_eq!(
         core.tooth_mass().get::<kilogram>(),
         0.012194,
         epsilon = 1e-6
     );
-    approx::assert_abs_diff_eq!(
+    approxim::assert_abs_diff_eq!(
         core.teeth_mass().get::<kilogram>(),
         core.tooth_mass().get::<kilogram>() * core.slots() as f64,
         epsilon = 1e-6
     );
-    approx::assert_abs_diff_eq!(core.yoke_mass().get::<kilogram>(), 1.00177, epsilon = 1e-5);
+    approxim::assert_abs_diff_eq!(core.yoke_mass().get::<kilogram>(), 1.00177, epsilon = 1e-5);
 }
 
 #[test]
 fn test_carter_factor() {
     let core = create_outer_core_from_phd(CarterFactorModel::Bin12);
-    approx::assert_abs_diff_eq!(
+    approxim::assert_abs_diff_eq!(
         core.carter_factor(Length::new::<millimeter>(1.0)),
         1.061802,
         epsilon = 0.001
     );
 
     let core = create_outer_core_from_phd(CarterFactorModel::MVP08);
-    approx::assert_abs_diff_eq!(
+    approxim::assert_abs_diff_eq!(
         core.carter_factor(Length::new::<millimeter>(1.0)),
         1.063295,
         epsilon = 0.001
@@ -934,6 +934,6 @@ fn test_current_displacement_coefficients() {
         ElectricalConductivity::new::<siemens_per_meter>(57e6),
         1.0,
     );
-    approx::assert_abs_diff_eq!(coeffs.resistance, 4.839075, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(coeffs.inductance, 0.659253, epsilon = 1e-3);
+    approxim::assert_abs_diff_eq!(coeffs.resistance, 4.839075, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(coeffs.inductance, 0.659253, epsilon = 1e-3);
 }

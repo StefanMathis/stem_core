@@ -5,7 +5,7 @@ use planar_geo::draw::{Color, Style};
 use stem_core::prelude::*;
 use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
 
-fn create_plain_core(flux_barrier: Option<Star1FluxBarrier>) -> LinCore {
+fn create_plain_core(flux_barrier: Option<Spoke1FluxBarrier>) -> LinCore {
     let air_gap = PlainAirGap::new(1, Length::new::<millimeter>(10.0), 0.7, 12, false).unwrap();
 
     let flux_barrier: Option<Box<dyn FluxBarrier>> = flux_barrier
@@ -27,7 +27,7 @@ fn create_plain_core(flux_barrier: Option<Star1FluxBarrier>) -> LinCore {
     .unwrap()
 }
 
-fn create_slotted_core(flux_barrier: Option<Star1FluxBarrier>) -> LinCore {
+fn create_slotted_core(flux_barrier: Option<Spoke1FluxBarrier>) -> LinCore {
     let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
         bottom_width: Length::new::<millimeter>(8.0),
         opening_width: Length::new::<millimeter>(2.0),
@@ -66,7 +66,7 @@ fn create_slotted_core(flux_barrier: Option<Star1FluxBarrier>) -> LinCore {
 
 #[test]
 fn plain_with_relief_path() {
-    let mut barrier = Star1FluxBarrier {
+    let mut barrier = Spoke1FluxBarrier {
         magnet_space_width: Length::new::<millimeter>(10.0),
         glue_gap: Length::new::<millimeter>(0.2),
         magnet_material: Some(Arc::new(Material::default())),
@@ -74,9 +74,9 @@ fn plain_with_relief_path() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(5.0),
-        magnet_space_height_or_relief_path_width: Star1HeightSplit::ReliefPathWidth(Length::new::<
-            millimeter,
-        >(2.0)),
+        magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(
+            Length::new::<millimeter>(2.0),
+        ),
     };
 
     {
@@ -85,7 +85,7 @@ fn plain_with_relief_path() {
         assert_eq!(contours.len(), 6);
 
         let c = barrier.cache.as_ref().unwrap();
-        approx::assert_abs_diff_eq!(c.pt_air_gap_leakage[1] - c.pt_inner_relief[1], -0.002);
+        approxim::assert_abs_diff_eq!(c.pt_air_gap_leakage[1] - c.pt_inner_relief[1], -0.002);
 
         let mut style = Style::default();
         style.background_color = Color {
@@ -97,7 +97,7 @@ fn plain_with_relief_path() {
 
         let view = Viewport::from_bounded_entities(contours.iter(), SideLength::Long(1000))
             .expect("contours is not empty");
-        let path = std::path::Path::new("tests/img/star1_flux_barrier_lin/contours_1.png");
+        let path = std::path::Path::new("tests/img/spoke1_flux_barrier_lin/contours_1.png");
         let callback = |path: &std::path::Path| {
             return view.write_to_file(path, |cr| {
                 cr.set_source_rgb(1.0, 1.0, 1.0);
@@ -115,7 +115,7 @@ fn plain_with_relief_path() {
 
         let drawable = core.drawable();
         let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-        let path = std::path::Path::new("tests/img/star1_flux_barrier_lin/core_1.png");
+        let path = std::path::Path::new("tests/img/spoke1_flux_barrier_lin/core_1.png");
         let callback = |path: &std::path::Path| {
             return view.write_to_file(path, |cr| {
                 cr.set_source_rgb(1.0, 1.0, 1.0);
@@ -131,7 +131,7 @@ fn plain_with_relief_path() {
             SideLength::Long(1000),
         )
         .unwrap();
-        let path = std::path::Path::new("tests/img/star1_flux_barrier_lin/magnets_1.png");
+        let path = std::path::Path::new("tests/img/spoke1_flux_barrier_lin/magnets_1.png");
         let callback = |path: &std::path::Path| {
             return view.write_to_file(path, |cr| {
                 cr.set_source_rgb(1.0, 1.0, 1.0);
@@ -145,7 +145,8 @@ fn plain_with_relief_path() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
 
         let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-        let path = std::path::Path::new("tests/img/star1_flux_barrier_lin/core_with_magnets_1.png");
+        let path =
+            std::path::Path::new("tests/img/spoke1_flux_barrier_lin/core_with_magnets_1.png");
         let callback = |path: &std::path::Path| {
             return view.write_to_file(path, |cr| {
                 cr.set_source_rgb(1.0, 1.0, 1.0);
@@ -171,7 +172,7 @@ fn plain_with_relief_path() {
 
 #[test]
 fn plain_no_relief_path() {
-    let mut barrier = Star1FluxBarrier {
+    let mut barrier = Spoke1FluxBarrier {
         magnet_space_width: Length::new::<millimeter>(10.0),
         glue_gap: Length::new::<millimeter>(0.2),
         magnet_material: Some(Arc::new(Material::default())),
@@ -179,9 +180,9 @@ fn plain_no_relief_path() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(10.0),
-        magnet_space_height_or_relief_path_width: Star1HeightSplit::ReliefPathWidth(Length::new::<
-            millimeter,
-        >(0.0)),
+        magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(
+            Length::new::<millimeter>(0.0),
+        ),
     };
 
     {
@@ -190,7 +191,7 @@ fn plain_no_relief_path() {
         assert_eq!(contours.len(), 6);
 
         let c = barrier.cache.as_ref().unwrap();
-        approx::assert_abs_diff_eq!(c.pt_air_gap_leakage[1] - c.pt_inner_relief[1], 0.0);
+        approxim::assert_abs_diff_eq!(c.pt_air_gap_leakage[1] - c.pt_inner_relief[1], 0.0);
 
         let mut style = Style::default();
         style.background_color = Color {
@@ -202,7 +203,7 @@ fn plain_no_relief_path() {
 
         let view = Viewport::from_bounded_entities(contours.iter(), SideLength::Long(1000))
             .expect("contours is not empty");
-        let path = std::path::Path::new("tests/img/star1_flux_barrier_lin/contours_2.png");
+        let path = std::path::Path::new("tests/img/spoke1_flux_barrier_lin/contours_2.png");
         let callback = |path: &std::path::Path| {
             return view.write_to_file(path, |cr| {
                 cr.set_source_rgb(1.0, 1.0, 1.0);
@@ -220,7 +221,7 @@ fn plain_no_relief_path() {
 
         let drawable = core.drawable();
         let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-        let path = std::path::Path::new("tests/img/star1_flux_barrier_lin/core_2.png");
+        let path = std::path::Path::new("tests/img/spoke1_flux_barrier_lin/core_2.png");
         let callback = |path: &std::path::Path| {
             return view.write_to_file(path, |cr| {
                 cr.set_source_rgb(1.0, 1.0, 1.0);
@@ -236,7 +237,7 @@ fn plain_no_relief_path() {
             SideLength::Long(1000),
         )
         .unwrap();
-        let path = std::path::Path::new("tests/img/star1_flux_barrier_lin/magnets_2.png");
+        let path = std::path::Path::new("tests/img/spoke1_flux_barrier_lin/magnets_2.png");
         let callback = |path: &std::path::Path| {
             return view.write_to_file(path, |cr| {
                 cr.set_source_rgb(1.0, 1.0, 1.0);
@@ -250,7 +251,8 @@ fn plain_no_relief_path() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
 
         let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-        let path = std::path::Path::new("tests/img/star1_flux_barrier_lin/core_with_magnets_2.png");
+        let path =
+            std::path::Path::new("tests/img/spoke1_flux_barrier_lin/core_with_magnets_2.png");
         let callback = |path: &std::path::Path| {
             return view.write_to_file(path, |cr| {
                 cr.set_source_rgb(1.0, 1.0, 1.0);
@@ -268,7 +270,7 @@ fn plain_no_relief_path() {
 
 #[test]
 fn slotted_with_relief_path() {
-    let mut barrier = Star1FluxBarrier {
+    let mut barrier = Spoke1FluxBarrier {
         magnet_space_width: Length::new::<millimeter>(10.0),
         glue_gap: Length::new::<millimeter>(0.2),
         magnet_material: Some(Arc::new(Material::default())),
@@ -276,9 +278,9 @@ fn slotted_with_relief_path() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(5.0),
-        magnet_space_height_or_relief_path_width: Star1HeightSplit::ReliefPathWidth(Length::new::<
-            millimeter,
-        >(2.0)),
+        magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(
+            Length::new::<millimeter>(2.0),
+        ),
     };
 
     {
@@ -287,7 +289,7 @@ fn slotted_with_relief_path() {
         assert_eq!(contours.len(), 6);
 
         let c = barrier.cache.as_ref().unwrap();
-        approx::assert_abs_diff_eq!(c.pt_air_gap_leakage[1] - c.pt_inner_relief[1], -0.002);
+        approxim::assert_abs_diff_eq!(c.pt_air_gap_leakage[1] - c.pt_inner_relief[1], -0.002);
 
         let mut style = Style::default();
         style.background_color = Color {
@@ -299,7 +301,7 @@ fn slotted_with_relief_path() {
 
         let view = Viewport::from_bounded_entities(contours.iter(), SideLength::Long(1000))
             .expect("contours is not empty");
-        let path = std::path::Path::new("tests/img/star1_flux_barrier_lin/contours_3.png");
+        let path = std::path::Path::new("tests/img/spoke1_flux_barrier_lin/contours_3.png");
         let callback = |path: &std::path::Path| {
             return view.write_to_file(path, |cr| {
                 cr.set_source_rgb(1.0, 1.0, 1.0);
@@ -317,7 +319,7 @@ fn slotted_with_relief_path() {
 
         let drawable = core.drawable();
         let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-        let path = std::path::Path::new("tests/img/star1_flux_barrier_lin/core_3.png");
+        let path = std::path::Path::new("tests/img/spoke1_flux_barrier_lin/core_3.png");
         let callback = |path: &std::path::Path| {
             return view.write_to_file(path, |cr| {
                 cr.set_source_rgb(1.0, 1.0, 1.0);
@@ -333,7 +335,7 @@ fn slotted_with_relief_path() {
             SideLength::Long(1000),
         )
         .unwrap();
-        let path = std::path::Path::new("tests/img/star1_flux_barrier_lin/magnets_3.png");
+        let path = std::path::Path::new("tests/img/spoke1_flux_barrier_lin/magnets_3.png");
         let callback = |path: &std::path::Path| {
             return view.write_to_file(path, |cr| {
                 cr.set_source_rgb(1.0, 1.0, 1.0);
@@ -347,7 +349,8 @@ fn slotted_with_relief_path() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
 
         let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-        let path = std::path::Path::new("tests/img/star1_flux_barrier_lin/core_with_magnets_3.png");
+        let path =
+            std::path::Path::new("tests/img/spoke1_flux_barrier_lin/core_with_magnets_3.png");
         let callback = |path: &std::path::Path| {
             return view.write_to_file(path, |cr| {
                 cr.set_source_rgb(1.0, 1.0, 1.0);
@@ -365,7 +368,7 @@ fn slotted_with_relief_path() {
 
 #[test]
 fn slotted_no_relief_path() {
-    let mut barrier = Star1FluxBarrier {
+    let mut barrier = Spoke1FluxBarrier {
         magnet_space_width: Length::new::<millimeter>(10.0),
         glue_gap: Length::new::<millimeter>(0.2),
         magnet_material: Some(Arc::new(Material::default())),
@@ -373,9 +376,9 @@ fn slotted_no_relief_path() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(5.0),
-        magnet_space_height_or_relief_path_width: Star1HeightSplit::ReliefPathWidth(Length::new::<
-            millimeter,
-        >(0.0)),
+        magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(
+            Length::new::<millimeter>(0.0),
+        ),
     };
 
     {
@@ -384,7 +387,7 @@ fn slotted_no_relief_path() {
         assert_eq!(contours.len(), 6);
 
         let c = barrier.cache.as_ref().unwrap();
-        approx::assert_abs_diff_eq!(c.pt_air_gap_leakage[1] - c.pt_inner_relief[1], 0.0);
+        approxim::assert_abs_diff_eq!(c.pt_air_gap_leakage[1] - c.pt_inner_relief[1], 0.0);
 
         let mut style = Style::default();
         style.background_color = Color {
@@ -396,7 +399,7 @@ fn slotted_no_relief_path() {
 
         let view = Viewport::from_bounded_entities(contours.iter(), SideLength::Long(1000))
             .expect("contours is not empty");
-        let path = std::path::Path::new("tests/img/star1_flux_barrier_lin/contours_4.png");
+        let path = std::path::Path::new("tests/img/spoke1_flux_barrier_lin/contours_4.png");
         let callback = |path: &std::path::Path| {
             return view.write_to_file(path, |cr| {
                 cr.set_source_rgb(1.0, 1.0, 1.0);
@@ -414,7 +417,7 @@ fn slotted_no_relief_path() {
 
         let drawable = core.drawable();
         let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-        let path = std::path::Path::new("tests/img/star1_flux_barrier_lin/core_4.png");
+        let path = std::path::Path::new("tests/img/spoke1_flux_barrier_lin/core_4.png");
         let callback = |path: &std::path::Path| {
             return view.write_to_file(path, |cr| {
                 cr.set_source_rgb(1.0, 1.0, 1.0);
@@ -430,7 +433,7 @@ fn slotted_no_relief_path() {
             SideLength::Long(1000),
         )
         .unwrap();
-        let path = std::path::Path::new("tests/img/star1_flux_barrier_lin/magnets_4.png");
+        let path = std::path::Path::new("tests/img/spoke1_flux_barrier_lin/magnets_4.png");
         let callback = |path: &std::path::Path| {
             return view.write_to_file(path, |cr| {
                 cr.set_source_rgb(1.0, 1.0, 1.0);
@@ -444,7 +447,8 @@ fn slotted_no_relief_path() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
 
         let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-        let path = std::path::Path::new("tests/img/star1_flux_barrier_lin/core_with_magnets_4.png");
+        let path =
+            std::path::Path::new("tests/img/spoke1_flux_barrier_lin/core_with_magnets_4.png");
         let callback = |path: &std::path::Path| {
             return view.write_to_file(path, |cr| {
                 cr.set_source_rgb(1.0, 1.0, 1.0);
@@ -481,23 +485,22 @@ fn test_deserialize() {
             starts_in_slot_middle: false
             slots: 12
     flux_barrier:
-        Star1FluxBarrier:
+        Spoke1FluxBarrier:
             magnet_space_width: 10 mm
             glue_gap: 0.2 mm
             magnet_material:
             air_gap_leakage_path_width: 1 mm
             yoke_leakage_path_width: 1 mm
             relief_path_air_gap_width: 5 mm
-            magnet_space_height_or_relief_path_width:
-                ReliefPathWidth:
-                    2 mm
+            magnet_space_height_or_relief_path_width: !ReliefPathWidth
+                2 mm
     "};
 
-    let core: LinCore = serde_yaml::from_str(&yaml).unwrap();
+    let core: LinCore = yaml_serde::from_str(&yaml).unwrap();
 
     let drawable = core.drawable();
     let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-    let path = std::path::Path::new("tests/img/star1_flux_barrier_lin/core_1.png");
+    let path = std::path::Path::new("tests/img/spoke1_flux_barrier_lin/core_1.png");
     let callback = |path: &std::path::Path| {
         return view.write_to_file(path, |cr| {
             cr.set_source_rgb(1.0, 1.0, 1.0);

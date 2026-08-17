@@ -122,9 +122,9 @@ representation is first deserialized into a [`LinCoreBuilder`] which is then
 converted via [`TryFrom`].
 
 ```
-use approx;
+use approxim;
 use stem_core::prelude::*;
-use serde_yaml;
+use yaml_serde;
 
 let str = indoc::indoc! {"
 air_gap_radius: 55 mm
@@ -146,7 +146,7 @@ air_gap:
         slots: 0
 "};
 
-let core: RotCore = serde_yaml::from_str(&str).expect("valid dimensions");
+let core: RotCore = yaml_serde::from_str(&str).expect("valid dimensions");
 assert_eq!(core.air_gap_radius().get::<millimeter>(), 55.0);
 ```
  */
@@ -343,7 +343,7 @@ impl RotCore {
     ///
     /// ```
     /// use std::sync::Arc;
-    /// use approx::assert_abs_diff_eq;
+    /// use approxim::assert_abs_diff_eq;
     /// use stem_core::prelude::*;
     /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
     ///
@@ -446,12 +446,12 @@ impl RotCore {
     /// assert!(rot_core.flux_barrier().is_none());
     ///
     /// // A compatible flux barrier
-    /// let fb_comp = Star1FluxBarrier {
+    /// let fb_comp = Spoke1FluxBarrier {
     ///     air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
     ///     yoke_leakage_path_width: Length::new::<millimeter>(1.0),
     ///     relief_path_air_gap_width: Length::new::<millimeter>(4.0),
     ///     magnet_space_width: Length::new::<millimeter>(10.0),
-    ///    magnet_space_height_or_relief_path_width: Star1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(2.0)),
+    ///    magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(2.0)),
     ///     glue_gap: Length::new::<millimeter>(0.0),
     ///     magnet_material: None,
     ///     cache: None,
@@ -464,12 +464,12 @@ impl RotCore {
     /// assert!(rot_core.flux_barrier().is_none());
     ///
     /// // An incompatible flux barrier
-    /// let mut fb_incomp = Star1FluxBarrier {
+    /// let mut fb_incomp = Spoke1FluxBarrier {
     ///     air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
     ///     yoke_leakage_path_width: Length::new::<millimeter>(1.0),
     ///     relief_path_air_gap_width: Length::new::<millimeter>(4.0),
     ///     magnet_space_width: Length::new::<millimeter>(30.0), // Too wide for the core width
-    ///     magnet_space_height_or_relief_path_width: Star1HeightSplit::ReliefPathWidth(Length::new::<
+    ///     magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(Length::new::<
     ///         millimeter,
     ///     >(2.0)),
     ///     glue_gap: Length::new::<millimeter>(0.0),
@@ -724,10 +724,8 @@ impl TryFrom<RotCoreBuilder> for RotCore {
             pole_pairs: builder.pole_pairs,
             skew_angle: builder.skew_angle,
             axial_coil_overhang: builder.axial_coil_overhang,
-            // Placeholder
             air_gap: builder.air_gap.clone(),
-            // Placeholder
-            flux_barrier: None,
+            flux_barrier: builder.flux_barrier, // Inserted so AirGap::combine has access to it
             // Placeholder
             shape: Shape::from_outer(BoundingBox::new(0.0, 1.0, 0.0, 1.0).into())?,
         };
@@ -736,8 +734,13 @@ impl TryFrom<RotCoreBuilder> for RotCore {
         this.shape = AirGap::combine(&mut *ag, this.as_core_ref())?;
         this.air_gap = ag;
 
+        // Move the flux barrier temporarily out again so FluxBarrier::combine can have
+        // a mutable reference to it
+        let mut flux_barrier_opt = None;
+        std::mem::swap(&mut flux_barrier_opt, &mut this.flux_barrier);
+
         // Check if core and flux barrier are compatible
-        if let Some(mut fb) = builder.flux_barrier {
+        if let Some(mut fb) = flux_barrier_opt {
             let contours = FluxBarrier::combine(&mut *fb, this.as_core_ref())?;
             for contour in contours {
                 this.shape.add_hole(contour)?;

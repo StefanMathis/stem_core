@@ -1,8 +1,27 @@
-pub mod star1;
+/*!
+This module defines the [`FluxBarrier`] trait used to define cutouts inside the
+core yoke for influencing the magnetic flux paths and for mounting interior
+magnets.
+
+Besides the aforementioned trait, this module also reexports some implementors
+of the [`FluxBarrier`] trait as well as auxiliary types and functions:
+- [`Spoke1FluxBarrier`] (reexported from the [`spoke1`] module) defines a spoke
+desgin flux barrier for a single block magnet (hence the "1") with an optional
+flux relief path next to the flux leakage path at the air gap.
+- [`V1rFluxBarrier`] (reexported from the [`v1r`] module) defines a V-shaped
+flux barrier with an (optional) flux relief path in the middle of the V.
+- [`V2rFluxBarrier`] (reexported from the [`v2r`] module) defines a V-shaped
+flux barrier with two (optional) flux relief paths at the ends of the V (next
+to the flux leakage paths).
+
+See the [trait documentation](FluxBarrier) for details.
+ */
+
+pub mod spoke1;
 pub mod v1r;
 pub mod v2r;
 
-pub use star1::{Star1FluxBarrier, Star1HeightSplit};
+pub use spoke1::{Spoke1FluxBarrier, Spoke1HeightSplit};
 pub use v1r::V1rFluxBarrier;
 pub use v2r::V2rFluxBarrier;
 
@@ -15,20 +34,107 @@ use stem_slot::prelude::*;
 
 use crate::{core::CoreRef, error::Error, magnets::Magnets};
 
-/// The `FluxBarrier` trait allows the usage of structs as flux barriers.
+/**
+A trait to define "flux barriers": Cutouts in the yoke of cores which can be
+used to steer the magnetic flux and to hold interior magnets.
+
+This trait is used to create the `flux_barrier` trait objects for the core
+builder structs [`LinCoreBuilder`](crate::core::LinCoreBuilder) and
+[`RotCoreBuilder`](crate::core::RotCoreBuilder). A core may or may not have a
+flux barrier (in the latter case, `flux_barrier` is simply set to `None`). The
+image below shows two cores which are identical except for their flux barrier
+(`None` for the left core and [`V1rFluxBarrier`] for the right one).
+ */
+#[doc = ""]
+#[cfg_attr(
+    feature = "doc-images",
+    doc = "![Slotted core with and without a flux barrier][slotted_core_with_and_without_fb]"
+)]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image(
+        "slotted_core_with_and_without_fb",
+        "docs/img/slotted_core_with_and_without_fb.svg"
+    )
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/**
+
+_This image was produced with `examples/flux_barrier_plots.rs`._
+
+A flux barrier consists of one or more cutouts in the core yoke which are
+usually repeated along the individual poles. Since cores are usually made from
+ferromagnetic material, the magnetic flux avoids the cutouts. This can be used
+to purposefully introduce a difference in the d- and q-axes inductances,
+creating a reluctance force / torque. Additonally, the cutouts can also be used
+to mount permanent magnets:
+ */
+#[doc = ""]
+#[cfg_attr(
+    feature = "doc-images",
+    doc = "![Interior magnets for a linear and a rotary core][lin_and_rot_core_interior_magnets]"
+)]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image(
+        "lin_and_rot_core_interior_magnets",
+        "docs/img/lin_and_rot_core_interior_magnets.svg"
+    )
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/**
+
+_This image was produced with `examples/lin_and_rot_core_plots.rs`._
+
+The trait methods are not meant to be called by user code. Instead, all of them
+(except [`FluxBarrier::combine`]) are used to implement the
+[`CoreExt`](crate::core::CoreExt) methods of the same name. For example, the
+[`CoreExt::d_axis_offset`](crate::core::CoreExt::d_axis_offset) method is
+implemented like this:
+
+```ignore
+fn d_axis_offset(&self) -> u16 {
+    match self.flux_barrier() {
+        Some(fb) => fb
+            .d_axis_offset(self.as_core_ref())
+            .rem_euclid(std::f64::consts::TAU),
+        None => FRAC_PI_2,
+    }
+}
+```
+
+Generally speaking, the documentation of the [`CoreExt`](crate::core::CoreExt)
+method therefors focuses on the _usage_ of that specific method, whereas the
+[`FluxBarrier`] method docstring explains how to _implement_ it for custom
+flux barrier types. If the latter have examples, they are just there to show how
+the method is supposed to work, not how to use them in user code.
+
+The [`FluxBarrier::combine`] method is used in
+[`LinCore::new`](crate::core::LinCore::new) and
+[`RotCore::new`](crate::core::RotCore::new) to create the flux barrier cutouts
+in the core shape. See the trait method documentation for examples.
+ */
 #[cfg_attr(feature = "serde", typetag::serde)]
 pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static {
-    /**
-    Returns the pole coverage of the flux barrier. The pole coverage is the air gap area of the d-axis flux over the total air gap area
-    and is therefore a value between 0 and 1. This is usually the area between the flux leakage paths.
-     */
+    /// Returns the pole coverage of the flux barrier.
+    ///
+    /// This method implements [`CoreExt::pole_coverage`]. Because it is a
+    /// ratio, it should return a value between 0 and 1.
     fn pole_coverage(&self, core: CoreRef<'_>) -> f64;
 
     /// Returns an iterator over the interior magnet shapes for the given
     /// `core`.
     ///
     /// This method implements [`CoreExt::interior_magnets`] for the different
-    /// possible flux barrier types. For example, for a [`Star1FluxBarrier`],
+    /// possible flux barrier types. For example, for a [`Spoke1FluxBarrier`],
     /// the magnets are arranged in the center of the rectangular cutouts within
     /// the core.
     #[doc = ""]
@@ -89,7 +195,7 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     ///
     /// The [`crate::magnets`] module contains some predefined iterators
     /// to simplify the implementation of this method, see e.g. the source code
-    /// of [`Star1FluxBarrier::interior_magnets`] for an example.
+    /// of [`Spoke1FluxBarrier::interior_magnets`] for an example.
     fn interior_magnets(&self, _core: CoreRef<'_>, _split: bool) -> Magnets {
         // Dummy implementation, to be overwritten.
         return crate::magnets::EvenlyDistributedMagnets::<true>::new(
@@ -98,6 +204,7 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
             Vec::new(),
             0.0,
             0,
+            0.0,
         )
         .into();
     }
@@ -143,7 +250,7 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     magnet of an assembly is used multiple times within the cross section,
     [`MagnetAssembly::num_tangential`] should be set to the times of occurences.
     For example, [`MagnetAssembly::num_tangential`] is 2 for a
-    [`V1rFluxBarrier`], but 1 for a [`Star1FluxBarrier`]. The number of axial
+    [`V1rFluxBarrier`], but 1 for a [`Spoke1FluxBarrier`]. The number of axial
     subdivisions depends entirely on the flux barrier implementation.
 
     The [`FluxBarrier::interior_magnets`] returns an iterator over the shapes
@@ -172,7 +279,7 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
 
     use stem_core::prelude::*;
 
-    let star1 = Star1FluxBarrier {
+    let spoke1 = Spoke1FluxBarrier {
         magnet_space_width: Length::new::<millimeter>(10.0),
         glue_gap: Length::new::<millimeter>(0.2),
         magnet_material: Some(Arc::new(Material::default())),
@@ -180,11 +287,11 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(5.0),
-        magnet_space_height_or_relief_path_width: Star1HeightSplit::ReliefPathWidth(Length::new::<
+        magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(Length::new::<
             millimeter,
         >(2.0)),
     };
-    let star1_core: RotCore = RotCoreBuilder {
+    let spoke1_core: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(55.0),
         yoke_radius: Length::new::<millimeter>(18.0),
         axial_length: Length::new::<millimeter>(165.0),
@@ -194,7 +301,7 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
         pole_pairs: 2,
         skew_angle: 0.0,
         air_gap: Box::new(PlainAirGap::default()),
-        flux_barrier: Some(Box::new(star1)),
+        flux_barrier: Some(Box::new(spoke1)),
     }
     .try_into()
     .unwrap();
@@ -227,10 +334,10 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     .try_into()
     .unwrap();
 
-    let binding = star1_core.flux_barrier();
-    let star1 = binding.as_ref().expect("has flux barrier");
-    let sum_star1_mags: usize = star1.magnet_assemblies(star1_core.as_core_ref()).iter().map(|m|m.num_magnets()).sum();
-    assert_eq!(sum_star1_mags, 1);
+    let binding = spoke1_core.flux_barrier();
+    let spoke1 = binding.as_ref().expect("has flux barrier");
+    let sum_spoke1_mags: usize = spoke1.magnet_assemblies(spoke1_core.as_core_ref()).iter().map(|m|m.num_magnets()).sum();
+    assert_eq!(sum_spoke1_mags, 1);
 
     let binding = v1r_core.flux_barrier();
     let v1r = binding.as_ref().expect("has flux barrier");
@@ -239,6 +346,32 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     ```
      */
     fn magnet_assemblies(&self, core: CoreRef<'_>) -> &[MagnetAssembly];
+
+    /// Returns the offset of the first positive d-axis against the "start" of
+    /// the core in electrical radians.
+    ///
+    /// This method implements [`CoreExt::d_axis_offset`], see its documentation
+    /// for details. The default implementation returns [`FRAC_PI_2`], although
+    /// it might be necessary to adjust this depending on the flux barrier
+    /// (compare [`Spoke1FluxBarrier`] and [`V1rFluxBarrier`] in the image
+    /// below).
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![d-Axis offset from core start][d_axis_offset]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image("d_axis_offset", "docs/img/d_axis_offset.svg")
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    fn d_axis_offset(&self, _core: CoreRef<'_>) -> f64 {
+        return FRAC_PI_2;
+    }
 }
 
 dyn_clone::clone_trait_object!(FluxBarrier);
@@ -366,7 +499,7 @@ mod tests {
                 .unwrap(),
         );
         assert_eq!(slot, 1);
-        approx::assert_abs_diff_eq!(closest_pt[0], 0.0449, epsilon = 1e-3);
-        approx::assert_abs_diff_eq!(closest_pt[1], 0.0157, epsilon = 1e-3);
+        approxim::assert_abs_diff_eq!(closest_pt[0], 0.0449, epsilon = 1e-3);
+        approxim::assert_abs_diff_eq!(closest_pt[1], 0.0157, epsilon = 1e-3);
     }
 }

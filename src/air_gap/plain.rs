@@ -153,7 +153,7 @@ will be clamped to be between 0 and 1.
 
 ```
 use stem_core::prelude::*;
-use serde_yaml;
+use yaml_serde;
 
 let str = indoc::indoc! {"
 air_gap_winding_height: 10 mm
@@ -163,7 +163,7 @@ starts_in_slot_middle: true
 slots: 12
 "};
 
-let ag: PlainAirGap = serde_yaml::from_str(&str).expect("valid dimensions");
+let ag: PlainAirGap = yaml_serde::from_str(&str).expect("valid dimensions");
 assert_eq!(ag.winding_coverage(), 1.0);
 ```
 
@@ -172,13 +172,13 @@ Any of these fields can be omitted, in which case the value from the
 
 ```
 use stem_core::prelude::*;
-use serde_yaml;
+use yaml_serde;
 
 let str = indoc::indoc! {"
 air_gap_winding_height: 10 mm
 "};
 
-let ag: PlainAirGap = serde_yaml::from_str(&str).expect("valid dimensions");
+let ag: PlainAirGap = yaml_serde::from_str(&str).expect("valid dimensions");
 assert_eq!(ag.winding_coverage(), 0.0);
 ```
  */
@@ -440,6 +440,7 @@ impl AirGap for PlainAirGap {
                 magnet_assembly,
                 split,
                 true, // Value is ignored anyway if LIN = true
+                core.d_axis_offset(),
             )
             .into(),
             CoreRef::Rot(core_rot) => EvenlyDistributedMagnets::<false>::from_magnet_assembly(
@@ -448,6 +449,7 @@ impl AirGap for PlainAirGap {
                 magnet_assembly,
                 split,
                 core_rot.is_outer(),
+                core.d_axis_offset(),
             )
             .into(),
         }

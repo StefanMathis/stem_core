@@ -28,28 +28,28 @@ fn set_fb_lin_core() -> Result<(), Box<dyn std::error::Error>> {
     .try_into()?;
 
     // Define a compatible flux barrier
-    let mut fb_comp = Star1FluxBarrier {
+    let mut fb_comp = Spoke1FluxBarrier {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(4.0),
         magnet_space_width: Length::new::<millimeter>(10.0),
-        magnet_space_height_or_relief_path_width: Star1HeightSplit::ReliefPathWidth(Length::new::<
-            millimeter,
-        >(2.0)),
+        magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(
+            Length::new::<millimeter>(2.0),
+        ),
         glue_gap: Length::new::<millimeter>(0.0),
         magnet_material: None,
         cache: None,
     };
 
     // Define an incompatible flux barrier
-    let mut fb_incomp = Star1FluxBarrier {
+    let mut fb_incomp = Spoke1FluxBarrier {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(4.0),
         magnet_space_width: Length::new::<millimeter>(30.0), // Too wide for the core width
-        magnet_space_height_or_relief_path_width: Star1HeightSplit::ReliefPathWidth(Length::new::<
-            millimeter,
-        >(2.0)),
+        magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(
+            Length::new::<millimeter>(2.0),
+        ),
         glue_gap: Length::new::<millimeter>(0.0),
         magnet_material: None,
         cache: None,
@@ -147,28 +147,28 @@ fn set_fb_rot_core() -> Result<(), Box<dyn std::error::Error>> {
     .try_into()?;
 
     // Define a compatible flux barrier
-    let mut fb_comp = Star1FluxBarrier {
+    let mut fb_comp = Spoke1FluxBarrier {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(4.0),
         magnet_space_width: Length::new::<millimeter>(10.0),
-        magnet_space_height_or_relief_path_width: Star1HeightSplit::ReliefPathWidth(Length::new::<
-            millimeter,
-        >(2.0)),
+        magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(
+            Length::new::<millimeter>(2.0),
+        ),
         glue_gap: Length::new::<millimeter>(0.0),
         magnet_material: None,
         cache: None,
     };
 
     // Define an incompatible flux barrier
-    let mut fb_incomp = Star1FluxBarrier {
+    let mut fb_incomp = Spoke1FluxBarrier {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(4.0),
         magnet_space_width: Length::new::<millimeter>(30.0), // Too wide for the core width
-        magnet_space_height_or_relief_path_width: Star1HeightSplit::ReliefPathWidth(Length::new::<
-            millimeter,
-        >(2.0)),
+        magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(
+            Length::new::<millimeter>(2.0),
+        ),
         glue_gap: Length::new::<millimeter>(0.0),
         magnet_material: None,
         cache: None,

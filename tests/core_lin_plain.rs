@@ -22,19 +22,19 @@ fn test_properties() {
     })
     .unwrap();
 
-    approx::assert_abs_diff_eq!(core.height().get::<meter>(), 0.025);
-    approx::assert_abs_diff_eq!(core.width().get::<meter>(), 0.15);
-    approx::assert_abs_diff_eq!(core.mass().get::<gram>(), 375.0);
-    approx::assert_abs_diff_eq!(
+    approxim::assert_abs_diff_eq!(core.height().get::<meter>(), 0.025);
+    approxim::assert_abs_diff_eq!(core.width().get::<meter>(), 0.15);
+    approxim::assert_abs_diff_eq!(core.mass().get::<gram>(), 375.0);
+    approxim::assert_abs_diff_eq!(
         core.tooth_width_at(Length::new::<millimeter>(0.0))
             .get::<meter>(),
         0.0
     );
-    approx::assert_abs_diff_eq!(core.tooth_height().get::<meter>(), 0.0);
-    approx::assert_abs_diff_eq!(core.teeth_mass().get::<gram>(), 0.0);
-    approx::assert_abs_diff_eq!(core.tooth_mass().get::<gram>(), 0.0);
-    approx::assert_abs_diff_eq!(core.slot_opening_factor(1), 0.994412, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(core.slot_opening_factor(10), 0.527081, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(core.tooth_height().get::<meter>(), 0.0);
+    approxim::assert_abs_diff_eq!(core.teeth_mass().get::<gram>(), 0.0);
+    approxim::assert_abs_diff_eq!(core.tooth_mass().get::<gram>(), 0.0);
+    approxim::assert_abs_diff_eq!(core.slot_opening_factor(1), 0.994412, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(core.slot_opening_factor(10), 0.527081, epsilon = 1e-6);
 }
 
 #[test]
@@ -60,8 +60,8 @@ fn test_current_displacement_coefficients() {
         ElectricalConductivity::new::<siemens_per_meter>(57e6),
         100.0,
     );
-    approx::assert_abs_diff_eq!(coeffs.resistance, 1.0, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(coeffs.inductance, 1.0, epsilon = 1e-3);
+    approxim::assert_abs_diff_eq!(coeffs.resistance, 1.0, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(coeffs.inductance, 1.0, epsilon = 1e-3);
 }
 
 #[test]
@@ -133,7 +133,7 @@ fn test_pole_coverage() {
     let assembly =
         MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap());
 
-    approx::assert_abs_diff_eq!(core.pole_coverage(Some(&assembly)), 0.8, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(core.pole_coverage(Some(&assembly)), 0.8, epsilon = 1e-6);
 }
 
 #[test]
@@ -463,7 +463,7 @@ fn serialize_and_deserialize() {
     };
 
     let core = LinCore::new(builder).expect("valid inputs");
-    let serialized = serde_yaml::to_string(&core).expect("can be serialized");
-    let de_core: LinCore = serde_yaml::from_str(&serialized).expect("can be deserialized");
+    let serialized = yaml_serde::to_string(&core).expect("can be serialized");
+    let de_core: LinCore = yaml_serde::from_str(&serialized).expect("can be deserialized");
     assert_eq!(core.width(), de_core.width());
 }

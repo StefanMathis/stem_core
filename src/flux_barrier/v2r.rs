@@ -305,11 +305,7 @@ impl V2rFluxBarrier {
                 angle,
                 10.0 * air_gap_radius.get::<meter>(),
             )?;
-            let intersection = match relief_circle.intersections_primitive(
-                &ext_middle,
-                DEFAULT_EPSILON,
-                DEFAULT_MAX_RELATIVE,
-            ) {
+            let intersection = match relief_circle.intersections_primitive(&ext_middle) {
                 PrimitiveIntersections::Zero => mag_space_middle,
                 PrimitiveIntersections::One(i) => i,
                 PrimitiveIntersections::Two([i1, i2]) => {
@@ -380,7 +376,7 @@ impl V2rFluxBarrier {
                 // Line-line intersection either results in PrimitiveIntersections::Zero or
                 // PrimitiveIntersections::One, there cannot be more than one intersection
                 // point.
-                l1.intersections_line(&l2, DEFAULT_EPSILON, DEFAULT_MAX_RELATIVE)
+                l1.intersections_primitive(&l2)
                     .into_iter()
                     .next()
                     .map(|pt| (pt, f.get::<meter>()))
@@ -576,6 +572,7 @@ impl FluxBarrier for V2rFluxBarrier {
             shapes,
             0.0,
             1,
+            core.d_axis_offset(),
         )
         .into();
     }

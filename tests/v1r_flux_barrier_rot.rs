@@ -116,8 +116,8 @@ fn test_slotted_core_90deg_open() {
             .unwrap();
 
         // Geometry comparison
-        approx::assert_abs_diff_eq!(core.pole_coverage(None), 8.0 / 14.0, epsilon = 0.0001);
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(core.pole_coverage(None), 8.0 / 14.0, epsilon = 0.0001);
+        approxim::assert_abs_diff_eq!(
             flux_barrier
                 .cache
                 .as_ref()
@@ -235,14 +235,14 @@ fn test_slotted_core_90deg_closed() {
             .unwrap();
 
         // Geometry properties
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             flux_barrier
                 .distance_to_q_axis_at_yoke()
                 .get::<millimeter>(),
             8.1578,
             epsilon = 1e-3
         );
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             flux_barrier
                 .distance_to_q_axis_at_air_gap()
                 .get::<millimeter>(),
@@ -504,7 +504,7 @@ fn test_slotted_core_45deg_open() {
             .unwrap();
         let slot = core.slot().unwrap();
 
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             flux_barrier
                 .cache
                 .as_ref()
@@ -515,7 +515,7 @@ fn test_slotted_core_45deg_open() {
             epsilon = 0.0001
         );
 
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             flux_barrier.leakage_path_width.get::<meter>(),
             1e-3,
             epsilon = 1e-9
@@ -620,7 +620,7 @@ fn test_slotted_core_45deg_closed() {
             .unwrap();
         let slot = core.slot().unwrap();
 
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             flux_barrier
                 .cache
                 .as_ref()
@@ -631,7 +631,7 @@ fn test_slotted_core_45deg_closed() {
             epsilon = 0.0001
         );
 
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             flux_barrier.leakage_path_width.get::<meter>(),
             1e-3,
             epsilon = 1e-9
@@ -736,8 +736,8 @@ fn test_slotted_core_no_relief_path() {
             .unwrap();
 
         // Geometry comparison
-        approx::assert_abs_diff_eq!(core.pole_coverage(None), 8.0 / 14.0, epsilon = 0.0001);
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(core.pole_coverage(None), 8.0 / 14.0, epsilon = 0.0001);
+        approxim::assert_abs_diff_eq!(
             flux_barrier
                 .cache
                 .as_ref()
@@ -847,8 +847,8 @@ fn test_slotted_core_slim_magnet_width() {
             .unwrap();
 
         // Geometry comparison
-        approx::assert_abs_diff_eq!(core.pole_coverage(None), 8.0 / 14.0, epsilon = 0.0001);
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(core.pole_coverage(None), 8.0 / 14.0, epsilon = 0.0001);
+        approxim::assert_abs_diff_eq!(
             flux_barrier
                 .cache
                 .as_ref()
@@ -964,7 +964,7 @@ fn test_deserialize() {
             leakage_path_width: 1 mm
             magnet_material:
     "};
-    let core: RotCore = serde_yaml::from_str(&yaml).unwrap();
+    let core: RotCore = yaml_serde::from_str(&yaml).unwrap();
 
     let drawable = core.drawable();
     let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));

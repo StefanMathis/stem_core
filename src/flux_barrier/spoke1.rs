@@ -31,21 +31,21 @@ use serde_mosaic::{deserialize_opt_arc_link, serialize_opt_arc_link};
 
 #[derive(Clone, Debug, Copy)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum Star1HeightSplit {
+pub enum Spoke1HeightSplit {
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     MagnetSpaceHeight(Length),
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     ReliefPathWidth(Length),
 }
 
-impl Star1HeightSplit {
+impl Spoke1HeightSplit {
     /// Returns an array `[magnet_space_height, relief_path_width]`.
     fn height_and_width(&self, total: Length) -> [Length; 2] {
         match self {
-            Star1HeightSplit::MagnetSpaceHeight(magnet_space_height) => {
+            Spoke1HeightSplit::MagnetSpaceHeight(magnet_space_height) => {
                 [*magnet_space_height, total - *magnet_space_height]
             }
-            Star1HeightSplit::ReliefPathWidth(relief_path_width) => {
+            Spoke1HeightSplit::ReliefPathWidth(relief_path_width) => {
                 [total - *relief_path_width, *relief_path_width]
             }
         }
@@ -54,10 +54,10 @@ impl Star1HeightSplit {
 
 /// TODO
 #[doc = ""]
-#[cfg_attr(feature = "doc-images", doc = "![Star1 drawing][cad_star1]")]
+#[cfg_attr(feature = "doc-images", doc = "![Spoke1 drawing][cad_spoke1]")]
 #[cfg_attr(
     feature = "doc-images",
-    embed_doc_image::embed_doc_image("cad_star1", "docs/img/cad_star1.svg")
+    embed_doc_image::embed_doc_image("cad_spoke1", "docs/img/cad_spoke1.svg")
 )]
 #[cfg_attr(
     not(feature = "doc-images"),
@@ -68,7 +68,7 @@ impl Star1HeightSplit {
 /// TODO
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct Star1FluxBarrier {
+pub struct Spoke1FluxBarrier {
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub air_gap_leakage_path_width: Length,
@@ -81,7 +81,7 @@ pub struct Star1FluxBarrier {
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub magnet_space_width: Length,
-    pub magnet_space_height_or_relief_path_width: Star1HeightSplit,
+    pub magnet_space_height_or_relief_path_width: Spoke1HeightSplit,
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub glue_gap: Length,
@@ -94,10 +94,10 @@ pub struct Star1FluxBarrier {
     )]
     pub magnet_material: Option<Arc<Material>>,
     /// Geometry data generated from [`FluxBarrier::combine`]. Set this field to
-    /// [`None`] when building a new [`Star1FluxBarrier`] instance.
+    /// [`None`] when building a new [`Spoke1FluxBarrier`] instance.
     ///
     /// If this field is not [`None`], the [`Cache`] holds data resulting from
-    /// the combination of [`Star1FluxBarrier`] with a [`CoreRef`]. This data
+    /// the combination of [`Spoke1FluxBarrier`] with a [`CoreRef`]. This data
     /// might be partially public and partially internal information.
     ///
     /// See the docstring of [`Cache`] for more.
@@ -105,17 +105,17 @@ pub struct Star1FluxBarrier {
     pub cache: Option<Cache>,
 }
 
-/// A struct resulting from combining a [`Star1FluxBarrier`] with a [`CoreRef`]
+/// A struct resulting from combining a [`Spoke1FluxBarrier`] with a [`CoreRef`]
 /// via [`FluxBarrier::combine`].
 ///
 /// This struct is created by applying [`FluxBarrier::combine`] to a
-/// [`Star1FluxBarrier`] and is then placed into the [`Star1FluxBarrier::cache`]
-/// field. It caches information from the combination procedure which is
-/// expensive to calculate; some of this information might be public and other
-/// might be private. Therefore, this struct cannot be created on its own. It is
-/// overwritten each time a [`Star1FluxBarrier`] is combined with a [`CoreRef`],
-/// therefore it makes no sense to move it from one [`Star1FluxBarrier`] to
-/// another one.
+/// [`Spoke1FluxBarrier`] and is then placed into the
+/// [`Spoke1FluxBarrier::cache`] field. It caches information from the
+/// combination procedure which is expensive to calculate; some of this
+/// information might be public and other might be private. Therefore, this
+/// struct cannot be created on its own. It is overwritten each time a
+/// [`Spoke1FluxBarrier`] is combined with a [`CoreRef`], therefore it makes no
+/// sense to move it from one [`Spoke1FluxBarrier`] to another one.
 #[derive(Debug, Clone)]
 pub struct Cache {
     pub pt_yoke_leakage: [f64; 2],
@@ -130,7 +130,7 @@ pub struct Cache {
     magnets: Option<[MagnetAssembly; 1]>,
 }
 
-impl Star1FluxBarrier {
+impl Spoke1FluxBarrier {
     pub fn total_magnet_space_width(&self) -> Length {
         return self.magnet_space_width + 2.0 * self.glue_gap;
     }
@@ -260,8 +260,8 @@ impl Star1FluxBarrier {
         let yoke_sweep_angle = 2.0 * (0.5 * total_width / yoke_leakage_radius).asin();
 
         let has_relief_path = match self.magnet_space_height_or_relief_path_width {
-            Star1HeightSplit::MagnetSpaceHeight(_) => true,
-            Star1HeightSplit::ReliefPathWidth(width) => width > zero,
+            Spoke1HeightSplit::MagnetSpaceHeight(_) => true,
+            Spoke1HeightSplit::ReliefPathWidth(width) => width > zero,
         };
 
         let air_gap_leakage_segment_width = if has_relief_path {
@@ -420,7 +420,7 @@ impl Star1FluxBarrier {
 }
 
 #[cfg_attr(feature = "serde", typetag::serde)]
-impl FluxBarrier for Star1FluxBarrier {
+impl FluxBarrier for Spoke1FluxBarrier {
     fn pole_coverage(&self, core: CoreRef<'_>) -> f64 {
         match core {
             CoreRef::Lin(lin_core) => (self.total_magnet_space_width() * lin_core.poles() as f64
@@ -467,8 +467,9 @@ impl FluxBarrier for Star1FluxBarrier {
 
         match core {
             CoreRef::Lin(lin_core) => {
+                let pole_width = lin_core.width().get::<meter>() / lin_core.poles() as f64;
                 let shift = [
-                    0.5 * magnet.thickness().get::<meter>(),
+                    0.5 * magnet.thickness().get::<meter>() + 0.5 * pole_width,
                     0.5 * magnet.width().get::<meter>()
                         + self.glue_gap.get::<meter>()
                         + c.pt_outer_relief[1],
@@ -488,6 +489,7 @@ impl FluxBarrier for Star1FluxBarrier {
                     shapes,
                     0.0,
                     1,
+                    core.d_axis_offset(),
                 )
                 .into();
             }
@@ -516,6 +518,7 @@ impl FluxBarrier for Star1FluxBarrier {
                     shapes,
                     0.0,
                     1,
+                    core.d_axis_offset(),
                 )
                 .into();
             }
@@ -527,10 +530,10 @@ impl FluxBarrier for Star1FluxBarrier {
         compare_variables!(val zero <= self.glue_gap)?;
         compare_variables!(val zero < self.magnet_space_width)?;
         match self.magnet_space_height_or_relief_path_width {
-            Star1HeightSplit::MagnetSpaceHeight(magnet_space_height) => {
+            Spoke1HeightSplit::MagnetSpaceHeight(magnet_space_height) => {
                 compare_variables!(val zero <= magnet_space_height)?;
             }
-            Star1HeightSplit::ReliefPathWidth(relief_path_width) => {
+            Spoke1HeightSplit::ReliefPathWidth(relief_path_width) => {
                 compare_variables!(val zero <= relief_path_width)?;
             }
         }
@@ -546,5 +549,12 @@ impl FluxBarrier for Star1FluxBarrier {
             .as_ref()
             .and_then(|c| c.magnets.as_ref())
             .map_or(&[], |m| m.as_slice())
+    }
+
+    fn d_axis_offset(&self, core: CoreRef<'_>) -> f64 {
+        match core {
+            CoreRef::Lin(_) => 0.0,
+            CoreRef::Rot(_) => FRAC_PI_2,
+        }
     }
 }

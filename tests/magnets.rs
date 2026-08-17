@@ -1,5 +1,5 @@
 use std::{
-    f64::consts::{PI, TAU},
+    f64::consts::{FRAC_PI_2, PI, TAU},
     sync::Arc,
 };
 
@@ -72,6 +72,7 @@ fn lin() {
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
             false,
             true,
+            FRAC_PI_2,
         )
         .map(From::from)
         .collect(),
@@ -86,6 +87,7 @@ fn lin() {
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 2.try_into().unwrap()),
             false,
             true,
+            FRAC_PI_2,
         )
         .map(From::from)
         .collect(),
@@ -100,6 +102,7 @@ fn lin() {
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 2.try_into().unwrap()),
             true,
             true,
+            FRAC_PI_2,
         )
         .map(From::from)
         .collect(),
@@ -126,6 +129,7 @@ fn rot_inner() {
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
             true,
             false,
+            FRAC_PI_2,
         )
         .map(From::from)
         .collect(),
@@ -140,14 +144,15 @@ fn rot_inner() {
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
             true,
             false,
+            FRAC_PI_2,
         )
         .map(|s| s.shape.bounding_box()),
     )
     .unwrap();
-    approx::assert_abs_diff_eq!(bb.xmin(), -0.081831, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(bb.xmax(), 0.081831, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(bb.ymin(), -0.081831, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(bb.ymax(), 0.081831, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(bb.xmin(), -0.081831, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(bb.xmax(), 0.081831, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(bb.ymin(), -0.081831, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(bb.ymax(), 0.081831, epsilon = 1e-6);
 
     let magnet = ArcSegmentMagnet::with_const_thickness(
         Length::new::<millimeter>(165.0),
@@ -165,6 +170,7 @@ fn rot_inner() {
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
             true,
             false,
+            FRAC_PI_2,
         )
         .map(From::from)
         .collect(),
@@ -179,14 +185,15 @@ fn rot_inner() {
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
             true,
             false,
+            FRAC_PI_2,
         )
         .map(|s| s.shape.bounding_box()),
     )
     .unwrap();
-    approx::assert_abs_diff_eq!(bb.xmin(), -0.082272, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(bb.xmax(), 0.082272, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(bb.ymin(), -0.082272, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(bb.ymax(), 0.082272, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(bb.xmin(), -0.082272, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(bb.xmax(), 0.082272, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(bb.ymin(), -0.082272, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(bb.ymax(), 0.082272, epsilon = 1e-6);
 
     let magnet = BreadLoafMagnet::with_center_thickness(
         Length::new::<millimeter>(165.0),
@@ -204,6 +211,7 @@ fn rot_inner() {
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
             true,
             false,
+            FRAC_PI_2,
         )
         .map(From::from)
         .collect(),
@@ -230,6 +238,7 @@ fn rot_outer() {
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
             true,
             true,
+            FRAC_PI_2,
         )
         .map(From::from)
         .collect(),
@@ -244,14 +253,15 @@ fn rot_outer() {
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
             true,
             true,
+            FRAC_PI_2,
         )
         .map(|s| s.shape.bounding_box()),
     )
     .unwrap();
-    approx::assert_abs_diff_eq!(bb.xmin(), -0.074584, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(bb.xmax(), 0.074584, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(bb.ymin(), -0.074584, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(bb.ymax(), 0.074584, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(bb.xmin(), -0.074584, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(bb.xmax(), 0.074584, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(bb.ymin(), -0.074584, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(bb.ymax(), 0.074584, epsilon = 1e-6);
 
     let magnet = ArcSegmentMagnet::with_const_thickness(
         Length::new::<millimeter>(165.0),
@@ -269,6 +279,7 @@ fn rot_outer() {
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
             true,
             true,
+            FRAC_PI_2,
         )
         .map(From::from)
         .collect(),
@@ -283,14 +294,15 @@ fn rot_outer() {
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
             true,
             true,
+            FRAC_PI_2,
         )
         .map(|s| s.shape.bounding_box()),
     )
     .unwrap();
-    approx::assert_abs_diff_eq!(bb.xmin(), -0.073612, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(bb.xmax(), 0.073612, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(bb.ymin(), -0.073612, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(bb.ymax(), 0.073612, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(bb.xmin(), -0.073612, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(bb.xmax(), 0.073612, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(bb.ymin(), -0.073612, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(bb.ymax(), 0.073612, epsilon = 1e-6);
 
     let magnet = BreadLoafMagnet::with_center_thickness(
         Length::new::<millimeter>(165.0),
@@ -308,6 +320,7 @@ fn rot_outer() {
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
             true,
             true,
+            FRAC_PI_2,
         )
         .map(From::from)
         .collect(),
@@ -333,7 +346,7 @@ fn test_pole_coverage() {
             magnet.core_radius().get::<meter>(),
             Length::new::<millimeter>(0.0),
         );
-        approx::assert_abs_diff_eq!(a, magnet.angle(), epsilon = 1e-8);
+        approxim::assert_abs_diff_eq!(a, magnet.angle(), epsilon = 1e-8);
     }
     {
         let magnet = ArcSegmentMagnet::with_const_thickness(
@@ -350,6 +363,6 @@ fn test_pole_coverage() {
             magnet.core_radius().get::<meter>(),
             Length::new::<millimeter>(0.0),
         );
-        approx::assert_abs_diff_eq!(a, magnet.angle(), epsilon = 1e-8);
+        approxim::assert_abs_diff_eq!(a, magnet.angle(), epsilon = 1e-8);
     }
 }

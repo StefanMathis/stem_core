@@ -5,7 +5,7 @@ for all core types: [`LinCore`](crate::core::LinCore),
 [`CoreRef`] enums. It is a sealed trait. See its docstring for more.
 */
 
-use std::sync::Arc;
+use std::{f64::consts::FRAC_PI_2, sync::Arc};
 
 use planar_geo::prelude::*;
 use rayon::prelude::*;
@@ -406,7 +406,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// use std::f64::consts::FRAC_PI_2;
     /// use std::sync::Arc;
     ///
-    /// use approx::assert_abs_diff_eq;
+    /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
     /// use stem_slot::semi_trapezoid::SemiTrapezoidWidthsAndHeightsBuilder;
@@ -505,7 +505,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// use std::f64::consts::PI;
     /// use std::sync::Arc;
     ///
-    /// use approx::assert_abs_diff_eq;
+    /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
     /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
@@ -650,8 +650,9 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         let core_shape = self.shape();
         let zones: Vec<PositionedZoneContour> = self.winding_zones(coil_layout).collect();
         if let Some(o) = zones.par_iter().enumerate().find_map_any(|(i1, z1)| {
-            if let Ok(overlap) =
-                core_shape.contains_any_composite(&z1.contour, epsilon, max_relative)
+            if let Ok(overlap) = core_shape
+                .with_tolerance(epsilon, max_relative)
+                .contains_any(&z1.contour)
             {
                 return Some(AssemblyFailure {
                     left_component: Component::Core(core_shape.clone()),
@@ -667,9 +668,10 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
                 if i1 <= i2 {
                     return None;
                 }
-                if let Ok(overlap) =
-                    z2.contour
-                        .contains_any_composite(&z1.contour, epsilon, max_relative)
+                if let Ok(overlap) = z2
+                    .contour
+                    .with_tolerance(epsilon, max_relative)
+                    .contains_any(&z1.contour)
                 {
                     return Some(AssemblyFailure {
                         left_component: Component::Zone {
@@ -700,7 +702,10 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
                 .collect::<Vec<_>>()
         }) {
             if let Some(o) = magnets.par_iter().enumerate().find_map_any(|(i1, m1)| {
-                if let Ok(overlap) = core_shape.contains_any_composite(m1, epsilon, max_relative) {
+                if let Ok(overlap) = core_shape
+                    .with_tolerance(epsilon, max_relative)
+                    .contains_any(m1)
+                {
                     return Some(AssemblyFailure {
                         left_component: Component::Core(core_shape.clone()),
                         right_component: Component::SurfaceMagnet {
@@ -716,7 +721,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
                         return None;
                     }
 
-                    if let Ok(overlap) = m2.contains_any_composite(m1, epsilon, max_relative) {
+                    if let Ok(overlap) = m2.with_tolerance(epsilon, max_relative).contains_any(m1) {
                         return Some(AssemblyFailure {
                             left_component: Component::SurfaceMagnet {
                                 idx: i1,
@@ -735,9 +740,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
                 }
 
                 if let Some(o) = zones.par_iter().enumerate().find_map_any(|(i, z)| {
-                    if let Ok(overlap) =
-                        m1.contains_any_composite(&z.contour, epsilon, max_relative)
-                    {
+                    if let Ok(overlap) = m1.contains_any(&z.contour) {
                         return Some(AssemblyFailure {
                             left_component: Component::Zone {
                                 idx: i,
@@ -771,7 +774,8 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
             .find_map_any(|(i, m)| {
                 if let Err(e) = core_shape
                     .contour()
-                    .contains_shape(&m.shape, epsilon, max_relative)
+                    .with_tolerance(epsilon, max_relative)
+                    .contains(&m.shape)
                 {
                     return Some(AssemblyFailure {
                         left_component: Component::Core(core_shape.clone()),
@@ -783,7 +787,9 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
                     });
                 }
 
-                if let Ok(overlap) = core_shape.contains_any_shape(&m.shape, epsilon, max_relative)
+                if let Ok(overlap) = core_shape
+                    .with_tolerance(epsilon, max_relative)
+                    .contains_any(&m.shape)
                 {
                     return Some(AssemblyFailure {
                         left_component: Component::Core(core_shape.clone()),
@@ -1095,7 +1101,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// using `self` as the second and `split` as the third argument. The
     /// image below shows two examples: On the left a linear core
     /// and on the right a rotary core, both containing a
-    /// [`Star1FluxBarrier`](crate::flux_barrier::Star1FluxBarrier).
+    /// [`Spoke1FluxBarrier`](crate::flux_barrier::Spoke1FluxBarrier).
     #[doc = ""]
     #[cfg_attr(
         feature = "doc-images",
@@ -1118,20 +1124,21 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// # Examples
     ///
     /// For the shown case of a linear core with a
-    /// [`Star1FluxBarrier`](crate::flux_barrier::Star1FluxBarrier), the number
-    /// of magnet shapes equals the number of poles times 1 plus `split`.
+    /// [`Spoke1FluxBarrier`](crate::flux_barrier::Spoke1FluxBarrier), the
+    /// number of magnet shapes equals the number of poles times 1 plus
+    /// `split`.
     ///
     /// ```
     /// use std::sync::Arc;
     ///
     /// use stem_core::prelude::*;
     ///
-    /// let fb = Star1FluxBarrier {
+    /// let fb = Spoke1FluxBarrier {
     ///     air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
     ///     yoke_leakage_path_width: Length::new::<millimeter>(1.0),
     ///     relief_path_air_gap_width: Length::new::<millimeter>(0.0),
     ///     magnet_space_width: Length::new::<millimeter>(10.0),
-    ///     magnet_space_height_or_relief_path_width: Star1HeightSplit::ReliefPathWidth(Length::new::<
+    ///     magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(Length::new::<
     ///         millimeter,
     ///     >(0.0)),
     ///     glue_gap: Length::new::<millimeter>(0.5),
@@ -1224,7 +1231,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// use std::f64::consts::FRAC_PI_2;
     /// use std::sync::Arc;
     ///
-    /// use approx::assert_abs_diff_eq;
+    /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
     ///
@@ -1273,7 +1280,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// use std::f64::consts::FRAC_PI_2;
     /// use std::sync::Arc;
     ///
-    /// use approx::assert_abs_diff_eq;
+    /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
     ///
@@ -1391,7 +1398,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     use std::f64::consts::FRAC_PI_2;
     use std::sync::Arc;
 
-    use approx::assert_abs_diff_eq;
+    use approxim::assert_abs_diff_eq;
 
     use stem_core::prelude::*;
 
@@ -1486,7 +1493,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// use std::f64::consts::PI;
     /// use std::sync::Arc;
     ///
-    /// use approx::assert_abs_diff_eq;
+    /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
     /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
@@ -1542,7 +1549,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// use std::f64::consts::PI;
     /// use std::sync::Arc;
     ///
-    /// use approx::assert_abs_diff_eq;
+    /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
     /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
@@ -1613,7 +1620,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// ```
     /// use std::sync::Arc;
     ///
-    /// use approx::assert_abs_diff_eq;
+    /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
     ///
@@ -1662,7 +1669,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// ```
     /// use std::sync::Arc;
     ///
-    /// use approx::assert_abs_diff_eq;
+    /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
     ///
@@ -1699,7 +1706,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// ```
     /// use std::sync::Arc;
     ///
-    /// use approx::assert_abs_diff_eq;
+    /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
     ///
@@ -1735,7 +1742,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// ```
     /// use std::sync::Arc;
     ///
-    /// use approx::assert_abs_diff_eq;
+    /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
     ///
@@ -1772,7 +1779,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// ```
     /// use std::sync::Arc;
     ///
-    /// use approx::assert_abs_diff_eq;
+    /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
     ///
@@ -1811,7 +1818,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// use std::f64::consts::PI;
     /// use std::sync::Arc;
     ///
-    /// use approx::assert_abs_diff_eq;
+    /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
     /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
@@ -1864,7 +1871,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// use std::f64::consts::PI;
     /// use std::sync::Arc;
     ///
-    /// use approx::assert_abs_diff_eq;
+    /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
     /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
@@ -1934,7 +1941,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     use std::f64::consts::PI;
     use std::sync::Arc;
 
-    use approx::assert_abs_diff_eq;
+    use approxim::assert_abs_diff_eq;
 
     use stem_core::prelude::*;
 
@@ -1969,6 +1976,50 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
      */
     fn slotting_ordinals(&self) -> SlottingOrdinals {
         return SlottingOrdinals::new(self.slots(), self.pole_pairs());
+    }
+
+    /// Returns the offset of the first positive d-axis against the "start" of
+    /// the core in electrical radians.
+    ///
+    /// The "start" of a linear core is its left edge when looking at the cross
+    /// section; for a rotary core it is the x-axis. If there is no flux
+    /// barrier, this value defaults to [`FRAC_PI_2`] (meaning that the
+    /// start coincidences with a negative q-axis). If the core has a flux
+    /// barrier, this method forwards to [`FluxBarrier::d_axis_offset`] and
+    /// normalizes the returned value to be between 0 and 2 pi.
+    ///
+    /// The following image shows why this factor is needed using the examples
+    /// of a [`Spoke1FluxBarrier`](crate::flux_barrier::Spoke1FluxBarrier) and a
+    /// [`V1rFluxBarrier`](crate::flux_barrier::V1rFluxBarrier): The former has
+    /// an offset of 0 (for a linear core), because the magnet sits directly in
+    /// the q-axis. Contrary, for the latter, the offset is [`FRAC_PI_2`] so
+    /// the magnet assembly is not cut in half.
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![d-Axis offset from core start][d_axis_offset]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image("d_axis_offset", "docs/img/d_axis_offset.svg")
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    ///
+    /// `d_axis_offset` is even relevant when considering a rotary motor because
+    /// it determines the position of the d-axis. This information is needed
+    /// when placing surface magnets so they are located in the d-axes (as they
+    /// should be).
+    fn d_axis_offset(&self) -> f64 {
+        match self.flux_barrier() {
+            Some(fb) => fb
+                .d_axis_offset(self.as_core_ref())
+                .rem_euclid(std::f64::consts::TAU),
+            None => FRAC_PI_2,
+        }
     }
 }
 
@@ -2035,7 +2086,7 @@ suppressed by skewing with a full slot pitch (360 / 15 = 24 degree)
 ```
 use std::f64::consts::TAU;
 use stem_core::core::skew_factor;
-use approx::assert_abs_diff_eq;
+use approxim::assert_abs_diff_eq;
 
 let slots = 15;
 let pole_pairs = 5;
@@ -2059,7 +2110,7 @@ massively while still fully suppressing the 30th and its multiples.
 ```
 use std::f64::consts::TAU;
 use stem_core::core::skew_factor;
-use approx::assert_abs_diff_eq;
+use approxim::assert_abs_diff_eq;
 
 let slots = 15;
 let pole_pairs = 5;
@@ -2082,7 +2133,7 @@ As discussed above, having only one segment is equal to not skewing at all:
 ```
 use std::f64::consts::TAU;
 use stem_core::core::skew_factor;
-use approx::assert_abs_diff_eq;
+use approxim::assert_abs_diff_eq;
 
 let slots = 15;
 let pole_pairs = 5;
@@ -2104,7 +2155,7 @@ the staggered rotor behaves like the skewed one and suppresses all multiples.
 ```
 use std::f64::consts::TAU;
 use stem_core::core::skew_factor;
-use approx::assert_abs_diff_eq;
+use approxim::assert_abs_diff_eq;
 
 let slots = 15;
 let pole_pairs = 5;

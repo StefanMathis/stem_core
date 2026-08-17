@@ -87,6 +87,13 @@ planar surface. Hence, `num_segments` has the [`NonZero<usize>`] type.
 A [`StraightIndentsAirGap`] cannot be wound, hence [`AirGap::slots`] always
 returns zero.
 
+When used in a linear motor, [`CoreExt::d_axis_offset`] must be `pi/2`, which it
+is by default if the core has no flux barrier. If the core does have a flux
+barrier, that value depends on the implementation of
+[`FluxBarrier::d_axis_offset`](crate::flux_barrier::FluxBarrier::d_axis_offset).
+If the d-axis offset isn't `pi/2`, trying to [`combine`](AirGap::combine) the
+core and the air gap will return an error.
+
 The effect of the indents on the air gap field is neglected in the analytical
 approximations like [`CoreExt::carter_factor`] or [`CoreExt::slotting_ordinals`].
 
@@ -152,7 +159,7 @@ zero.
 
 ```
 use stem_core::prelude::*;
-use serde_yaml;
+use yaml_serde;
 
 // Positive indent width -> Invariant upheld.
 let str = indoc::indoc! {"
@@ -161,7 +168,7 @@ indent_width: 10 mm
 indent_depth: -2 mm
 indents_per_pole: 2
 "};
-assert!(serde_yaml::from_str::<StraightIndentsAirGap>(&str).is_ok());
+assert!(yaml_serde::from_str::<StraightIndentsAirGap>(&str).is_ok());
 
 // Negative indent width -> Invariant not upheld.
 let str = indoc::indoc! {"
@@ -170,7 +177,7 @@ indent_width: -10 mm
 indent_depth: 2 mm
 indents_per_pole: 2
 "};
-assert!(serde_yaml::from_str::<StraightIndentsAirGap>(&str).is_err());
+assert!(yaml_serde::from_str::<StraightIndentsAirGap>(&str).is_err());
 
 // Deserialize from PolygonAirGapBuilder
 let str = indoc::indoc! {"
@@ -179,7 +186,7 @@ indents_per_pole: 2
 pole_pairs: 3
 air_gap_radius: 100 mm
 "};
-assert!(serde_yaml::from_str::<StraightIndentsAirGap>(&str).is_ok());
+assert!(yaml_serde::from_str::<StraightIndentsAirGap>(&str).is_ok());
 ```
  */
 #[derive(Debug, Clone)]
@@ -323,7 +330,7 @@ impl StraightIndentsAirGap {
     /// # Examples
     ///
     /// ```
-    /// use approx::assert_abs_diff_eq;
+    /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
     ///
@@ -380,7 +387,7 @@ impl StraightIndentsAirGap {
     /// # Examples
     ///
     /// ```
-    /// use approx::assert_abs_diff_eq;
+    /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
     ///
@@ -452,7 +459,7 @@ impl StraightIndentsAirGap {
     /// # Examples
     ///
     /// ```
-    /// use approx::assert_abs_diff_eq;
+    /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
     ///
@@ -507,8 +514,22 @@ impl StraightIndentsAirGap {
     /// Returns the core shape for a linear core, if the combination of `self`
     /// and `core` results in a valid shape.
     fn shape_lin(&self, core: &LinCore) -> Result<Shape, Error> {
+        use compare_variables::{Comparison, ComparisonOperator, ComparisonValue};
+
         let zero_length = Length::new::<meter>(0.0);
         compare_variables!(self.indent_width > zero_length)?;
+
+        // A linear core can only be built if the d-axis offset is pi/2
+        if approxim::relative_ne!(core.d_axis_offset(), FRAC_PI_2) {
+            return Err(Comparison::new(
+                ComparisonValue::new(core.d_axis_offset(), Some("core.d_axis_offset")),
+                ComparisonOperator::Inequal,
+                ComparisonValue::new(FRAC_PI_2, None),
+                ComparisonOperator::Equal,
+                None,
+            )
+            .into());
+        }
 
         let indent_depth = self.indent_depth.get::<meter>();
         let indent_width = self.indent_width.get::<meter>();
@@ -634,7 +655,11 @@ impl StraightIndentsAirGap {
         }
 
         // Rotate the air gap so the q-axis is on the positive x-axis
-        air_gap.rotate([0.0, 0.0], 0.5 * sweep_angle - start_angle);
+        air_gap.rotate(
+            [0.0, 0.0],
+            0.5 * sweep_angle - start_angle
+                + (core.d_axis_offset() - FRAC_PI_2) / core.pole_pairs() as f64,
+        );
 
         // Repeat the pattern for all poles
         air_gap.rotational_pattern([0.0, 0.0], angle_per_pole, usize::from(core.poles()) - 1);
@@ -698,6 +723,7 @@ impl AirGap for StraightIndentsAirGap {
                     magnet_shapes,
                     magnet_coverage,
                     num_tangential,
+                    core.d_axis_offset(),
                 )
                 .into();
             }
@@ -724,6 +750,7 @@ impl AirGap for StraightIndentsAirGap {
                     magnet_shapes,
                     magnet_coverage,
                     num_tangential,
+                    core.d_axis_offset(),
                 )
                 .into();
             }
@@ -798,7 +825,7 @@ A [`PolygonAirGapBuilder`] can be fallibly converted into a
 [`StraightIndentsAirGap`] with [`TryFrom`] / [`TryInto`]:
 
 ```
-use approx::assert_abs_diff_eq;
+use approxim::assert_abs_diff_eq;
 use stem_core::prelude::*;
 
 let builder = PolygonAirGapBuilder {

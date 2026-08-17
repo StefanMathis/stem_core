@@ -65,6 +65,7 @@ pub struct EvenlyDistributedMagnets<const LIN: bool> {
     magnet_coverage: f64, // If LIN, this is a length, otherwise it is an angle
     num_tangential: usize,
     index: usize,
+    d_axis_offset: f64,
 }
 
 impl<const LIN: bool> EvenlyDistributedMagnets<LIN> {
@@ -74,6 +75,7 @@ impl<const LIN: bool> EvenlyDistributedMagnets<LIN> {
         magnet_shapes: Vec<PositionedMagnetShape>,
         magnet_coverage: f64,
         num_tangential: usize,
+        d_axis_offset: f64,
     ) -> Self {
         Self {
             poles,
@@ -82,6 +84,7 @@ impl<const LIN: bool> EvenlyDistributedMagnets<LIN> {
             num_tangential,
             magnet_coverage,
             index: 0,
+            d_axis_offset,
         }
     }
 
@@ -91,6 +94,7 @@ impl<const LIN: bool> EvenlyDistributedMagnets<LIN> {
         dist_width_or_circumference: Length,
         magnet_shapes: Vec<PositionedMagnetShape>,
         num_tangential: usize,
+        d_axis_offset: f64,
     ) -> Self {
         let magnet_coverage = if LIN {
             BoundingBox::from_bounded_entities(magnet_shapes.iter().map(|p| &p.shape))
@@ -112,6 +116,7 @@ impl<const LIN: bool> EvenlyDistributedMagnets<LIN> {
             num_tangential,
             magnet_coverage,
             index: 0,
+            d_axis_offset,
         }
     }
 
@@ -121,6 +126,7 @@ impl<const LIN: bool> EvenlyDistributedMagnets<LIN> {
         assembly: &MagnetAssembly,
         split: bool,
         outer_core: bool,
+        d_axis_offset: f64,
     ) -> Self {
         if LIN {
             let num_tangential = assembly.num_tangential();
@@ -136,7 +142,7 @@ impl<const LIN: bool> EvenlyDistributedMagnets<LIN> {
             };
 
             magnet_shapes.iter_mut().for_each(|s| {
-                s.rotate([0.0, 0.0], PI);
+                s.line_reflection([0.0, 0.0], [1.0, 0.0]);
             });
 
             return Self::with_calculated_coverage(
@@ -152,6 +158,7 @@ impl<const LIN: bool> EvenlyDistributedMagnets<LIN> {
                     })
                     .collect(),
                 num_tangential,
+                d_axis_offset,
             );
         } else {
             let num_tangential = assembly.num_tangential();
@@ -185,6 +192,7 @@ impl<const LIN: bool> EvenlyDistributedMagnets<LIN> {
                     })
                     .collect(),
                 num_tangential,
+                d_axis_offset,
             );
         }
     }
@@ -214,7 +222,7 @@ impl<const LIN: bool> Iterator for EvenlyDistributedMagnets<LIN> {
         if LIN {
             let width_per_pole =
                 self.dist_width_or_circumference.get::<meter>() / self.poles as f64;
-            let offset = (0.5 + current_pole as f64) * width_per_pole
+            let offset = (self.d_axis_offset / PI + current_pole as f64) * width_per_pole
                 + (tan_idx as f64 - 0.5 * (self.num_tangential as f64 - 1.0))
                     * self.magnet_coverage;
             shape.translate([offset, 0.0]);
@@ -224,7 +232,7 @@ impl<const LIN: bool> Iterator for EvenlyDistributedMagnets<LIN> {
             let angle = angle_per_pole * (0.5 + current_pole as f64)
                 + (tan_idx as f64 - 0.5 * (self.num_tangential as f64 - 1.0))
                     * self.magnet_coverage;
-            shape.rotate([0.0, 0.0], -angle + FRAC_PI_2);
+            shape.rotate([0.0, 0.0], -angle + self.d_axis_offset);
         }
 
         if current_pole.is_odd() {
@@ -309,7 +317,7 @@ pub fn pole_coverage_angle<'a, I: Iterator<Item = &'a Shape> + Clone>(
             let line = Line::from_point_angle([0.0, -radius], angle);
 
             if let Segment::ArcSegment(a) = s {
-                match a.intersections_line(&line, DEFAULT_EPSILON, DEFAULT_MAX_RELATIVE) {
+                match a.intersections_primitive(&line) {
                     PrimitiveIntersections::Zero => break 'angle_increment,
                     PrimitiveIntersections::One(_) => break 'angle_increment,
                     PrimitiveIntersections::Two(_) => {

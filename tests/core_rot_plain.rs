@@ -54,14 +54,14 @@ fn test_read_core_properties() {
         })
         .unwrap();
 
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             core.yoke_height().get::<millimeter>(),
             30.0,
             epsilon = 1e-10
         );
         assert_eq!(core.pole_pairs(), 5);
         assert_eq!(core.slots(), 12);
-        approx::assert_abs_diff_eq!(core.slot_opening_factor(1), 0.9886159, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(core.slot_opening_factor(1), 0.9886159, epsilon = 1e-6);
     }
     {
         let air_gap = PlainAirGap::new(1, Length::new::<millimeter>(0.0), 1.0, 12, false).unwrap();
@@ -129,7 +129,7 @@ fn test_pole_coverage() {
     let assembly =
         MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap());
 
-    approx::assert_abs_diff_eq!(
+    approxim::assert_abs_diff_eq!(
         core.pole_coverage(Some(&assembly)),
         1.0 / 3.0,
         epsilon = 1e-6
@@ -579,7 +579,7 @@ fn serialize_and_deserialize() {
     };
 
     let core = RotCore::new(builder).expect("valid inputs");
-    let serialized = serde_yaml::to_string(&core).expect("can be serialized");
-    let de_core: RotCore = serde_yaml::from_str(&serialized).expect("can be deserialized");
+    let serialized = yaml_serde::to_string(&core).expect("can be serialized");
+    let de_core: RotCore = yaml_serde::from_str(&serialized).expect("can be deserialized");
     assert_eq!(core.air_gap_radius(), de_core.air_gap_radius());
 }

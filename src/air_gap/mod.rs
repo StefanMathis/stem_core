@@ -28,7 +28,7 @@ use stem_magnet::assembly::MagnetAssembly;
 use stem_slot::prelude::*;
 
 use crate::{
-    core::CoreRef,
+    core::{CoreExt, CoreRef},
     error::Error,
     magnets::Magnets,
     winding_zones::{WindingZones, WindingZonesEqSpaced},
@@ -51,10 +51,16 @@ builder structs [`LinCoreBuilder`](crate::core::LinCoreBuilder) and
 different cores where all parameters except for `air_gap` are identical:
  */
 #[doc = ""]
-#[cfg_attr(feature = "doc-images", doc = "![Main dimensions][cad_lin_core_dims]")]
 #[cfg_attr(
     feature = "doc-images",
-    embed_doc_image::embed_doc_image("cad_lin_core_dims", "docs/img/cad_lin_core_dims.svg")
+    doc = "![Different air gaps, same core otherwise][rot_air_gap_comparison]"
+)]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image(
+        "rot_air_gap_comparison",
+        "docs/img/cad_lirot_air_gap_comparisonn_core_dims.svg"
+    )
 )]
 #[cfg_attr(
     not(feature = "doc-images"),
@@ -62,6 +68,7 @@ different cores where all parameters except for `air_gap` are identical:
     `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
 /**
+
 _This image was produced with `examples/air_gap_plots.rs`. From left to right:
 a [`PlainAirGap`], a [`SlottedAirGap`] and a [`StraightIndentsAirGap`]._
 
@@ -274,7 +281,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     use std::f64::consts::FRAC_PI_2;
     use std::sync::Arc;
 
-    use approx::assert_abs_diff_eq;
+    use approxim::assert_abs_diff_eq;
 
     use stem_core::prelude::*;
 
@@ -380,7 +387,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     fn surface_magnets(
         &self,
         magnet_assembly: &MagnetAssembly,
-        _core: CoreRef<'_>,
+        core: CoreRef<'_>,
         split: bool,
     ) -> Magnets {
         // Dummy implementation, to be overwritten.
@@ -390,6 +397,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
             magnet_assembly,
             split,
             true,
+            core.d_axis_offset(),
         )
         .into();
     }
@@ -585,7 +593,7 @@ Müller, G., Vogt, K. and Ponick, B.: Berechnung elektrischer Maschinen,
 # Examples
 
 ```
-use approx::assert_abs_diff_eq;
+use approxim::assert_abs_diff_eq;
 
 use stem_core::air_gap::slot_opening_factor;
 use stem_core::prelude::*;

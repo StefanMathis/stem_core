@@ -127,7 +127,7 @@ fn from_slot_rot_outer() {
         .next()
         .unwrap();
         let slot_opening_pt = slot_contour.contour.points().next().unwrap();
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             (slot_opening_pt[0].powi(2) + slot_opening_pt[1].powi(2)).sqrt(),
             radius.get::<meter>()
         );
@@ -158,7 +158,7 @@ fn from_slot_rot_inner() {
         .next()
         .unwrap();
         let slot_opening_pt = slot_contour.contour.points().next().unwrap();
-        approx::assert_abs_diff_eq!(
+        approxim::assert_abs_diff_eq!(
             (slot_opening_pt[0].powi(2) + slot_opening_pt[1].powi(2)).sqrt(),
             radius.get::<meter>()
         );

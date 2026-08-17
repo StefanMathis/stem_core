@@ -123,7 +123,7 @@ interior magnets. The type of those magnets is determined by the
 [`FluxBarrier`](crate::flux_barrier::FluxBarrier), hence it is not necessary to
 specifiy the [`MagnetAssembly`] for the interior magnets. In the image below,
 a linear and a rotary core with the
-[`Star1FluxBarrier`](crate::flux_barrier::Star1FluxBarrier) are shown.
+[`Spoke1FluxBarrier`](crate::flux_barrier::Spoke1FluxBarrier) are shown.
 */
 #![cfg_attr(feature = "doc-images", doc = "")]
 #![cfg_attr(

@@ -55,14 +55,14 @@ fn create_core(starts_in_slot_middle: bool, open_slot: bool) -> LinCore {
 fn test_read_properties() {
     let core = create_core(false, true);
 
-    approx::assert_abs_diff_eq!(core.yoke_height().get::<millimeter>(), 7.25, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(core.height().get::<millimeter>(), 25.0, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(
+    approxim::assert_abs_diff_eq!(core.yoke_height().get::<millimeter>(), 7.25, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(core.height().get::<millimeter>(), 25.0, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(
         core.tooth_height().get::<millimeter>(),
         25.0 - 7.25,
         epsilon = 1e-6
     );
-    approx::assert_abs_diff_eq!(core.yoke_height().get::<millimeter>(), 7.25, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(core.yoke_height().get::<millimeter>(), 7.25, epsilon = 1e-6);
 }
 
 #[test]
@@ -246,7 +246,7 @@ fn test_plot_assembly() {
         };
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
 
-        approx::assert_abs_diff_eq!(core.slot_opening_factor(1), 0.9997075, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(core.slot_opening_factor(1), 0.9997075, epsilon = 1e-6);
     }
 }
 
@@ -295,46 +295,46 @@ fn test_current_displacement_coefficients() {
         ElectricalConductivity::new::<siemens_per_meter>(57e6),
         1.0,
     );
-    approx::assert_abs_diff_eq!(coeffs.resistance, 1.603643, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(coeffs.inductance, 0.855859, epsilon = 1e-3);
+    approxim::assert_abs_diff_eq!(coeffs.resistance, 1.603643, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(coeffs.inductance, 0.855859, epsilon = 1e-3);
 
     let coeffs = core.current_displacement_coefficients().eval(
         Frequency::new::<uom::si::frequency::hertz>(200.0),
         ElectricalConductivity::new::<siemens_per_meter>(57e6),
         1.0,
     );
-    approx::assert_abs_diff_eq!(coeffs.resistance, 3.581551, epsilon = 1e-6);
-    approx::assert_abs_diff_eq!(coeffs.inductance, 0.503458, epsilon = 1e-3);
+    approxim::assert_abs_diff_eq!(coeffs.resistance, 3.581551, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(coeffs.inductance, 0.503458, epsilon = 1e-3);
 }
 
 #[test]
 fn test_tooth_width_at() {
     let core = create_core(false, true);
-    approx::assert_abs_diff_eq!(
+    approxim::assert_abs_diff_eq!(
         core.tooth_width_at(Length::new::<millimeter>(0.0))
             .get::<millimeter>(),
         10.5,
         epsilon = 1e-6
     );
-    approx::assert_abs_diff_eq!(
+    approxim::assert_abs_diff_eq!(
         core.tooth_width_at(Length::new::<millimeter>(1.0))
             .get::<millimeter>(),
         6.563508,
         epsilon = 1e-6
     );
-    approx::assert_abs_diff_eq!(
+    approxim::assert_abs_diff_eq!(
         core.tooth_width_at(Length::new::<millimeter>(12.0))
             .get::<millimeter>(),
         4.5,
         epsilon = 1e-6
     );
-    approx::assert_abs_diff_eq!(
+    approxim::assert_abs_diff_eq!(
         core.tooth_width_at(Length::new::<millimeter>(18.0))
             .get::<millimeter>(),
         12.5,
         epsilon = 1e-6
     );
-    approx::assert_abs_diff_eq!(
+    approxim::assert_abs_diff_eq!(
         core.tooth_width_at(Length::new::<millimeter>(50.0))
             .get::<millimeter>(),
         12.5,
