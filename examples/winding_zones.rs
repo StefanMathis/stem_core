@@ -9,8 +9,14 @@ use stem_slot::planar_geo::prelude::Composite;
 use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let air_gap =
-        PlainAirGap::new(0, Length::new::<millimeter>(4.0), 0.8, 24, false).expect("valid");
+    let plain_air_gap = PlainAirGap {
+        num_segments: 0,
+        air_gap_winding_height: Length::new::<millimeter>(4.0),
+        winding_coverage: 0.8,
+        starts_in_slot_middle: false,
+        slots: 24,
+    };
+
     let core_plain: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(55.0),
         yoke_radius: Length::new::<millimeter>(18.0),
@@ -20,7 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         material: Arc::new(Material::default()),
         pole_pairs: 2,
         skew_angle: 0.0,
-        air_gap: Box::new(air_gap),
+        air_gap: Box::new(plain_air_gap),
         flux_barrier: None,
     }
     .try_into()?;

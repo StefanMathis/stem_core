@@ -59,7 +59,7 @@ different cores where all parameters except for `air_gap` are identical:
     feature = "doc-images",
     embed_doc_image::embed_doc_image(
         "rot_air_gap_comparison",
-        "docs/img/cad_lirot_air_gap_comparisonn_core_dims.svg"
+        "docs/img/rot_air_gap_comparison.svg"
     )
 )]
 #[cfg_attr(
@@ -79,9 +79,8 @@ air gap width is, whether the core has [`Slot`]s and so on. Please see the
 individual trait methods for more information.
 
 The trait methods are not meant to be called by user code. Instead, all of them
-(except [`AirGap::combine`]) are used to implement the
-[`CoreExt`](crate::core::CoreExt) methods of the same name. For example, the
-[`CoreExt::slots`](crate::core::CoreExt::slots) method is implemented like
+(except [`AirGap::combine`]) are used to implement the [`CoreExt`] methods of
+the same name. For example, the [`CoreExt::slots`] method is implemented like
 this:
 
 ```ignore
@@ -90,11 +89,11 @@ fn slots(&self) -> u16 {
 }
 ```
 
-Generally speaking, the documentation of the [`CoreExt`](crate::core::CoreExt)
-method therefors focuses on the _usage_ of that specific method, whereas the
-[`AirGap`] method docstring explains how to _implement_ it for custom air gap
-types. If the latter have examples, they are just there to show how the method
-is supposed to work.
+Generally speaking, the documentation of the [`CoreExt`] method therefors
+focuses on the _usage_ of that specific method, whereas the [`AirGap`] method
+docstring explains how to _implement_ it for custom air gap types. If the latter
+have examples, they are just there to show how the method is supposed to work,
+not how to use them in user code.
 
 The [`AirGap::combine`] method is used in
 [`LinCore::new`](crate::core::LinCore::new) and
@@ -180,33 +179,33 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// // a length of 20 mm, there is one of them per pole and the core has
     /// // four poles -> all indents cover 80 mm in total, which is smaller than
     /// // the core width of 100 mm
-    /// let comp_ag = StraightIndentsAirGap::new(
-    ///     1.try_into().expect("is not zero"),
-    ///     Length::new::<millimeter>(20.0),
-    ///     Length::new::<millimeter>(2.0),
-    ///     1,
-    /// ).expect("valid data");
+    /// let comp_ag = StraightIndentsAirGap {
+    ///     num_segments: 1.try_into().expect("is not zero"),
+    ///     indent_width: Length::new::<millimeter>(20.0),
+    ///     indent_depth: Length::new::<millimeter>(2.0),
+    ///     indents_per_pole: 1,
+    /// };
+    ///
     /// assert!(fake_new(Box::new(comp_ag)).is_ok());
     ///
     /// // Air gap is not compatible because it has two indents per pole, but
     /// // the indent length is still 20 mm -> All indents cover 160 mm in total,
     /// // which is larger than the core width of 100 mm.
-    /// let comp_ag = StraightIndentsAirGap::new(
-    ///     1.try_into().expect("is not zero"),
-    ///     Length::new::<millimeter>(20.0),
-    ///     Length::new::<millimeter>(2.0),
-    ///     2,
-    /// ).expect("valid data");
-    /// assert!(fake_new(Box::new(comp_ag)).is_err());
+    /// let incomp_ag = StraightIndentsAirGap {
+    ///     num_segments: 1.try_into().expect("is not zero"),
+    ///     indent_width: Length::new::<millimeter>(20.0),
+    ///     indent_depth: Length::new::<millimeter>(2.0),
+    ///     indents_per_pole: 2,
+    /// };
+    /// assert!(fake_new(Box::new(incomp_ag)).is_err());
     /// ```
     fn combine(&mut self, core: CoreRef<'_>) -> Result<Shape, Error>;
 
     /// Returns the discretization / number of segments of the core.
     ///
     /// This method implements
-    /// [`CoreExt::num_segments`](crate::core::CoreExt::num_segments). Depending
-    /// on `self`, a core may be composed of multiple individual segments
-    /// against each other as defined by the
+    /// [`CoreExt::num_segments`]. Depending on `self`, a core may be composed
+    /// of multiple individual segments against each other as defined by the
     /// [`CoreExt::skew_angle`](crate::core::CoreExt::skew_angle). This affects
     /// the [`skew_factor`](crate::core::skew_factor) of the core, which can be
     /// used to suppress/ unwanted magnetic harmonics.  See the
@@ -226,23 +225,21 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
 
     /// Returns the number of slots.
     ///
-    /// This method implements [`CoreExt::slots`](crate::core::CoreExt::slots).
-    /// If the number of slots is zero, slot is not windable. This number
-    /// corresponds to the "slots" property of a winding, not necessarily to
-    /// a physical [`Slot`]. For example, a plain air gap has no slot, but
-    /// still can be windable.
+    /// This method implements [`CoreExt::slots`]. If the number of slots is
+    /// zero, slot is not windable. This number corresponds to the "slots"
+    /// property of a winding, not necessarily to a physical [`Slot`]. For
+    /// example, a plain air gap has no slot, but still can be windable.
     fn slots(&self, core: CoreRef<'_>) -> u16;
 
     /**
     Returns the slot opening factor for the harmonic with the specified
     `mech_ordinal`.
 
-    This method implements
-    [`CoreExt::slot_opening_factor`](crate::core::CoreExt::slot_opening_factor).
-    When determining the electric loading / induction distribution along the air
-    gap, analytical methods assume that the whole electric loading produced by a
-    particular slot is concentrated in its center at the air gap. For real core
-    and winding geometries, this is obviously not the case. For the example of a
+    This method implements [`CoreExt::slot_opening_factor`]. When determining
+    the electric loading / induction distribution along the air gap, analytical
+    methods assume that the whole electric loading produced by a particular slot
+    is concentrated in its center at the air gap. For real core and winding
+    geometries, this is obviously not the case. For the example of a
     [`SlottedAirGap`], the electric loading is distributed along the slot,
     opening whereas a wound [`PlainAirGap`] distributes the load along the
     entire air gap surface covered by coils. For further information, see
@@ -286,7 +283,13 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     use stem_core::prelude::*;
 
     // 80 % of a slot pitch is covered by coils
-    let air_gap = PlainAirGap::new(0, Length::new::<millimeter>(1.0), 0.8, 36, true).unwrap();
+    let air_gap = PlainAirGap {
+        num_segments: 0,
+        air_gap_winding_height: Length::new::<millimeter>(1.0),
+        winding_coverage: 0.8,
+        starts_in_slot_middle: true,
+        slots: 36,
+    };
     let core: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(55.0),
         yoke_radius: Length::new::<millimeter>(18.0),
@@ -315,30 +318,29 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// Returns the Carter factor of `self` for the given `core`.
     ///
     /// This method implements
-    /// [`CoreExt::carter_factor`](crate::core::CoreExt::carter_factor) for the
-    /// different possible air gap types. If the air gap contour is
-    /// (approximately) smooth or the air gap cannot be wound in the first
-    /// place, this method should simply return 1 for any input. Otherwise,
-    /// the returned value can depend on core geometry and air gap width,
-    /// see for example [`CarterFactorModel`]. It should be equal to or
-    /// larger than 1 to represent the virtual "increase" of the
-    /// `air_gap_width` due to the non-smooth surface.
+    /// [`CoreExt::carter_factor`] for the different possible air gap types. If
+    /// the air gap contour is (approximately) smooth or the air gap cannot
+    /// be wound in the first place, this method should simply return 1 for
+    /// any input. Otherwise, the returned value can depend on core geometry
+    /// and air gap width, see for example [`CarterFactorModel`]. It should
+    /// be equal to or larger than 1 to represent the virtual "increase" of
+    /// the `air_gap_width` due to the non-smooth surface.
     fn carter_factor(&self, core: CoreRef<'_>, air_gap_width: Length) -> f64;
 
     /// Returns a reference to the [`Slot`] of the air gap, if it has one.
     ///
-    /// This method implements [`CoreExt::slot`](crate::core::CoreExt::slot).
+    /// This method implements [`CoreExt::slot`].
     fn slot(&self, _core: CoreRef<'_>) -> Option<&dyn Slot>;
 
     /// Returns an iterator over the surface magnet shapes for the given
     /// `magnet_assembly` and `core`.
     ///
     /// This method implements
-    /// [`CoreExt::surface_magnets`](crate::core::CoreExt::surface_magnets) for
-    /// the different possible air gap types. For example, for a
-    /// [`PlainAirGap`] and a rotary core, the magnets are arranged on the
-    /// circular air gap surface of the core, whereas they are positioned in
-    /// the indent middle for a [`StraightIndentsAirGap`].
+    /// [`CoreExt::surface_magnets`] for the different possible air gap types.
+    /// For example, for a [`PlainAirGap`] and a rotary core, the magnets
+    /// are arranged on the circular air gap surface of the core, whereas
+    /// they are positioned in the indent middle for a
+    /// [`StraightIndentsAirGap`].
     #[doc = ""]
     #[cfg_attr(
         feature = "doc-images",
@@ -406,12 +408,11 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// [`PositionedZoneContour`](core::winding_zones::PositionedZoneContour)s
     /// for the given `coil_layout`.
     ///
-    /// This method implements
-    /// [`CoreExt::winding_zones`](crate::core::CoreExt::winding_zones) for the
-    /// different possible air gap types. For example, for a
-    /// [`PlainAirGap`], the winding zone contours are located inside the
-    /// air gap itself, whereas those of a [`SlottedAirGap`] are situated
-    /// within the slots as shown in the image below:
+    /// This method implements [`CoreExt::winding_zones`] for the different
+    /// possible air gap types. For example, for a [`PlainAirGap`], the
+    /// winding zone contours are located inside the air gap itself, whereas
+    /// those of a [`SlottedAirGap`] are situated within the slots as shown
+    /// in the image below:
     #[doc = ""]
     #[cfg_attr(
         feature = "doc-images",
@@ -527,7 +528,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// coefficients for different current frequencies.
     ///
     /// This method implements
-    /// [`CoreExt::current_displacement_coefficients`](crate::core::CoreExt::current_displacement_coefficients).
+    /// [`CoreExt::current_displacement_coefficients`].
     /// If an air gap supports windings created from massive conductors
     /// (e.g. squirrel cage windings), the latter may be subject to
     /// non-negligible current displacement affecting both the effective

@@ -6,7 +6,13 @@ use stem_core::prelude::*;
 use stem_slot::semi_trapezoid::SemiTrapezoidWidthsAndHeightsBuilder;
 
 fn create_plain_inner_core(flux_barrier: Option<Spoke1FluxBarrier>) -> RotCore {
-    let air_gap = PlainAirGap::new(1, Length::new::<millimeter>(10.0), 0.7, 12, false).unwrap();
+    let air_gap = PlainAirGap {
+        num_segments: 0,
+        air_gap_winding_height: Length::new::<millimeter>(10.0),
+        winding_coverage: 0.7,
+        starts_in_slot_middle: false,
+        slots: 12,
+    };
 
     let flux_barrier: Option<Box<dyn FluxBarrier>> = flux_barrier
         .map(Box::new)
@@ -29,7 +35,13 @@ fn create_plain_inner_core(flux_barrier: Option<Spoke1FluxBarrier>) -> RotCore {
 }
 
 fn create_plain_outer_core(flux_barrier: Option<Spoke1FluxBarrier>) -> RotCore {
-    let air_gap = PlainAirGap::new(1, Length::new::<millimeter>(10.0), 0.7, 12, false).unwrap();
+    let air_gap = PlainAirGap {
+        num_segments: 0,
+        air_gap_winding_height: Length::new::<millimeter>(10.0),
+        winding_coverage: 0.7,
+        starts_in_slot_middle: false,
+        slots: 12,
+    };
 
     let flux_barrier: Option<Box<dyn FluxBarrier>> = flux_barrier
         .map(Box::new)
@@ -951,7 +963,7 @@ fn test_deserialize() {
         PlainAirGap:
             air_gap_winding_height: 10 mm
             winding_coverage: 0.7
-            num_segments: 1
+            num_segments: 0
             starts_in_slot_middle: false
             slots: 12
     flux_barrier:
@@ -996,13 +1008,12 @@ fn test_straight_indents_ag() {
         ),
     };
 
-    let air_gap = StraightIndentsAirGap::new(
-        1.try_into().unwrap(),
-        Length::new::<millimeter>(20.0),
-        Length::new::<millimeter>(-1.0),
-        1.try_into().unwrap(),
-    )
-    .expect("valid inputs");
+    let air_gap = StraightIndentsAirGap {
+        num_segments: 1.try_into().unwrap(),
+        indent_width: Length::new::<millimeter>(20.0),
+        indent_depth: Length::new::<millimeter>(-1.0),
+        indents_per_pole: 1,
+    };
 
     let core: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(54.4),

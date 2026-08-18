@@ -571,12 +571,12 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     magnets, their shapes returned by [`CoreExt::interior_magnets`].
 
     If any two of these bodies overlap (checked with
-    [`Composite::contains_any_composite`] using the provided `epsilon` and
+    [`Composite::contains_any`] using the provided `epsilon` and
     `max_relative` tolerances, an [`AssemblyFailure`] is returned, containing
     both the two overlapping bodes as well as the exact [`Overlap`] provided by
-    [`Composite::contains_any_composite`]. Furthermore, all interior magnets of
+    [`Composite::contains_any`]. Furthermore, all interior magnets of
     should be contained within the [`Shape::contour`] of the core shape, which
-    is tested with [`Composite::contains_composite`]. If this is not the case,
+    is tested with [`Composite::contains`]. If this is not the case,
     the core shape and the magnet shape are returned together with a
     [`NotContained`] enum providing more details.
 
@@ -1403,7 +1403,13 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     use stem_core::prelude::*;
 
     // 80 % of a slot pitch is covered by coils
-    let air_gap = PlainAirGap::new(0, Length::new::<millimeter>(1.0), 0.8, 36, true).unwrap();
+    let air_gap = PlainAirGap {
+        num_segments: 0,
+        air_gap_winding_height: Length::new::<millimeter>(1.0),
+        winding_coverage: 0.8,
+        starts_in_slot_middle: true,
+        slots: 36,
+    };
     let core: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(55.0),
         yoke_radius: Length::new::<millimeter>(18.0),
@@ -1946,7 +1952,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     use stem_core::prelude::*;
 
     // Skewing by one slot pitch
-    let air_gap = PlainAirGap::new(0, Length::new::<millimeter>(1.0), 0.8, 36, true).unwrap();
+    let air_gap = PlainAirGap::default();
     let core: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(55.0),
         yoke_radius: Length::new::<millimeter>(18.0),

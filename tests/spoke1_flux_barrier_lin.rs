@@ -6,7 +6,13 @@ use stem_core::prelude::*;
 use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
 
 fn create_plain_core(flux_barrier: Option<Spoke1FluxBarrier>) -> LinCore {
-    let air_gap = PlainAirGap::new(1, Length::new::<millimeter>(10.0), 0.7, 12, false).unwrap();
+    let air_gap = PlainAirGap {
+        num_segments: 1,
+        air_gap_winding_height: Length::new::<millimeter>(10.0),
+        winding_coverage: 0.7,
+        starts_in_slot_middle: false,
+        slots: 12,
+    };
 
     let flux_barrier: Option<Box<dyn FluxBarrier>> = flux_barrier
         .map(Box::new)

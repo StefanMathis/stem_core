@@ -8,8 +8,14 @@ use stem_core::prelude::*;
 use stem_slot::planar_geo::prelude::Composite;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let air_gap =
-        PlainAirGap::new(0, Length::new::<millimeter>(4.0), 0.8, 24, false).expect("valid");
+    let air_gap = PlainAirGap {
+        num_segments: 0,
+        air_gap_winding_height: Length::new::<millimeter>(4.0),
+        winding_coverage: 0.8,
+        starts_in_slot_middle: false,
+        slots: 24,
+    };
+
     let core_plain: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(55.0),
         yoke_radius: Length::new::<millimeter>(18.0),
@@ -32,13 +38,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
     let surface_magnets_plain = MagnetAssembly::new(magnet, 1.try_into()?, 2.try_into()?);
 
-    let air_gap = StraightIndentsAirGap::new(
-        1.try_into().unwrap(),
-        Length::new::<millimeter>(20.5),
-        Length::new::<millimeter>(2.0),
-        3,
-    )
-    .expect("valid inputs");
+    let air_gap = StraightIndentsAirGap {
+        num_segments: 1.try_into()?,
+        indent_width: Length::new::<millimeter>(20.5),
+        indent_depth: Length::new::<millimeter>(2.0),
+        indents_per_pole: 3,
+    };
+
     let core_straight_indents: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(55.0),
         yoke_radius: Length::new::<millimeter>(18.0),

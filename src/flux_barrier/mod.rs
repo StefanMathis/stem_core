@@ -32,7 +32,11 @@ use planar_geo::contour::Contour;
 use stem_magnet::assembly::MagnetAssembly;
 use stem_slot::prelude::*;
 
-use crate::{core::CoreRef, error::Error, magnets::Magnets};
+use crate::{
+    core::{CoreExt, CoreRef},
+    error::Error,
+    magnets::Magnets,
+};
 
 /**
 A trait to define "flux barriers": Cutouts in the yoke of cores which can be
@@ -96,9 +100,8 @@ _This image was produced with `examples/lin_and_rot_core_plots.rs`._
 
 The trait methods are not meant to be called by user code. Instead, all of them
 (except [`FluxBarrier::combine`]) are used to implement the
-[`CoreExt`](crate::core::CoreExt) methods of the same name. For example, the
-[`CoreExt::d_axis_offset`](crate::core::CoreExt::d_axis_offset) method is
-implemented like this:
+[`CoreExt`] methods of the same name. For example, the
+[`CoreExt::d_axis_offset`] method is implemented like this:
 
 ```ignore
 fn d_axis_offset(&self) -> u16 {
@@ -111,11 +114,11 @@ fn d_axis_offset(&self) -> u16 {
 }
 ```
 
-Generally speaking, the documentation of the [`CoreExt`](crate::core::CoreExt)
-method therefors focuses on the _usage_ of that specific method, whereas the
-[`FluxBarrier`] method docstring explains how to _implement_ it for custom
-flux barrier types. If the latter have examples, they are just there to show how
-the method is supposed to work, not how to use them in user code.
+Generally speaking, the documentation of the [`CoreExt`] method therefors
+focuses on the _usage_ of that specific method, whereas the [`FluxBarrier`]
+method docstring explains how to _implement_ it for custom flux barrier types.
+If the latter have examples, they are just there to show how the method is
+supposed to work, not how to use them in user code.
 
 The [`FluxBarrier::combine`] method is used in
 [`LinCore::new`](crate::core::LinCore::new) and
@@ -216,19 +219,11 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     /// [`RotCore`](crate::core::RotCore) out of a
     /// [`LinCoreBuilder`](crate::core::LinCoreBuilder) /
     /// [`RotCoreBuilder`](crate::core::RotCoreBuilder). It therefore functions
-    /// as a general hook to check the compatibility of the [`AirGap`] with
-    /// the core. For example, when combining an [`SlottedAirGap`] with a
-    /// [`LinCore`](crate::core::LinCore), the latter must be high enough to
-    /// accomodate the slot (otherwise the shape creation will fail). But
-    /// even if the shape creation succeeds, an [`AirGap`] might still be
-    /// incompatible to a core: If for example the
-    /// [`air_gap_winding_height`](PlainAirGap::air_gap_winding_height) of a
-    /// [`PlainAirGap`] is larger than inner air gap radius of a
-    /// [`RotCore`](crate::core::RotCore), the winding does not fit inside
+    /// as a general hook to check the compatibility of the [`FluxBarrier`] with
     /// the core.
     ///
-    /// Some implementors of [`AirGap`] might also be generally incompatible to
-    /// either a [`LinCore`](crate::core::LinCore) or a
+    /// Some implementors of [`FluxBarrier`] might also be generally
+    /// incompatible to either a [`LinCore`](crate::core::LinCore) or a
     /// [`RotCore`](crate::core::RotCore). In this case, this method should
     /// return [`Error::IncompatibleToLinCore`] or
     /// [`Error::IncompatibleToRotCore`], where the `&'static str` represents
@@ -261,13 +256,11 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     `PositionedMagnetShape::magnet_idx` of a returned shape is 1, that shape
     belongs to the second magnet assembly in the slice. This can e.g. be used to
     calculate the total mass of all interior magnets (see source code of
-    [`CoreExt::mass_interior_magnets`](crate::core::CoreExt::mass_interior_magnets)
-    ). When implementing [`FluxBarrier`] for an external type, this relation
-    needs to be uphold, because otherwise these calculations will return wrong
-    results.
+    [`CoreExt::mass_interior_magnets`]. When implementing [`FluxBarrier`] for
+    an external type, this relation needs to be uphold, because otherwise these
+    calculations will return wrong results.
 
-    If the flux barrier does not hold magnets
-    ([`FluxBarrier::interior_magnets`](crate::core::CoreExt::interior_magnets)
+    If the flux barrier does not hold magnets ([`FluxBarrier::interior_magnets`]
     returns an empty iterator), this method can be implemented by simply
     returning an empty slice.
 
@@ -387,7 +380,6 @@ pub(crate) fn closest_slot_bottom_middle_rot(
     core: &crate::core::RotCore,
     air_gap: &crate::air_gap::SlottedAirGap,
 ) -> ([f64; 2], u16) {
-    use crate::core::CoreExt;
     use stem_magnet::planar_geo::Transformation;
     use uom::si::length::meter;
 
@@ -424,13 +416,13 @@ pub(crate) fn closest_slot_bottom_middle_rot(
     );
 }
 
-/// Returns the distance from the given point to the q-axis
+/// Returns the distance from the given point to the q-axis.
 pub(crate) fn dist_to_q_axis(pt: [f64; 2], pole_pairs: u16) -> f64 {
     let x = pt[0];
     let y = pt[1];
 
-    // Define the q-axis line from the origin to the air gap as an equation ax + by
-    // + c
+    // Define the q-axis line from the origin to the air gap as an equation
+    // ax + by + c
     let angle = FRAC_PI_2 * (1.0 - 1.0 / (pole_pairs as f64));
     let x1 = angle.cos();
     let y1 = angle.sin();

@@ -77,13 +77,6 @@ indent width, two indents per pole).
 
 _This image was produced with `examples/air_gap_plots.rs`._
 
-A [`StraightIndentsAirGap`] can be segmented, but not continuously skewed. It is
-possible to mount a magnet assembly on a segmented core if the assembly is
-segmented itself in the same way (i.e [`MagnetAssembly::num_axial`] matches
-[`CoreExt::num_segments`] and [`MagnetAssembly::length`] matches
-[`CoreExt::axial_length`]), but a continuously skewed core does not provide a
-planar surface. Hence, `num_segments` has the [`NonZero<usize>`] type.
-
 A [`StraightIndentsAirGap`] cannot be wound, hence [`AirGap::slots`] always
 returns zero.
 
@@ -128,40 +121,24 @@ much simpler and only the first two values are needed.
 )]
 /**
 
-# Fields
-
-All fields of this struct can be read out via their accessor function. Please
-see the accessor docstring for details on the particular field.
-- [`num_segments`](StraightIndentsAirGap::num_segments)
-- [`indent_width`](StraightIndentsAirGap::indent_width)
-- [`indent_depth`](StraightIndentsAirGap::indent_depth)
-- [`indents_per_pole`](StraightIndentsAirGap::indents_per_pole)
-
-If `indent_depth` is positive, the indent is sunken into the core, otherwise it
-extrudes out of the air gap contour.
-
 # Constructors
 
-An instance of this struct can be created with [`StraightIndentsAirGap::new`],
-which requires specifying all aforementioned fields. Alternatively, the
-[`PolygonAirGapBuilder`] can be used to build a [`StraightIndentsAirGap`] for a
-[`RotCore`] where the entire air gap surface is covered by indents (i.e. the
-indents of one pole directly touch that of the next one, resulting in a
-symmetric polygon). A [`PolygonAirGapBuilder`] can be fallibly converted into
-a [`StraightIndentsAirGap`] via [`TryFrom`].
+Besides using the struct constructor directly, a [`PolygonAirGapBuilder`] can be
+used to build a [`StraightIndentsAirGap`] for a [`RotCore`] where the entire air
+gap surface is covered by indents (i.e. the indents of one pole directly touch
+that of the next one, resulting in a symmetric polygon). A
+[`PolygonAirGapBuilder`] can be fallibly converted into a
+[`StraightIndentsAirGap`] via [`TryFrom`].
 
 # Serialization and deserialization
 
-A [`StraightIndentsAirGap`] can be deserialized directly from the arguments to
-[`StraightIndentsAirGap::new`] or alternatively from a [`PolygonAirGapBuilder`].
-As with [`StraightIndentsAirGap::new`], `indent_width` must not be smaller than
-zero.
+A [`StraightIndentsAirGap`] can be deserialized directly its fields or
+alternatively from a [`PolygonAirGapBuilder`].
 
 ```
 use stem_core::prelude::*;
 use yaml_serde;
 
-// Positive indent width -> Invariant upheld.
 let str = indoc::indoc! {"
 num_segments: 2
 indent_width: 10 mm
@@ -169,15 +146,6 @@ indent_depth: -2 mm
 indents_per_pole: 2
 "};
 assert!(yaml_serde::from_str::<StraightIndentsAirGap>(&str).is_ok());
-
-// Negative indent width -> Invariant not upheld.
-let str = indoc::indoc! {"
-num_segments: 2
-indent_width: -10 mm
-indent_depth: 2 mm
-indents_per_pole: 2
-"};
-assert!(yaml_serde::from_str::<StraightIndentsAirGap>(&str).is_err());
 
 // Deserialize from PolygonAirGapBuilder
 let str = indoc::indoc! {"
@@ -192,112 +160,30 @@ assert!(yaml_serde::from_str::<StraightIndentsAirGap>(&str).is_ok());
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct StraightIndentsAirGap {
-    num_segments: NonZero<usize>,
+    /// Number of segments of the core.
+    ///
+    /// A [`StraightIndentsAirGap`] can be segmented, but not continuously
+    /// skewed. It is possible to mount a magnet assembly on a segmented
+    /// core if the assembly is segmented itself in the same way (i.e
+    /// [`MagnetAssembly::num_axial`] matches [`CoreExt::num_segments`] and
+    /// [`MagnetAssembly::length`] matches [`CoreExt::axial_length`]), but a
+    /// continuously skewed core does not provide a planar surface. Hence,
+    /// `num_segments` has the [`NonZero<usize>`] type.
+    pub num_segments: NonZero<usize>,
+    /// Width of a single indent. Must not be negative (`indent_width >= 0 m`);
+    /// otherwise [`StraightIndentsAirGap::combine`] will return an error.
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
-    indent_width: Length,
+    pub indent_width: Length,
+    /// Depth of a single indent. A positive value means the indent is sunken
+    /// into the core, a negative indent means that the indent protrudes from
+    /// the core.
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
-    indent_depth: Length,
-    indents_per_pole: usize,
+    pub indent_depth: Length,
+    /// Number of indents per pole.
+    pub indents_per_pole: usize,
 }
 
 impl StraightIndentsAirGap {
-    /**
-    Creates a new [`StraightIndentsAirGap`] from valid input data.
-
-    The creation fails if `indent_width` is negative.
-
-    # Examples
-
-    ```
-    use std::num::NonZero;
-
-    use stem_core::prelude::*;
-
-    let num_segments: NonZero<usize> = 2.try_into().expect("not zero");
-
-    // Valid input data
-    assert!(StraightIndentsAirGap::new(num_segments, Length::new::<millimeter>(10.0), Length::new::<millimeter>(2.0), 2).is_ok());
-    assert!(StraightIndentsAirGap::new(num_segments, Length::new::<millimeter>(10.0), Length::new::<millimeter>(0.0), 2).is_ok());
-    assert!(StraightIndentsAirGap::new(num_segments, Length::new::<millimeter>(10.0), Length::new::<millimeter>(-2.0), 2).is_ok());
-
-    // Negative indent width -> creation fails
-    assert!(StraightIndentsAirGap::new(num_segments, Length::new::<millimeter>(-10.0), Length::new::<millimeter>(0.0), 2).is_err());
-    ```
-     */
-    pub fn new(
-        num_segments: NonZero<usize>,
-        indent_width: Length,
-        indent_depth: Length,
-        indents_per_pole: usize,
-    ) -> Result<Self, crate::error::Error> {
-        let zero_length = Length::new::<meter>(0.0);
-        compare_variables!(indent_width >= zero_length)?;
-        return Ok(Self {
-            num_segments,
-            indent_width,
-            indent_depth,
-            indents_per_pole,
-        });
-    }
-
-    /// Returns the width of a single indent.
-    ///
-    /// When mounting a [`MagnetAssembly`] via [`AirGap::surface_magnets`], the
-    /// [`Magnet::width`] of the underlying [`MagnetAssembly::magnet`] must not
-    /// be larger than this value, because it might otherwise overlap with the
-    /// core or with neighboring magnets. See [`CoreExt::assembly_check`] for
-    /// more.
-    #[doc = ""]
-    #[cfg_attr(
-        feature = "doc-images",
-        doc = "![Dimensions of a StraightIndentsAirGap][cad_straight_indents_air_gap_dims]"
-    )]
-    #[cfg_attr(
-        feature = "doc-images",
-        embed_doc_image::embed_doc_image(
-            "cad_straight_indents_air_gap_dims",
-            "docs/img/cad_straight_indents_air_gap_dims.svg"
-        )
-    )]
-    #[cfg_attr(
-        not(feature = "doc-images"),
-        doc = "**Doc images not enabled**. Compile docs with
-        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
-    )]
-    pub fn indent_width(&self) -> Length {
-        return self.indent_width;
-    }
-
-    /// Returns the depth of a single indent.
-    ///
-    /// If this value is positive, the indent is cut into the core, otherwise it
-    /// extrudes from it.
-    #[doc = ""]
-    #[cfg_attr(
-        feature = "doc-images",
-        doc = "![Dimensions of a StraightIndentsAirGap][cad_straight_indents_air_gap_dims]"
-    )]
-    #[cfg_attr(
-        feature = "doc-images",
-        embed_doc_image::embed_doc_image(
-            "cad_straight_indents_air_gap_dims",
-            "docs/img/cad_straight_indents_air_gap_dims.svg"
-        )
-    )]
-    #[cfg_attr(
-        not(feature = "doc-images"),
-        doc = "**Doc images not enabled**. Compile docs with
-        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
-    )]
-    pub fn indent_depth(&self) -> Length {
-        return self.indent_depth;
-    }
-
-    /// Returns the number of indents per magnetic pole.
-    pub fn indents_per_pole(&self) -> usize {
-        return self.indents_per_pole;
-    }
-
     /// Returns the opening angle of a single indent in radians.
     ///
     /// This angle is measured from the corners of a single indent with the
@@ -334,11 +220,12 @@ impl StraightIndentsAirGap {
     ///
     /// use stem_core::prelude::*;
     ///
-    /// let air_gap = StraightIndentsAirGap::new(
-    ///     2.try_into().expect("not zero"),
-    ///     Length::new::<millimeter>(10.0),
-    ///     Length::new::<millimeter>(2.0),
-    ///     2).expect("valid inputs");
+    /// let air_gap = StraightIndentsAirGap {
+    ///     num_segments: 2.try_into().expect("not zero"),
+    ///     indent_width: Length::new::<millimeter>(10.0),
+    ///     indent_depth: Length::new::<millimeter>(2.0),
+    ///     indents_per_pole: 2,
+    /// };
     /// assert_abs_diff_eq!(air_gap.indent_opening_angle(Length::new::<millimeter>(60.0), true), 0.161, epsilon = 1e-3);
     /// assert_abs_diff_eq!(air_gap.indent_opening_angle(Length::new::<millimeter>(60.0), false), 0.172, epsilon = 1e-3);
     /// ```
@@ -348,9 +235,9 @@ impl StraightIndentsAirGap {
         let middle_radius = self.indent_corner_radius(air_gap_radius, is_outer);
 
         let adjusted_middle_radius =
-            (middle_radius.powi(P2::new()) + (self.indent_width() / 2.0).powi(P2::new())).sqrt();
+            (middle_radius.powi(P2::new()) + (self.indent_width / 2.0).powi(P2::new())).sqrt();
 
-        return 2.0 * f64::from(self.indent_width() / (2.0 * adjusted_middle_radius)).asin();
+        return 2.0 * f64::from(self.indent_width / (2.0 * adjusted_middle_radius)).asin();
     }
 
     /// Returns the radius at the indent center.
@@ -391,27 +278,30 @@ impl StraightIndentsAirGap {
     ///
     /// use stem_core::prelude::*;
     ///
-    /// let ag1 = StraightIndentsAirGap::new(
-    ///     2.try_into().expect("not zero"),
-    ///     Length::new::<millimeter>(10.0),
-    ///     Length::new::<millimeter>(2.0),
-    ///     2).expect("valif inputs");
+    /// let ag1 = StraightIndentsAirGap {
+    ///     num_segments: 2.try_into().expect("not zero"),
+    ///     indent_width: Length::new::<millimeter>(10.0),
+    ///     indent_depth: Length::new::<millimeter>(2.0),
+    ///     indents_per_pole: 2,
+    /// };
     /// assert_abs_diff_eq!(ag1.indent_center_radius(Length::new::<millimeter>(60.0), true).get::<millimeter>(), 61.791, epsilon = 1e-3);
     /// assert_abs_diff_eq!(ag1.indent_center_radius(Length::new::<millimeter>(60.0), false).get::<millimeter>(), 57.791, epsilon = 1e-3);
     ///
-    /// let ag2 = StraightIndentsAirGap::new(
-    ///     2.try_into().expect("not zero"),
-    ///     Length::new::<millimeter>(10.0),
-    ///     Length::new::<millimeter>(0.0),
-    ///     2).expect("valif inputs");
+    /// let ag2 = StraightIndentsAirGap {
+    ///     num_segments: 2.try_into().expect("not zero"),
+    ///     indent_width: Length::new::<millimeter>(10.0),
+    ///     indent_depth: Length::new::<millimeter>(0.0),
+    ///     indents_per_pole: 2,
+    /// };
     /// assert_abs_diff_eq!(ag2.indent_center_radius(Length::new::<millimeter>(60.0), true).get::<millimeter>(), 59.791, epsilon = 1e-3);
     /// assert_abs_diff_eq!(ag2.indent_center_radius(Length::new::<millimeter>(60.0), false).get::<millimeter>(), 59.791, epsilon = 1e-3);
     ///
-    /// let ag3 = StraightIndentsAirGap::new(
-    ///     2.try_into().expect("not zero"),
-    ///     Length::new::<millimeter>(10.0),
-    ///     Length::new::<millimeter>(-2.0),
-    ///     2).expect("valif inputs");
+    /// let ag3 = StraightIndentsAirGap {
+    ///     num_segments: 2.try_into().expect("not zero"),
+    ///     indent_width: Length::new::<millimeter>(10.0),
+    ///     indent_depth: Length::new::<millimeter>(-2.0),
+    ///     indents_per_pole: 2,
+    /// };
     /// assert_abs_diff_eq!(ag3.indent_center_radius(Length::new::<millimeter>(60.0), true).get::<millimeter>(), 57.791, epsilon = 1e-3);
     /// assert_abs_diff_eq!(ag3.indent_center_radius(Length::new::<millimeter>(60.0), false).get::<millimeter>(), 61.791, epsilon = 1e-3);
     /// ```
@@ -463,31 +353,34 @@ impl StraightIndentsAirGap {
     ///
     /// use stem_core::prelude::*;
     ///
-    /// let ag1 = StraightIndentsAirGap::new(
-    ///     2.try_into().expect("not zero"),
-    ///     Length::new::<millimeter>(10.0),
-    ///     Length::new::<millimeter>(2.0),
-    ///     2).expect("valif inputs");
+    /// let ag1 = StraightIndentsAirGap {
+    ///     num_segments: 2.try_into().expect("not zero"),
+    ///     indent_width: Length::new::<millimeter>(10.0),
+    ///     indent_depth: Length::new::<millimeter>(2.0),
+    ///     indents_per_pole: 2,
+    /// };
     /// assert_abs_diff_eq!(ag1.indent_corner_radius(Length::new::<millimeter>(60.0), true).get::<millimeter>(), 61.993, epsilon = 1e-3);
     /// assert_abs_diff_eq!(ag1.indent_corner_radius(Length::new::<millimeter>(60.0), false).get::<millimeter>(), 58.007, epsilon = 1e-3);
     /// assert!(ag1.indent_corner_radius(Length::new::<millimeter>(60.0), true) > ag1.indent_center_radius(Length::new::<millimeter>(60.0), true));
     /// assert!(ag1.indent_corner_radius(Length::new::<millimeter>(60.0), false) > ag1.indent_center_radius(Length::new::<millimeter>(60.0), false));
     ///
-    /// let ag2 = StraightIndentsAirGap::new(
-    ///     2.try_into().expect("not zero"),
-    ///     Length::new::<millimeter>(10.0),
-    ///     Length::new::<millimeter>(0.0),
-    ///     2).expect("valif inputs");
+    /// let ag2 = StraightIndentsAirGap {
+    ///     num_segments: 2.try_into().expect("not zero"),
+    ///     indent_width: Length::new::<millimeter>(10.0),
+    ///     indent_depth: Length::new::<millimeter>(0.0),
+    ///     indents_per_pole: 2,
+    /// };
     /// assert_abs_diff_eq!(ag2.indent_corner_radius(Length::new::<millimeter>(60.0), true).get::<millimeter>(), 60.0, epsilon = 1e-3);
     /// assert_abs_diff_eq!(ag2.indent_corner_radius(Length::new::<millimeter>(60.0), false).get::<millimeter>(), 60.0, epsilon = 1e-3);
     /// assert!(ag2.indent_corner_radius(Length::new::<millimeter>(60.0), true) > ag2.indent_center_radius(Length::new::<millimeter>(60.0), true));
     /// assert!(ag2.indent_corner_radius(Length::new::<millimeter>(60.0), false) > ag2.indent_center_radius(Length::new::<millimeter>(60.0), false));
     ///
-    /// let ag3 = StraightIndentsAirGap::new(
-    ///     2.try_into().expect("not zero"),
-    ///     Length::new::<millimeter>(10.0),
-    ///     Length::new::<millimeter>(-2.0),
-    ///     2).expect("valif inputs");
+    /// let ag3 = StraightIndentsAirGap {
+    ///     num_segments: 2.try_into().expect("not zero"),
+    ///     indent_width: Length::new::<millimeter>(10.0),
+    ///     indent_depth: Length::new::<millimeter>(-2.0),
+    ///     indents_per_pole: 2,
+    /// };
     /// assert_abs_diff_eq!(ag3.indent_corner_radius(Length::new::<millimeter>(60.0), true).get::<millimeter>(), 58.007, epsilon = 1e-3);
     /// assert_abs_diff_eq!(ag3.indent_corner_radius(Length::new::<millimeter>(60.0), false).get::<millimeter>(), 61.993, epsilon = 1e-3);
     /// assert!(ag3.indent_corner_radius(Length::new::<millimeter>(60.0), true) > ag3.indent_center_radius(Length::new::<millimeter>(60.0), true));
@@ -767,6 +660,8 @@ impl AirGap for StraightIndentsAirGap {
     }
 
     fn combine(&mut self, core: CoreRef<'_>) -> Result<Shape, Error> {
+        let zero_length = super::zero_length();
+        compare_variables!(self.indent_width >= zero_length)?;
         match core {
             CoreRef::Lin(lin_core) => self.shape_lin(lin_core),
             CoreRef::Rot(rot_core) => self.shape_rot(rot_core),
@@ -836,7 +731,7 @@ let builder = PolygonAirGapBuilder {
 };
 
 let ag = StraightIndentsAirGap::try_from(builder).expect("valid data");
-assert_abs_diff_eq!(ag.indent_width().get::<millimeter>(), 31.058, epsilon = 1e-3);
+assert_abs_diff_eq!(ag.indent_width.get::<millimeter>(), 31.058, epsilon = 1e-3);
 ```
 The conversion fails if the calculated `indent_width` is negative (i.e.
 [`PolygonAirGapBuilder::air_gap_radius`] is negative).
@@ -881,12 +776,15 @@ impl TryFrom<PolygonAirGapBuilder> for StraightIndentsAirGap {
         let sides = 2.0 * value.pole_pairs as f64 * value.indents_per_pole as f64;
         let indent_width = 2.0 * value.air_gap_radius * (std::f64::consts::PI / sides).sin();
 
-        return StraightIndentsAirGap::new(
-            value.num_segments,
+        let zero_length = super::zero_length();
+        compare_variables!(indent_width >= zero_length)?;
+
+        return Ok(StraightIndentsAirGap {
+            num_segments: value.num_segments,
             indent_width,
-            super::zero_length(),
-            value.indents_per_pole,
-        );
+            indent_depth: super::zero_length(),
+            indents_per_pole: value.indents_per_pole,
+        });
     }
 }
 
@@ -915,13 +813,19 @@ impl<'de> Deserialize<'de> for StraightIndentsAirGap {
 
         let ag = AirGapEnum::deserialize(deserializer)?;
         match ag {
-            AirGapEnum::StraightIndentsAirGap(ag) => StraightIndentsAirGap::new(
-                ag.num_segments,
-                ag.indent_width,
-                ag.indent_depth,
-                ag.indents_per_pole,
-            )
-            .map_err(serde::de::Error::custom),
+            AirGapEnum::StraightIndentsAirGap(ag) => {
+                let indent_width = ag.indent_width;
+                let zero_length = super::zero_length();
+                compare_variables!(indent_width >= zero_length)
+                    .map_err(serde::de::Error::custom)?;
+                Ok(StraightIndentsAirGap {
+                    num_segments: ag.num_segments,
+                    indent_width: indent_width,
+                    indent_depth: ag.indent_depth,
+                    indents_per_pole: ag.indents_per_pole,
+                })
+            }
+
             AirGapEnum::PolygonAirGapBuilder(ag) => ag.try_into().map_err(serde::de::Error::custom),
         }
     }

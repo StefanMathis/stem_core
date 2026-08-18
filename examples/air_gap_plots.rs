@@ -66,13 +66,12 @@ fn plot_comparison() -> Result<(), Box<dyn std::error::Error>> {
     }
     .try_into()?;
 
-    let air_gap = StraightIndentsAirGap::new(
-        1.try_into()?,
-        Length::new::<millimeter>(10.0),
-        Length::new::<millimeter>(2.0),
-        2,
-    )
-    .expect("valid inputs");
+    let air_gap = StraightIndentsAirGap {
+        num_segments: 1.try_into()?,
+        indent_width: Length::new::<millimeter>(10.0),
+        indent_depth: Length::new::<millimeter>(2.0),
+        indents_per_pole: 2,
+    };
 
     let straight_indents_air_pap: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(40.0),
@@ -189,7 +188,13 @@ fn plot_plain() -> Result<(), Box<dyn std::error::Error>> {
     // =========================================================================
     // Plot with air gap winding and surface magnets
 
-    let ag = PlainAirGap::new(0, Length::new::<millimeter>(3.0), 0.8, 12, true)?;
+    let ag = PlainAirGap {
+        num_segments: 0,
+        air_gap_winding_height: Length::new::<millimeter>(3.0),
+        winding_coverage: 0.8,
+        starts_in_slot_middle: true,
+        slots: 12,
+    };
     let rot_core: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(40.0),
         yoke_radius: Length::new::<millimeter>(19.0),
@@ -472,13 +477,12 @@ fn plot_straight_indents() -> Result<(), Box<dyn std::error::Error>> {
     let distance = 0.02;
     let magnet_thickness = 0.005;
 
-    let air_gap = StraightIndentsAirGap::new(
-        1.try_into()?,
-        Length::new::<millimeter>(10.0),
-        Length::new::<millimeter>(-2.0),
-        2,
-    )
-    .expect("valid inputs");
+    let air_gap = StraightIndentsAirGap {
+        num_segments: 1.try_into()?,
+        indent_width: Length::new::<millimeter>(10.0),
+        indent_depth: Length::new::<millimeter>(-2.0),
+        indents_per_pole: 2,
+    };
 
     let lin_core: LinCore = LinCoreBuilder {
         height: Length::new::<millimeter>(20.0),
@@ -494,13 +498,12 @@ fn plot_straight_indents() -> Result<(), Box<dyn std::error::Error>> {
     }
     .try_into()?;
 
-    let air_gap = StraightIndentsAirGap::new(
-        1.try_into()?,
-        Length::new::<millimeter>(10.0),
-        Length::new::<millimeter>(2.0),
-        2,
-    )
-    .expect("valid inputs");
+    let air_gap = StraightIndentsAirGap {
+        num_segments: 1.try_into()?,
+        indent_width: Length::new::<millimeter>(10.0),
+        indent_depth: Length::new::<millimeter>(2.0),
+        indents_per_pole: 2,
+    };
 
     let rot_core: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(40.0),

@@ -8,13 +8,12 @@ use stem_slot::planar_geo::{DEFAULT_EPSILON, DEFAULT_MAX_RELATIVE, draw::Drawabl
 fn test_radii_calc() {
     let air_gap_radius = Length::new::<millimeter>(60.0);
     {
-        let air_gap = StraightIndentsAirGap::new(
-            1.try_into().unwrap(),
-            Length::new::<millimeter>(20.0),
-            Length::new::<millimeter>(0.0),
-            3.try_into().unwrap(),
-        )
-        .expect("valid inputs");
+        let air_gap = StraightIndentsAirGap {
+            num_segments: 1.try_into().unwrap(),
+            indent_width: Length::new::<millimeter>(20.0),
+            indent_depth: Length::new::<millimeter>(0.0),
+            indents_per_pole: 3,
+        };
 
         approxim::assert_abs_diff_eq!(
             air_gap
@@ -49,7 +48,7 @@ fn test_radii_calc() {
                 .indent_center_radius(air_gap_radius, false)
                 .get::<meter>()
                 .powi(2)
-                + (0.5 * air_gap.indent_width().get::<meter>()).powi(2))
+                + (0.5f64 * air_gap.indent_width.get::<meter>()).powi(2))
             .sqrt(),
             0.06,
             epsilon = 1e-4
@@ -59,20 +58,19 @@ fn test_radii_calc() {
                 .indent_center_radius(air_gap_radius, true)
                 .get::<meter>()
                 .powi(2)
-                + (0.5 * air_gap.indent_width().get::<meter>()).powi(2))
+                + (0.5f64 * air_gap.indent_width.get::<meter>()).powi(2))
             .sqrt(),
             0.06,
             epsilon = 1e-4
         );
     }
     {
-        let air_gap = StraightIndentsAirGap::new(
-            1.try_into().unwrap(),
-            Length::new::<millimeter>(20.0),
-            Length::new::<millimeter>(5.0),
-            3.try_into().unwrap(),
-        )
-        .expect("valid inputs");
+        let air_gap = StraightIndentsAirGap {
+            num_segments: 1.try_into().unwrap(),
+            indent_width: Length::new::<millimeter>(20.0),
+            indent_depth: Length::new::<millimeter>(5.0),
+            indents_per_pole: 3,
+        };
 
         approxim::assert_abs_diff_eq!(
             air_gap
@@ -105,13 +103,12 @@ fn test_radii_calc() {
         );
     }
     {
-        let air_gap = StraightIndentsAirGap::new(
-            1.try_into().unwrap(),
-            Length::new::<millimeter>(20.0),
-            Length::new::<millimeter>(-5.0),
-            3.try_into().unwrap(),
-        )
-        .expect("valid inputs");
+        let air_gap = StraightIndentsAirGap {
+            num_segments: 1.try_into().unwrap(),
+            indent_width: Length::new::<millimeter>(20.0),
+            indent_depth: Length::new::<millimeter>(-5.0),
+            indents_per_pole: 3,
+        };
 
         approxim::assert_abs_diff_eq!(
             air_gap
@@ -245,15 +242,12 @@ fn create_core(
         material: Arc::new(Material::default()),
         pole_pairs: 2,
         skew_angle: 0.0,
-        air_gap: Box::new(
-            StraightIndentsAirGap::new(
-                1.try_into().unwrap(),
-                Length::new::<millimeter>(indent_width),
-                Length::new::<millimeter>(indent_depth),
-                indents_per_pole.try_into().expect("must not be zero"),
-            )
-            .expect("valid inputs"),
-        ),
+        air_gap: Box::new(StraightIndentsAirGap {
+            num_segments: 1.try_into().unwrap(),
+            indent_width: Length::new::<millimeter>(indent_width),
+            indent_depth: Length::new::<millimeter>(indent_depth),
+            indents_per_pole,
+        }),
         flux_barrier: None,
     }
     .try_into()
@@ -262,13 +256,13 @@ fn create_core(
 
 #[test]
 fn test_assembly_check_block() {
-    let air_gap = StraightIndentsAirGap::new(
-        1.try_into().unwrap(),
-        Length::new::<millimeter>(20.5),
-        Length::new::<millimeter>(2.0),
-        3,
-    )
-    .expect("valid inputs");
+    let air_gap = StraightIndentsAirGap {
+        num_segments: 1.try_into().unwrap(),
+        indent_width: Length::new::<millimeter>(20.5),
+        indent_depth: Length::new::<millimeter>(2.0),
+        indents_per_pole: 3,
+    };
+
     let core: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(55.0),
         yoke_radius: Length::new::<millimeter>(18.0),

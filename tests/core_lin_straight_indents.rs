@@ -7,13 +7,13 @@ use stem_slot::planar_geo::draw::Drawable;
 use stem_slot::planar_geo::prelude::*;
 
 fn create_core(indent_width: Length, indent_depth: Length, indents_per_pole: usize) -> LinCore {
-    let air_gap = StraightIndentsAirGap::new(
-        1.try_into().unwrap(),
+    let air_gap = StraightIndentsAirGap {
+        num_segments: 1.try_into().unwrap(),
         indent_width,
         indent_depth,
-        indents_per_pole.try_into().unwrap(),
-    )
-    .expect("valid inputs");
+        indents_per_pole,
+    };
+
     return LinCoreBuilder {
         height: Length::new::<millimeter>(25.0),
         width: Length::new::<millimeter>(150.0),

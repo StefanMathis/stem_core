@@ -101,31 +101,11 @@ equipped with surface magnets on its six poles.
 /**
 _This image was produced with `examples/air_gap_plots.rs`._
 
-The space occupied by the air gap winding is defined by the
-[`PlainAirGap::air_gap_winding_height`] and [`PlainAirGap::winding_coverage`],
-see the method docstrings for details.
-
-A [`PlainAirGap`] can be either segmented or continuously skewed, meaning that
-[`AirGap::num_segments`] can be any `usize` for it. For details on the concept
-of skewing / segmentation, see also [`CoreExt::num_segments`].
-
-# Fields
-
-All fields of this struct can be read out via their accessor function. Please
-see the accessor docstring for details on the particular field.
-- [`air_gap_winding_height`](PlainAirGap::air_gap_winding_height)
-- [`winding_coverage`](PlainAirGap::winding_coverage)
-- [`num_segments`](PlainAirGap::num_segments)
-- [`starts_in_slot_middle`](PlainAirGap::starts_in_slot_middle)
-- [`slots`](PlainAirGap::slots)
-
 # Constructors
 
-This struct offers three constructors:
-- [`PlainAirGap::new`] allows specifying all fields directly (performing value
-range checks on some).
+This struct offers two constructors besides the "true" direct struct constructor:
 - [`PlainAirGap::with_num_segments`] is useful if the core is not meant to be
-wound, in which case all arguments to [`PlainAirGap::new`] except `num_segments`
+wound, in which case all fields of [`PlainAirGap`] except `num_segments`
 are irrelevant anyway.
 - [`PlainAirGap::default`] offers the most basic constructor implemented via the
 [`Default`] trait. All values are set to sensible defaults:
@@ -144,12 +124,38 @@ impl Default for PlainAirGap {
 }
 ```
 
+# Air gap winding dimensions
+
+The image below shows the definition of the three winding-related fields
+[`PlainAirGap::air_gap_winding_height`], [`PlainAirGap::winding_coverage`] and
+[`PlainAirGap::starts_in_slot_middle`] and how they influence the space
+available space for air-gap mounted coils. See the field docuemtnation for more.
+
+ */
+#[doc = ""]
+#[cfg_attr(
+    feature = "doc-images",
+    doc = "![Air gap winding dimensions][cad_plain_air_gap_winding]"
+)]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image(
+        "cad_plain_air_gap_winding",
+        "docs/img/cad_plain_air_gap_winding.svg"
+    )
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/**
+
 # Serialization and deserialization
 
-A [`PlainAirGap`] can be deserialized directly from the arguments to
-[`PlainAirGap::new`]. Note that the same invariants apply:
-`air_gap_winding_height` must not be smaller than zero and `winding_coverage`
-will be clamped to be between 0 and 1.
+When deserializing, the invariants stated on the struct field documentation
+applies: [`PlainAirGap::air_gap_winding_height`] must not be smaller than zero
+and [`PlainAirGap::winding_coverage`] will be clamped to be between 0 and 1.
 
 ```
 use stem_core::prelude::*;
@@ -164,7 +170,7 @@ slots: 12
 "};
 
 let ag: PlainAirGap = yaml_serde::from_str(&str).expect("valid dimensions");
-assert_eq!(ag.winding_coverage(), 1.0);
+assert_eq!(ag.winding_coverage, 1.0);
 ```
 
 Any of these fields can be omitted, in which case the value from the
@@ -179,14 +185,25 @@ air_gap_winding_height: 10 mm
 "};
 
 let ag: PlainAirGap = yaml_serde::from_str(&str).expect("valid dimensions");
-assert_eq!(ag.winding_coverage(), 0.0);
+assert_eq!(ag.winding_coverage, 0.0);
 ```
  */
 #[derive(Debug, Clone, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct PlainAirGap {
+    /// Number of segments of the core.
+    ///
+    /// A [`PlainAirGap`] can both be skewed (`num_segments = 0`) or segmented
+    /// (`num_segments > 0`). See [`CoreExt::num_segments`].
     #[cfg_attr(feature = "serde", serde(default = "usize::default"))]
-    num_segments: usize,
+    pub num_segments: usize,
+    /// Returns the height of the air gap winding space.
+    ///
+    /// This parameter shows how much the air gap winding extends into the air
+    /// gap itself. It therefore must not be negative (`air_gap_winding_height
+    /// >= 0 m`). If it is zero, the available winding space is also zero and
+    /// the core cannot be wound in practice. Therefore,
+    /// [`PlainAirGap::slots`] then also returns 0.
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(
         feature = "serde",
@@ -195,64 +212,43 @@ pub struct PlainAirGap {
             default = "super::zero_length"
         )
     )]
-    air_gap_winding_height: Length,
+    pub air_gap_winding_height: Length,
+    /// Returns the proportional coverage of the air gap surface by the air gap
+    /// winding space.
+    ///
+    /// This parameter needs to be between zero and one. If it is zero, the
+    /// available winding space is also zero and the core cannot be wound in
+    /// practice (even if [`PlainAirGap::slots`] is larger than zero). If it is
+    /// one, the entire air gap surface is covered by coils if the core is
+    /// wound. Therefore, [`PlainAirGap::slots`] then also returns 0.
     #[cfg_attr(
         feature = "serde",
         serde(
             deserialize_with = "deserialize_winding_coverage",
-            default = "f64::default"
+            default = "Default::default"
         )
     )]
-    winding_coverage: f64,
+    pub winding_coverage: f64,
+    /// Whether the air gap surface starts in the middle of a slot or inbetween
+    /// two slots.
+    ///
+    /// If the "slot" cannot be separated horizontally (e.g. in case of a
+    /// ([`CoilLayout::Single`])), the layers will protrude outside the air gap
+    /// for a linear core. This is obviously not desirable, which is why
+    /// this parameter should generally only be `true` for coil layouts
+    /// which can be separated horizontally
+    /// ([`CoilLayout::DoubleHorizontal`], [`CoilLayout::Quadruple`]).
+    /// For a rotary core, this is not the case, as there the parameter only
+    /// influences whether the first slot is positioned on the x-axis or not.
     #[cfg_attr(feature = "serde", serde(default = "bool::default"))]
-    starts_in_slot_middle: bool,
+    pub starts_in_slot_middle: bool,
+    /// Number of "slots" of the air gap, i.e. how many times a [`CoilLayout`]
+    /// is placed along the [`CoreExt::air_gap_length`].
     #[cfg_attr(feature = "serde", serde(default = "u16::default"))]
-    slots: u16,
+    pub slots: u16,
 }
 
 impl PlainAirGap {
-    /**
-    Creates a new [`PlainAirGap`] from valid input data.
-
-    The creation fails if `air_gap_winding_height` is negative.
-    `winding_coverage` is clamped between 0 and 1. All other data is straight
-    fed into the [`PlainAirGap`] struct.
-
-    # Examples
-
-    ```
-    use stem_core::prelude::*;
-
-    // Valid input data
-    assert!(PlainAirGap::new(2, Length::new::<millimeter>(1.0), 0.5, 12, true).is_ok());
-
-    // Winding coverage gets clamped
-    let ag = PlainAirGap::new(2, Length::new::<millimeter>(1.0), 2.0, 12, true).expect("valid input data");
-    assert_eq!(ag.winding_coverage(), 1.0);
-
-    // Negative winding height -> creation fails
-    assert!(PlainAirGap::new(2, Length::new::<millimeter>(-1.0), 0.5, 12, true).is_err());
-    ```
-     */
-    pub fn new(
-        num_segments: usize,
-        air_gap_winding_height: Length,
-        winding_coverage: f64,
-        slots: u16,
-        starts_in_slot_middle: bool,
-    ) -> Result<Self, Error> {
-        let zero_length = Length::new::<meter>(0.0);
-        compare_variables!(air_gap_winding_height >= zero_length)?;
-        let winding_coverage = winding_coverage.clamp(0.0, 1.0);
-        return Ok(Self {
-            air_gap_winding_height,
-            winding_coverage,
-            num_segments,
-            slots,
-            starts_in_slot_middle,
-        });
-    }
-
     /**
     Creates a new [`PlainAirGap`] where all values except `num_segments` are set
     to their default values (see [`PlainAirGap`] docstring).
@@ -270,8 +266,8 @@ impl PlainAirGap {
     use stem_core::prelude::*;
 
     let ag = PlainAirGap::with_num_segments(2);
-    assert_eq!(ag.air_gap_winding_height().get::<meter>(), 0.0);
-    assert_eq!(ag.winding_coverage(), 0.0);
+    assert_eq!(ag.air_gap_winding_height.get::<meter>(), 0.0);
+    assert_eq!(ag.winding_coverage, 0.0);
     ```
      */
     pub fn with_num_segments(num_segments: usize) -> Self {
@@ -282,106 +278,6 @@ impl PlainAirGap {
             slots: 0,
             starts_in_slot_middle: true,
         }
-    }
-
-    /// Returns the height of the air gap winding space.
-    ///
-    /// This parameter shows how much the air gap winding extends into the air
-    /// gap itself. It therefore must not be negative. If it is zero, the
-    /// available winding space is also zero and the core cannot be wound in
-    /// practice. Therefore, [`PlainAirGap::slots`] then also returns 0.
-    ///
-    /// The image below shows a double-layer winding with the (hatched) layers
-    /// arranged horizontally next to each other
-    /// ([`CoilLayout::DoubleHorizontal`]).
-    #[doc = ""]
-    #[cfg_attr(
-        feature = "doc-images",
-        doc = "![Air gap winding dimensions][cad_plain_air_gap_winding]"
-    )]
-    #[cfg_attr(
-        feature = "doc-images",
-        embed_doc_image::embed_doc_image(
-            "cad_plain_air_gap_winding",
-            "docs/img/cad_plain_air_gap_winding.svg"
-        )
-    )]
-    #[cfg_attr(
-        not(feature = "doc-images"),
-        doc = "**Doc images not enabled**. Compile docs with
-        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
-    )]
-    pub fn air_gap_winding_height(&self) -> Length {
-        return self.air_gap_winding_height;
-    }
-
-    /// Returns the proportional coverage of the air gap surface by the air gap
-    /// winding space.
-    ///
-    /// This parameter is between zero and one. If it is zero, the
-    /// available winding space is also zero and the core cannot be wound in
-    /// practice (even if [`PlainAirGap::slots`] is larger than zero). If it is
-    /// one, the entire air gap surface is covered by coils if the core is
-    /// wound. Therefore, [`PlainAirGap::slots`] then also returns 0.
-    ///
-    /// As shown in the image below, this value is the ratio betwen the "slot"
-    /// (coil group) width and the [`CoreExt::slot_pitch`]. The depicted winding
-    /// is a double-layer winding with the (hatched) layers arranged
-    /// horizontally next to each other ([`CoilLayout::DoubleHorizontal`]).
-    #[doc = ""]
-    #[cfg_attr(
-        feature = "doc-images",
-        doc = "![Air gap winding dimensions][cad_plain_air_gap_winding]"
-    )]
-    #[cfg_attr(
-        feature = "doc-images",
-        embed_doc_image::embed_doc_image(
-            "cad_plain_air_gap_winding",
-            "docs/img/cad_plain_air_gap_winding.svg"
-        )
-    )]
-    #[cfg_attr(
-        not(feature = "doc-images"),
-        doc = "**Doc images not enabled**. Compile docs with
-        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
-    )]
-    pub fn winding_coverage(&self) -> f64 {
-        return self.winding_coverage;
-    }
-
-    /// Whether the air gap surface starts in the middle of a slot or inbetween
-    /// two slots.
-    ///
-    /// The image below shows the influence of this parameter on the positioning
-    /// of the individual winding layers for a double layer winding:
-    #[doc = ""]
-    #[cfg_attr(
-        feature = "doc-images",
-        doc = "![Effect of the starts_in_slot_middle parameter][cad_plain_air_gap_winding]"
-    )]
-    #[cfg_attr(
-        feature = "doc-images",
-        embed_doc_image::embed_doc_image(
-            "cad_plain_air_gap_winding",
-            "docs/img/cad_plain_air_gap_winding.svg"
-        )
-    )]
-    #[cfg_attr(
-        not(feature = "doc-images"),
-        doc = "**Doc images not enabled**. Compile docs with
-        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
-    )]
-    ///
-    /// If the "slot" cannot be separated horizontally (e.g. in case of a
-    /// ([`CoilLayout::Single`])), the layers will protrude outside the air gap
-    /// for a linear core. This is obviously not desirable, which is why
-    /// this parameter should generally only be `true` for coil layouts
-    /// which can be separated horizontally
-    /// ([`CoilLayout::DoubleHorizontal`], [`CoilLayout::Quadruple`]).
-    /// For a rotary core, this is not the case, as there the parameter only
-    /// influences whether the first slot is positioned on the x-axis or not.
-    pub fn starts_in_slot_middle(&self) -> bool {
-        return self.starts_in_slot_middle;
     }
 }
 
@@ -399,10 +295,10 @@ impl AirGap for PlainAirGap {
             >::from_air_gap_winding(
                 lin.air_gap_length(),
                 lin.slots(),
-                self.air_gap_winding_height(),
-                self.winding_coverage(),
+                self.air_gap_winding_height,
+                self.winding_coverage,
                 coil_layout,
-                self.starts_in_slot_middle(),
+                self.starts_in_slot_middle,
                 true,
             )),
             CoreRef::Rot(rot) => WindingZones::WindingZonesEqSpacedRot(WindingZonesEqSpaced::<
@@ -411,10 +307,10 @@ impl AirGap for PlainAirGap {
             >::from_air_gap_winding(
                 rot.air_gap_length(),
                 rot.slots(),
-                self.air_gap_winding_height(),
-                self.winding_coverage(),
+                self.air_gap_winding_height,
+                self.winding_coverage,
                 coil_layout,
-                self.starts_in_slot_middle(),
+                self.starts_in_slot_middle,
                 rot.is_outer(),
             )),
         }
@@ -456,6 +352,8 @@ impl AirGap for PlainAirGap {
     }
 
     fn combine(&mut self, core: CoreRef<'_>) -> Result<Shape, Error> {
+        let zero_length = super::zero_length();
+        compare_variables!(self.air_gap_winding_height >= zero_length)?;
         let shape = match core {
             CoreRef::Lin(core) => {
                 let contour = Contour::rectangle(
@@ -492,6 +390,7 @@ impl AirGap for PlainAirGap {
                 super::combine_air_gap_and_yoke_to_shape(air_gap, yoke, core.is_outer())?
             }
         };
+        self.winding_coverage = self.winding_coverage.clamp(0.0, 1.0);
         return Ok(shape);
     }
 
