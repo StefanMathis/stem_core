@@ -127,6 +127,116 @@ in the core shape. See the trait method documentation for examples.
  */
 #[cfg_attr(feature = "serde", typetag::serde)]
 pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static {
+    /// Combines `self` with the `core` and returns the cutout contours for the
+    /// entire core.
+    ///
+    /// This method is used when creating a [`LinCore`](crate::core::LinCore) /
+    /// [`RotCore`](crate::core::RotCore) out of a
+    /// [`LinCoreBuilder`](crate::core::LinCoreBuilder) /
+    /// [`RotCoreBuilder`](crate::core::RotCoreBuilder) OR when using
+    /// [`LinCore::set_flux_barrier`](crate::core::LinCore::set_flux_barrier) /
+    /// [`RotCore::set_flux_barrier`](crate::core::RotCore::set_flux_barrier) to
+    /// modify an existing core. It therefore functions as a general hook to
+    /// check the compatibility of the [`FluxBarrier`] with the core. The
+    /// contours returned by this method are (fallibly) inserted into the core
+    /// shape as "holes".
+    ///
+    /// Some implementors of [`FluxBarrier`] might also be generally
+    /// incompatible to either a [`LinCore`](crate::core::LinCore) or a
+    /// [`RotCore`](crate::core::RotCore). In this case, this method should
+    /// return [`Error::IncompatibleToLinCore`] or
+    /// [`Error::IncompatibleToRotCore`], where the `&'static str` represents
+    /// the type name.
+    ///
+    /// It might be useful to cache data created during the combination within
+    /// `self` (e.g. geometric data which is expensive to calculate but useful
+    /// for other [`FluxBarrier`] methods). Therefore, this method takes a
+    /// `&mut self` reference so that data can be stored within `self`.
+    ///
+    /// # Examples
+    ///
+    /// The following examples shows how [`FluxBarrier::combine`] is used within
+    /// [`LinCore::new`](crate::core::LinCore::new) /
+    /// [`RotCore::new`](crate::core::RotCore::new) on a principal level. The
+    /// image below shows the "fb_comp" scenario on the left and the "fb_incomp"
+    /// scenario on the right side.
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![Comparison compatible and incompatible flux barrier][rot_core_set_fb]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image("rot_core_set_fb", "docs/img/rot_core_set_fb.svg")
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    ///
+    /// ```
+    /// use std::sync::Arc;
+    ///
+    /// use stem_core::prelude::*;
+    /// use planar_geo::shape::Shape;
+    ///
+    /// fn fake_new(mut flux_barrier: Box<dyn FluxBarrier>) -> Result<RotCore, stem_core::error::Error> {
+    ///     let core: RotCore = RotCoreBuilder {
+    ///         air_gap_radius: Length::new::<millimeter>(40.0),
+    ///         yoke_radius: Length::new::<millimeter>(15.0),
+    ///         axial_length: Length::new::<millimeter>(100.0),
+    ///         axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///         skew_angle: 0.0,
+    ///         iron_fill_factor: 1.0,
+    ///         material: Arc::new(Material::default()),
+    ///         pole_pairs: 3,
+    ///         air_gap: Box::new(PlainAirGap::default()),
+    ///         flux_barrier: None, // No flux barrier at initialization
+    ///     }.try_into()?;
+    ///
+    ///     // In the real new method, the internally cached shape is used.
+    ///     let mut shape: Shape = core.shape().to_owned();
+    ///
+    ///     // Try to insert the flux barriers into the core shape
+    ///     let contours = flux_barrier.combine(core.as_core_ref())?;
+    ///     for c in contours {
+    ///         shape.add_hole(c)?;
+    ///     }
+    ///     
+    ///     return Ok(core);
+    /// }
+    ///
+    /// // Compatible flux barrier
+    /// let fb_comp = Spoke1FluxBarrier {
+    ///     air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
+    ///     yoke_leakage_path_width: Length::new::<millimeter>(1.0),
+    ///     relief_path_air_gap_width: Length::new::<millimeter>(4.0),
+    ///     magnet_space_width: Length::new::<millimeter>(10.0),
+    ///     magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(2.0)),
+    ///     glue_gap: Length::new::<millimeter>(0.0),
+    ///     magnet_material: None,
+    ///     cache: None,
+    /// };
+    /// assert!(fake_new(Box::new(fb_comp)).is_ok());
+    ///
+    /// // Incompatible flux barrier
+    /// let mut fb_incomp = Spoke1FluxBarrier {
+    ///     air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
+    ///     yoke_leakage_path_width: Length::new::<millimeter>(1.0),
+    ///     relief_path_air_gap_width: Length::new::<millimeter>(4.0),
+    ///     magnet_space_width: Length::new::<millimeter>(30.0), // Too wide for the core width
+    ///     magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(Length::new::<
+    ///         millimeter,
+    ///     >(2.0)),
+    ///     glue_gap: Length::new::<millimeter>(0.0),
+    ///     magnet_material: None,
+    ///     cache: None,
+    /// };
+    /// assert!(fake_new(Box::new(fb_incomp)).is_err());
+    /// ```
+    fn combine(&mut self, core: CoreRef<'_>) -> Result<Vec<Contour>, Error>;
+
     /// Returns the pole coverage of the flux barrier.
     ///
     /// This method implements [`CoreExt::pole_coverage`]. Because it is a
@@ -211,27 +321,6 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
         )
         .into();
     }
-
-    /// Combines `self` with the `core` and returns the resulting cross-section
-    /// shape.
-    ///
-    /// This method is used when creating a [`LinCore`](crate::core::LinCore) /
-    /// [`RotCore`](crate::core::RotCore) out of a
-    /// [`LinCoreBuilder`](crate::core::LinCoreBuilder) /
-    /// [`RotCoreBuilder`](crate::core::RotCoreBuilder). It therefore functions
-    /// as a general hook to check the compatibility of the [`FluxBarrier`] with
-    /// the core.
-    ///
-    /// Some implementors of [`FluxBarrier`] might also be generally
-    /// incompatible to either a [`LinCore`](crate::core::LinCore) or a
-    /// [`RotCore`](crate::core::RotCore). In this case, this method should
-    /// return [`Error::IncompatibleToLinCore`] or
-    /// [`Error::IncompatibleToRotCore`], where the `&'static str` represents
-    /// the type name.
-    ///
-    /// TODO: Example for successfull and failing combination
-    /// TODO: Slotted core image (linear core?)
-    fn combine(&mut self, core: CoreRef<'_>) -> Result<Vec<Contour>, Error>;
 
     /**
     Returns all magnet assemblies of a single pole placed within the flux

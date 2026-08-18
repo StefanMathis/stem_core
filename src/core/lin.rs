@@ -397,7 +397,7 @@ impl CoreExt for LinCore {
                 / self.width().get::<meter>();
         } else {
             if let Some(flux_barrier) = &self.flux_barrier {
-                return flux_barrier.pole_coverage(self.as_core_ref());
+                return flux_barrier.pole_coverage(self.as_core_ref()).clamp(0.0, 1.0);
             } else {
                 return 0.5;
             }

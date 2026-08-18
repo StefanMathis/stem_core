@@ -430,7 +430,6 @@ impl RotCore {
     /// use std::sync::Arc;
     /// use stem_core::prelude::*;
     ///
-    /// let air_gap = PlainAirGap::default();
     /// let mut rot_core: RotCore = RotCoreBuilder {
     ///     air_gap_radius: Length::new::<millimeter>(40.0),
     ///     yoke_radius: Length::new::<millimeter>(15.0),
@@ -440,7 +439,7 @@ impl RotCore {
     ///     iron_fill_factor: 1.0,
     ///     material: Arc::new(Material::default()),
     ///     pole_pairs: 3,
-    ///     air_gap: Box::new(air_gap),
+    ///     air_gap: Box::new(PlainAirGap::default()),
     ///     flux_barrier: None, // No flux barrier at initialization
     /// }.try_into().expect("valid inputs");
     /// assert!(rot_core.flux_barrier().is_none());
@@ -451,7 +450,7 @@ impl RotCore {
     ///     yoke_leakage_path_width: Length::new::<millimeter>(1.0),
     ///     relief_path_air_gap_width: Length::new::<millimeter>(4.0),
     ///     magnet_space_width: Length::new::<millimeter>(10.0),
-    ///    magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(2.0)),
+    ///     magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(2.0)),
     ///     glue_gap: Length::new::<millimeter>(0.0),
     ///     magnet_material: None,
     ///     cache: None,
@@ -611,7 +610,9 @@ impl CoreExt for RotCore {
                 / TAU;
         } else {
             if let Some(flux_barrier) = &self.flux_barrier {
-                return flux_barrier.pole_coverage(self.as_core_ref());
+                return flux_barrier
+                    .pole_coverage(self.as_core_ref())
+                    .clamp(0.0, 1.0);
             } else {
                 return 0.5;
             }

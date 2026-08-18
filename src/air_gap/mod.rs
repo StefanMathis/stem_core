@@ -179,25 +179,25 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// // a length of 20 mm, there is one of them per pole and the core has
     /// // four poles -> all indents cover 80 mm in total, which is smaller than
     /// // the core width of 100 mm
-    /// let comp_ag = StraightIndentsAirGap {
+    /// let ag_comp = StraightIndentsAirGap {
     ///     num_segments: 1.try_into().expect("is not zero"),
     ///     indent_width: Length::new::<millimeter>(20.0),
     ///     indent_depth: Length::new::<millimeter>(2.0),
     ///     indents_per_pole: 1,
     /// };
     ///
-    /// assert!(fake_new(Box::new(comp_ag)).is_ok());
+    /// assert!(fake_new(Box::new(ag_comp)).is_ok());
     ///
     /// // Air gap is not compatible because it has two indents per pole, but
     /// // the indent length is still 20 mm -> All indents cover 160 mm in total,
     /// // which is larger than the core width of 100 mm.
-    /// let incomp_ag = StraightIndentsAirGap {
+    /// let ag_incomp = StraightIndentsAirGap {
     ///     num_segments: 1.try_into().expect("is not zero"),
     ///     indent_width: Length::new::<millimeter>(20.0),
     ///     indent_depth: Length::new::<millimeter>(2.0),
     ///     indents_per_pole: 2,
     /// };
-    /// assert!(fake_new(Box::new(incomp_ag)).is_err());
+    /// assert!(fake_new(Box::new(ag_incomp)).is_err());
     /// ```
     fn combine(&mut self, core: CoreRef<'_>) -> Result<Shape, Error>;
 
