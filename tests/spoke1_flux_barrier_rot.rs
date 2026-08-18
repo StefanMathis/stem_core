@@ -157,7 +157,7 @@ fn plain_inner_with_relief_path() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(5.0),
-        magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(
+        height_split: Spoke1HeightSplit::ReliefPathWidth(
             Length::new::<millimeter>(2.0),
         ),
     };
@@ -263,7 +263,7 @@ fn plain_inner_no_relief_path() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(10.0),
-        magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(
+        height_split: Spoke1HeightSplit::ReliefPathWidth(
             Length::new::<millimeter>(0.0),
         ),
     };
@@ -361,7 +361,7 @@ fn slotted_inner_with_relief_path() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(5.0),
-        magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(
+        height_split: Spoke1HeightSplit::ReliefPathWidth(
             Length::new::<millimeter>(2.0),
         ),
     };
@@ -459,7 +459,7 @@ fn slotted_inner_no_relief_path() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(5.0),
-        magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(
+        height_split: Spoke1HeightSplit::ReliefPathWidth(
             Length::new::<millimeter>(0.0),
         ),
     };
@@ -557,7 +557,7 @@ fn plain_outer_with_relief_path() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(5.0),
-        magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(
+        height_split: Spoke1HeightSplit::ReliefPathWidth(
             Length::new::<millimeter>(2.0),
         ),
     };
@@ -658,7 +658,7 @@ fn plain_outer_no_relief_path() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(10.0),
-        magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(
+        height_split: Spoke1HeightSplit::ReliefPathWidth(
             Length::new::<millimeter>(0.0),
         ),
     };
@@ -756,7 +756,7 @@ fn slotted_outer_with_relief_path() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(5.0),
-        magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(
+        height_split: Spoke1HeightSplit::ReliefPathWidth(
             Length::new::<millimeter>(2.0),
         ),
     };
@@ -857,7 +857,7 @@ fn slotted_outer_no_relief_path() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(5.0),
-        magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(
+        height_split: Spoke1HeightSplit::ReliefPathWidth(
             Length::new::<millimeter>(0.0),
         ),
     };
@@ -974,7 +974,7 @@ fn test_deserialize() {
             air_gap_leakage_path_width: 1 mm
             yoke_leakage_path_width: 1 mm
             relief_path_air_gap_width: 5 mm
-            magnet_space_height_or_relief_path_width: !ReliefPathWidth
+            height_split: !ReliefPathWidth
                 2 mm
     "};
 
@@ -1003,7 +1003,7 @@ fn test_straight_indents_ag() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(5.0),
-        magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(
+        height_split: Spoke1HeightSplit::ReliefPathWidth(
             Length::new::<millimeter>(2.0),
         ),
     };

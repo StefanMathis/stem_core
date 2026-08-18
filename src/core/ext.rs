@@ -1138,7 +1138,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///     yoke_leakage_path_width: Length::new::<millimeter>(1.0),
     ///     relief_path_air_gap_width: Length::new::<millimeter>(0.0),
     ///     magnet_space_width: Length::new::<millimeter>(10.0),
-    ///     magnet_space_height_or_relief_path_width: Spoke1HeightSplit::ReliefPathWidth(Length::new::<
+    ///     height_split: Spoke1HeightSplit::ReliefPathWidth(Length::new::<
     ///         millimeter,
     ///     >(0.0)),
     ///     glue_gap: Length::new::<millimeter>(0.5),

@@ -29,24 +29,92 @@ use crate::{
 #[cfg(feature = "serde")]
 use serde_mosaic::{deserialize_opt_arc_link, serialize_opt_arc_link};
 
+/**
+A helper enum for creating a [`Spoke1FluxBarrier`] from either the
+`magnet_space_height` or `relief_path_width`.
+
+As evident from the drawing below, `magnet_space_height` and `relief_path_width`
+are not independent parameters, but are related via the following equation:
+
+`magnet_space_height + relief_path_width =`[`CoreExt::yoke_height`]`- 2 *`
+[`Spoke1FluxBarrier::glue_gap`]
+[`CoreExt::yoke_height`]`-`[`Spoke1FluxBarrier::air_gap_leakage_path_width`]`-`
+[`Spoke1FluxBarrier::yoke_leakage_path_width`]
+
+*/
+#[doc = ""]
+#[cfg_attr(feature = "doc-images", doc = "![Spoke1 drawing][cad_spoke1]")]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image("cad_spoke1", "docs/img/cad_spoke1.svg")
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/**
+
+Hence, it is sufficient to specify only one of them in
+[`Spoke1FluxBarrier::height_split`] via this enum. The second parameter can then
+be calculated with [`Spoke1HeightSplit::height_and_width`] during
+[`Spoke1FluxBarrier::combine`].
+*/
 #[derive(Clone, Debug, Copy)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Spoke1HeightSplit {
+    /// Definition of the `magnet_space_height`, `relief_path_width` is then
+    /// calculated with [`Spoke1HeightSplit::height_and_width`]. Must be
+    /// positive (`magnet_space_height > 0 m`).
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     MagnetSpaceHeight(Length),
+    /// Definition of the `relief_path_width`, `magnet_space_height` is then
+    /// calculated with [`Spoke1HeightSplit::height_and_width`]. Must not be
+    /// negative (`relief_path_width >= 0 m`). If set to zero, the
+    /// [`Spoke1FluxBarrier`] doesn't have a relief path.
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     ReliefPathWidth(Length),
 }
 
 impl Spoke1HeightSplit {
-    /// Returns an array `[magnet_space_height, relief_path_width]`.
-    fn height_and_width(&self, total: Length) -> [Length; 2] {
+    /// Calculates `[magnet_space_height, relief_path_width]` from the total
+    /// available height for both.
+    ///
+    /// The `total_height` is the sum of `magnet_space_height` and
+    /// `relief_path_width`. One of the summands is given by `self`, and this
+    /// method calculates the other summand using that relationship. The
+    /// `total_height` itself defined as:
+    ///
+    /// `total_height =`[`CoreExt::yoke_height`]`- 2 *`
+    /// [`Spoke1FluxBarrier::glue_gap`]`-`
+    /// [`Spoke1FluxBarrier::air_gap_leakage_path_width`]`-`
+    /// [`Spoke1FluxBarrier::yoke_leakage_path_width`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use approxim::assert_abs_diff_eq;
+    /// use stem_core::prelude::*;
+    ///
+    /// let height_split = Spoke1HeightSplit::MagnetSpaceHeight(Length::new::<millimeter>(10.0));
+    /// let [magnet_space_height, relief_path_width] = height_split.height_and_width(Length::new::<millimeter>(11.0));
+    /// assert_abs_diff_eq!(magnet_space_height.get::<millimeter>(), 10.0, epsilon=1e-10);
+    /// assert_abs_diff_eq!(relief_path_width.get::<millimeter>(), 1.0, epsilon=1e-10);
+    ///
+    /// let height_split = Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(2.0));
+    /// let [magnet_space_height, relief_path_width] = height_split.height_and_width(Length::new::<millimeter>(10.0));
+    /// assert_abs_diff_eq!(magnet_space_height.get::<millimeter>(), 8.0, epsilon=1e-10);
+    /// assert_abs_diff_eq!(relief_path_width.get::<millimeter>(), 2.0, epsilon=1e-10);
+    /// ```
+    pub fn height_and_width(&self, total_height: Length) -> [Length; 2] {
         match self {
             Spoke1HeightSplit::MagnetSpaceHeight(magnet_space_height) => {
-                [*magnet_space_height, total - *magnet_space_height]
+                [*magnet_space_height, total_height - *magnet_space_height]
             }
             Spoke1HeightSplit::ReliefPathWidth(relief_path_width) => {
-                [total - *relief_path_width, *relief_path_width]
+                [total_height - *relief_path_width, *relief_path_width]
             }
         }
     }
@@ -91,9 +159,9 @@ pub struct Spoke1FluxBarrier {
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub magnet_space_width: Length,
     /// Definition of either the magnet space height or the relief path width,
-    /// the other information is then calculated inside
+    /// the other information is then calculated by
     /// [`FluxBarrier::combine`]. See [`Spoke1HeightSplit`] for details.
-    pub magnet_space_height_or_relief_path_width: Spoke1HeightSplit,
+    pub height_split: Spoke1HeightSplit,
     /// Glue gap width. The glue gap is an optional "margin" between the magnet
     /// and the flux barrier sides and can be used to provide space for glue and
     /// easier assembly. Must not be negative (`glue_gap >= 0 m`).
@@ -105,7 +173,7 @@ pub struct Spoke1FluxBarrier {
     /// If a material is given, a [`BlockMagnet`] is created by
     /// [`FluxBarrier::combine`] whose dimensions are defined by
     /// [`Spoke1FluxBarrier::magnet_space_width`] and
-    /// [`Spoke1FluxBarrier::magnet_space_height_or_relief_path_width`]. This
+    /// [`Spoke1FluxBarrier::height_split`]. This
     /// magnet can be accessed with [`Spoke1FluxBarrier::magnet`] or via
     /// [`FluxBarrier::magnet_assemblies`]. Changing this field after
     /// [`FluxBarrier::combine`] does not magically create a new magnet. In
@@ -128,7 +196,7 @@ pub struct Spoke1FluxBarrier {
     /// might be partially public and partially internal information.
     ///
     /// See the docstring of [`Cache`] for more.
-    #[cfg_attr(feature = "serde", serde(skip))]
+    #[cfg_attr(feature = "serde", serde(skip, default))]
     pub cache: Option<Cache>,
 }
 
@@ -174,10 +242,10 @@ pub struct Cache {
     /// the [`Cache::air_gap_leakage_segment`].
     pub pt_air_gap_leakage: [f64; 2],
     /// Height of the magnet space (derived from
-    /// [`Spoke1FluxBarrier::magnet_space_height_or_relief_path_width`]).
+    /// [`Spoke1FluxBarrier::height_split`]).
     pub magnet_space_height: Length,
     /// Relief path width (derived from
-    /// [`Spoke1FluxBarrier::magnet_space_height_or_relief_path_width`]).
+    /// [`Spoke1FluxBarrier::height_split`]).
     pub relief_path_width: Length,
     /// Segment of the flux barrier contour which borders the air gap leakage
     /// path.
@@ -240,9 +308,8 @@ impl Spoke1FluxBarrier {
             - self.yoke_leakage_path_width;
         compare_variables!(val zero < height_for_flux_barrier)?;
 
-        let [magnet_space_height, relief_path_width] = self
-            .magnet_space_height_or_relief_path_width
-            .height_and_width(height_for_flux_barrier);
+        let [magnet_space_height, relief_path_width] =
+            self.height_split.height_and_width(height_for_flux_barrier);
         let half_width = 0.5 * self.magnet_space_width + self.glue_gap;
 
         let has_relief_path = relief_path_width != zero;
@@ -346,7 +413,7 @@ impl Spoke1FluxBarrier {
         let total_width = self.total_magnet_space_width().get::<meter>();
         let yoke_sweep_angle = 2.0 * (0.5 * total_width / yoke_leakage_radius).asin();
 
-        let has_relief_path = match self.magnet_space_height_or_relief_path_width {
+        let has_relief_path = match self.height_split {
             Spoke1HeightSplit::MagnetSpaceHeight(_) => true,
             Spoke1HeightSplit::ReliefPathWidth(width) => width > zero,
         };
@@ -404,9 +471,8 @@ impl Spoke1FluxBarrier {
         };
         compare_variables!(val zero < height_for_flux_barrier)?;
 
-        let [magnet_space_height, relief_path_width] = self
-            .magnet_space_height_or_relief_path_width
-            .height_and_width(height_for_flux_barrier);
+        let [magnet_space_height, relief_path_width] =
+            self.height_split.height_and_width(height_for_flux_barrier);
 
         let pt_inner_relief = [
             0.5 * air_gap_leakage_segment_width,
@@ -606,7 +672,7 @@ impl FluxBarrier for Spoke1FluxBarrier {
         let zero = Length::new::<meter>(0.0);
         compare_variables!(val zero <= self.glue_gap)?;
         compare_variables!(val zero < self.magnet_space_width)?;
-        match self.magnet_space_height_or_relief_path_width {
+        match self.height_split {
             Spoke1HeightSplit::MagnetSpaceHeight(magnet_space_height) => {
                 compare_variables!(val zero <= magnet_space_height)?;
             }

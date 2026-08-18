@@ -97,7 +97,7 @@ pub struct V2rFluxBarrier {
     /// might be partially public and partially internal information.
     ///
     /// See the docstring of [`Cache`] for more.
-    #[cfg_attr(feature = "serde", serde(skip))]
+    #[cfg_attr(feature = "serde", serde(skip, default))]
     pub cache: Option<Cache>,
 }
 
