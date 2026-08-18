@@ -65,26 +65,53 @@ impl Spoke1HeightSplit {
     `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
 ///
-/// TODO
+/// When building -> Cache to None.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Spoke1FluxBarrier {
+    /// Width of the air gap leakage path. Must be positive
+    /// (`air_gap_leakage_path_width > 0 m`).
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub air_gap_leakage_path_width: Length,
+    /// Width of the yoke leakage path. Must be positive
+    /// (`yoke_leakage_path_width > 0 m`).
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub yoke_leakage_path_width: Length,
+    /// Width of the relief path. Must not be negative
+    /// (`relief_path_air_gap_width >= 0 m`). If set to zero, no leakage path
+    /// exists.
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub relief_path_air_gap_width: Length,
+    /// Width of the space available for an interior magnet. Must be positive
+    /// (`magnet_space_width > 0 m`).
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub magnet_space_width: Length,
+    /// Definition of either the magnet space height or the relief path width,
+    /// the other information is then calculated inside
+    /// [`FluxBarrier::combine`]. See [`Spoke1HeightSplit`] for details.
     pub magnet_space_height_or_relief_path_width: Spoke1HeightSplit,
+    /// Glue gap width. The glue gap is an optional "margin" between the magnet
+    /// and the flux barrier sides and can be used to provide space for glue and
+    /// easier assembly. Must not be negative (`glue_gap >= 0 m`).
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub glue_gap: Length,
+    /// Material of the magnet, if the flux barrier has one.
+    ///
+    /// If a material is given, a [`BlockMagnet`] is created by
+    /// [`FluxBarrier::combine`] whose dimensions are defined by
+    /// [`Spoke1FluxBarrier::magnet_space_width`] and
+    /// [`Spoke1FluxBarrier::magnet_space_height_or_relief_path_width`]. This
+    /// magnet can be accessed with [`Spoke1FluxBarrier::magnet`] or via
+    /// [`FluxBarrier::magnet_assemblies`]. Changing this field after
+    /// [`FluxBarrier::combine`] does not magically create a new magnet. In
+    /// practice, this doesn't really matter, since a flux barrier is not meant
+    /// to be used stand-alone and [`FluxBarrier::combine`] runs anyway when
+    /// inserting the flux barrier into a core.
     #[cfg_attr(
         feature = "serde",
         serde(
@@ -115,32 +142,92 @@ pub struct Spoke1FluxBarrier {
 /// information might be public and other might be private. Therefore, this
 /// struct cannot be created on its own. It is overwritten each time a
 /// [`Spoke1FluxBarrier`] is combined with a [`CoreRef`], therefore it makes no
-/// sense to move it from one [`Spoke1FluxBarrier`] to another one.
+/// sense to move / clone it from one [`Spoke1FluxBarrier`] to another one.
+///
+/// The image below shows the dimensions of a [`Spoke1FluxBarrier`], some of
+/// those dimensions are calculated and stored in the [`Cache`] struct. All
+/// points (prefix `pt_`) use the coordinate system shown in the image.
+#[doc = ""]
+#[cfg_attr(feature = "doc-images", doc = "![Spoke1 drawing][cad_spoke1]")]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image("cad_spoke1", "docs/img/cad_spoke1.svg")
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
 #[derive(Debug, Clone)]
 pub struct Cache {
+    /// Right-side corner of the [`Cache::yoke_leakage_segment`].
     pub pt_yoke_leakage: [f64; 2],
+    /// Right-side corner of the transition from the magnet space to the relief
+    /// path. If no relief path exists, this point is equal to
+    /// [`Cache::pt_air_gap_leakage`].
     pub pt_inner_relief: [f64; 2],
+    /// Right-side corner of the magnet space near the air gap. If no relief
+    /// path exists, this point is equal to [`Cache::pt_air_gap_leakage`].
     pub pt_outer_relief: [f64; 2],
+    /// Corner between relief path and [`Cache::air_gap_leakage_segment`]. If no
+    /// relief path exists, this is the corner between the magnet space and
+    /// the [`Cache::air_gap_leakage_segment`].
     pub pt_air_gap_leakage: [f64; 2],
+    /// Height of the magnet space (derived from
+    /// [`Spoke1FluxBarrier::magnet_space_height_or_relief_path_width`]).
     pub magnet_space_height: Length,
+    /// Relief path width (derived from
+    /// [`Spoke1FluxBarrier::magnet_space_height_or_relief_path_width`]).
     pub relief_path_width: Length,
+    /// Segment of the flux barrier contour which borders the air gap leakage
+    /// path.
     pub air_gap_leakage_segment: Segment,
+    /// Segment of the flux barrier contour which borders the yoke leakage path.
     pub yoke_leakage_segment: Segment,
+    /// Number of pole pairs (copied from the `core` argument of
+    /// [`FluxBarrier::combine`]).
     pub pole_pairs: u16,
     magnets: Option<[MagnetAssembly; 1]>,
 }
 
 impl Spoke1FluxBarrier {
+    /// Returns the total magnet space width.
+    ///
+    /// This is [`Spoke1FluxBarrier::magnet_space_width`] plus twice the
+    /// [`Spoke1FluxBarrier::glue_gap`].
     pub fn total_magnet_space_width(&self) -> Length {
         return self.magnet_space_width + 2.0 * self.glue_gap;
     }
 
+    /// Returns the total magnet space height.
+    ///
+    /// If the cache has been created (i.e. if [`FluxBarrier::combine`] has been
+    /// called), this is [`Cache::magnet_space_height`] plus twice the
+    /// [`Spoke1FluxBarrier::glue_gap`]. Otherwise, zero is returned as a
+    /// default / placeholder value.
     pub fn total_magnet_space_height(&self) -> Length {
         return self
             .cache
             .as_ref()
             .map_or(Length::new::<meter>(0.0), |c| c.magnet_space_height)
             + 2.0 * self.glue_gap;
+    }
+
+    /// Returns the interior [`BlockMagnet`], if the flux barrier holds one.
+    ///    
+    /// If the cache has been created (i.e. if [`FluxBarrier::combine`] has been
+    /// called) and if [`Spoke1FluxBarrier::magnet_material`] isn't `None`, a
+    /// [`BlockMagnet`] is stored in the cache and can be accessed either
+    /// indirectly with [`FluxBarrier::magnet_assemblies`] or directly with
+    /// this method.
+    pub fn magnet(&self) -> Option<&BlockMagnet> {
+        self.cache
+            .as_ref()
+            .map(|c| {
+                let magnets = (&c.magnets).as_ref()?;
+                (magnets[0].magnet() as &dyn std::any::Any).downcast_ref::<BlockMagnet>()
+            })
+            .flatten()
     }
 
     fn combine_lin(&mut self, core: &LinCore) -> Result<Vec<Contour>, Error> {
@@ -406,16 +493,6 @@ impl Spoke1FluxBarrier {
             })
             .flatten()
             .map(|a| [a])
-    }
-
-    pub fn magnet(&self) -> Option<&BlockMagnet> {
-        self.cache
-            .as_ref()
-            .map(|c| {
-                let magnets = (&c.magnets).as_ref()?;
-                (magnets[0].magnet() as &dyn std::any::Any).downcast_ref::<BlockMagnet>()
-            })
-            .flatten()
     }
 }
 

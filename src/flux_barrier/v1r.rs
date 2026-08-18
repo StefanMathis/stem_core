@@ -175,6 +175,7 @@ impl V1rFluxBarrier {
         }
     }
 
+    // LAST THING TO BE DOCUMENTED HERE
     pub fn magnet(&self) -> Option<&BlockMagnet> {
         self.cache
             .as_ref()

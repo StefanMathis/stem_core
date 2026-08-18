@@ -129,16 +129,6 @@ pub struct Cache {
 }
 
 impl V2rFluxBarrier {
-    pub fn magnet(&self) -> Option<&BlockMagnet> {
-        self.cache
-            .as_ref()
-            .map(|c| {
-                let magnets = (&c.magnets).as_ref()?;
-                (magnets[0].magnet() as &dyn std::any::Any).downcast_ref::<BlockMagnet>()
-            })
-            .flatten()
-    }
-
     pub fn total_magnet_space_width(&self) -> Length {
         return self.magnet_space_width + 2.0 * self.glue_gap;
     }
@@ -210,6 +200,17 @@ impl V2rFluxBarrier {
             }
             None => Length::new::<meter>(0.0),
         }
+    }
+
+    // LAST THING TO BE DOCUMENTED HERE
+    pub fn magnet(&self) -> Option<&BlockMagnet> {
+        self.cache
+            .as_ref()
+            .map(|c| {
+                let magnets = (&c.magnets).as_ref()?;
+                (magnets[0].magnet() as &dyn std::any::Any).downcast_ref::<BlockMagnet>()
+            })
+            .flatten()
     }
 
     fn combine_rot(&mut self, core: &RotCore) -> Result<Vec<Contour>, Error> {
