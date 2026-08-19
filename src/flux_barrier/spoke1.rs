@@ -179,7 +179,7 @@ gap leakage path. A relief path is a leakage path which partially consists of
 air and therefore doesn't exist due to mechanical reasons, but instead protects
 the magnet against large magnetic fields originating from the stator by
 providing a "relief valve" for the magnetic flux while offering a high enough
-magnetiuc resistance so the magnet flux doesn't get short-circuited. For a
+magnetic resistance so the magnet flux doesn't get short-circuited. For a
 throughout explanation of the concept, see [\[1\]](#spoke1_fb_1).
 
 Constructing a [`Spoke1FluxBarrier`] requires specifying some geometric
