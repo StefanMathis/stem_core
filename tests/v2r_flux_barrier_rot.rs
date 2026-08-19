@@ -670,6 +670,56 @@ fn test_plain_core_90deg_no_relief() {
 }
 
 #[test]
+fn test_6_poles() {
+    let fb = V2rFluxBarrier {
+        yoke_distance: Length::new::<millimeter>(3.0),
+        relief_path_air_gap_width: Length::new::<millimeter>(2.0),
+        relief_path_length: Length::new::<millimeter>(4.0),
+        relief_path_width: Length::new::<millimeter>(2.0),
+        opening_angle: FRAC_PI_2,
+        magnet_space_width: Length::new::<millimeter>(6.0),
+        magnet_space_height: Length::new::<millimeter>(13.0),
+        glue_gap: Length::new::<millimeter>(0.2),
+        leakage_path_width: Length::new::<millimeter>(1.0),
+        magnet_material: Some(Arc::new(Material::default())),
+        fillet_q_side_leakage_space: None,
+        cache: None,
+    };
+
+    let rot_core: RotCore = RotCoreBuilder {
+        air_gap_radius: Length::new::<millimeter>(40.0),
+        yoke_radius: Length::new::<millimeter>(19.0),
+        axial_length: Length::new::<millimeter>(165.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 3,
+        skew_angle: 0.0,
+        air_gap: Box::new(PlainAirGap::default()),
+        flux_barrier: Some(Box::new(fb)),
+    }
+    .try_into()
+    .expect("valid core");
+
+    let drawable = rot_core.drawable();
+
+    let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
+    let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_with_magnets_6.png");
+    let callback = |path: &std::path::Path| {
+        return view.write_to_file(path, |cr| {
+            cr.set_source_rgb(1.0, 1.0, 1.0);
+            cr.paint()?;
+            drawable.draw(cr)?;
+            for m in rot_core.interior_magnets(true) {
+                m.clone().into_drawable().draw(cr)?;
+            }
+            return Ok(());
+        });
+    };
+    assert!(compare_or_create(path, &callback, 0.98).is_ok());
+}
+
+#[test]
 fn test_deserialize() {
     let yaml = indoc::indoc! {"
     ---

@@ -485,9 +485,9 @@ impl V2rFluxBarrier {
         let mut contours: Vec<Contour> = Vec::with_capacity(core.poles().into());
         contours.push(ps.into());
 
-        // Rotate flux barrier clockwise by 90°-360/4 p to have the negative
+        // Rotate flux barrier clockwise by 90°-180°/(2 p) to have the negative
         // q-axis start in the x-axis (d-axis at 90° electrical)
-        let q_axis_alignment_angle = PI / (core.poles() as f64);
+        let q_axis_alignment_angle = FRAC_PI_2 * (1.0 - 2.0 / (core.poles() as f64));
         contours
             .iter_mut()
             .for_each(|c| c.rotate([0.0, 0.0], q_axis_alignment_angle));

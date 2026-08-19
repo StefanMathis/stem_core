@@ -8,6 +8,8 @@ use stem_slot::semi_trapezoid::SemiTrapezoidWidthsAndHeightsBuilder;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     plot_spoke1_flux_barrier()?;
     plot_slotted_with_and_without_flux_barrier()?;
+    plot_v1r_flux_barrier()?;
+    plot_v2r_flux_barrier()?;
     return Ok(());
 }
 
@@ -78,6 +80,111 @@ fn plot_spoke1_flux_barrier() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         cr.translate(width + distance + ag_radius, yshift);
+
+        rot_core.drawable().draw(cr)?;
+        for m in rot_core.interior_magnets(true) {
+            m.into_drawable().draw(cr)?;
+        }
+
+        return Ok(());
+    })?;
+    return Ok(());
+}
+
+fn plot_v1r_flux_barrier() -> Result<(), Box<dyn std::error::Error>> {
+    let fb = V1rFluxBarrier {
+        yoke_distance: Length::new::<millimeter>(3.0),
+        relief_path_air_gap_width: Length::new::<millimeter>(2.0),
+        relief_path_length: Length::new::<millimeter>(4.0),
+        relief_path_width: Length::new::<millimeter>(2.0),
+        opening_angle: FRAC_PI_2,
+        magnet_space_width: Length::new::<millimeter>(6.0),
+        magnet_space_height: Length::new::<millimeter>(13.0),
+        glue_gap: Length::new::<millimeter>(0.2),
+        leakage_path_width: Length::new::<millimeter>(1.0),
+        magnet_material: Some(Arc::new(Material::default())),
+        cache: None,
+    };
+
+    let rot_core: RotCore = RotCoreBuilder {
+        air_gap_radius: Length::new::<millimeter>(40.0),
+        yoke_radius: Length::new::<millimeter>(19.0),
+        axial_length: Length::new::<millimeter>(165.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 3,
+        skew_angle: 0.0,
+        air_gap: Box::new(PlainAirGap::default()),
+        flux_barrier: Some(Box::new(fb)),
+    }
+    .try_into()?;
+
+    let fp = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(&format!("docs/img/rot_core_v1r.svg"));
+
+    let ag_radius = rot_core.air_gap_radius().get::<meter>();
+    let xshift = ag_radius;
+    let bb = BoundingBox::new(0.0, xshift + ag_radius, -ag_radius, ag_radius);
+
+    let view = Viewport::from_bounding_box(&bb, SideLength::Long(400));
+    view.write_to_file(&fp, |cr| {
+        cr.set_source_rgb(1.0, 1.0, 1.0);
+        cr.paint()?;
+
+        cr.translate(ag_radius, 0.0);
+
+        rot_core.drawable().draw(cr)?;
+        for m in rot_core.interior_magnets(true) {
+            m.into_drawable().draw(cr)?;
+        }
+
+        return Ok(());
+    })?;
+    return Ok(());
+}
+
+fn plot_v2r_flux_barrier() -> Result<(), Box<dyn std::error::Error>> {
+    let fb = V2rFluxBarrier {
+        yoke_distance: Length::new::<millimeter>(3.0),
+        relief_path_air_gap_width: Length::new::<millimeter>(2.0),
+        relief_path_length: Length::new::<millimeter>(4.0),
+        relief_path_width: Length::new::<millimeter>(2.0),
+        opening_angle: FRAC_PI_2,
+        magnet_space_width: Length::new::<millimeter>(6.0),
+        magnet_space_height: Length::new::<millimeter>(13.0),
+        glue_gap: Length::new::<millimeter>(0.2),
+        leakage_path_width: Length::new::<millimeter>(1.0),
+        magnet_material: Some(Arc::new(Material::default())),
+        fillet_q_side_leakage_space: None,
+        cache: None,
+    };
+
+    let rot_core: RotCore = RotCoreBuilder {
+        air_gap_radius: Length::new::<millimeter>(40.0),
+        yoke_radius: Length::new::<millimeter>(19.0),
+        axial_length: Length::new::<millimeter>(165.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 3,
+        skew_angle: 0.0,
+        air_gap: Box::new(PlainAirGap::default()),
+        flux_barrier: Some(Box::new(fb)),
+    }
+    .try_into()?;
+
+    let fp = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(&format!("docs/img/rot_core_v2r.svg"));
+
+    let ag_radius = rot_core.air_gap_radius().get::<meter>();
+    let xshift = ag_radius;
+    let bb = BoundingBox::new(0.0, xshift + ag_radius, -ag_radius, ag_radius);
+
+    let view = Viewport::from_bounding_box(&bb, SideLength::Long(400));
+    view.write_to_file(&fp, |cr| {
+        cr.set_source_rgb(1.0, 1.0, 1.0);
+        cr.paint()?;
+
+        cr.translate(ag_radius, 0.0);
 
         rot_core.drawable().draw(cr)?;
         for m in rot_core.interior_magnets(true) {
