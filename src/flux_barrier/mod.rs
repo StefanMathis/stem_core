@@ -235,7 +235,13 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     /// };
     /// assert!(fake_new(Box::new(fb_incomp)).is_err());
     /// ```
-    fn combine(&mut self, core: CoreRef<'_>) -> Result<Vec<Contour>, Error>;
+    fn combine(&mut self, core: CoreRef<'_>) -> Result<Vec<Contour>, Error> {
+        // Dummy implementation, to be overwritten.
+        match core {
+            CoreRef::Lin(_) => Err(Error::IncompatibleToLinCore("Flux barrier")),
+            CoreRef::Rot(_) => Err(Error::IncompatibleToRotCore("Flux barrier")),
+        }
+    }
 
     /// Returns the pole coverage of the flux barrier.
     ///

@@ -6,6 +6,90 @@ use stem_core::prelude::*;
 use stem_slot::semi_trapezoid::SemiTrapezoidWidthsAndHeightsBuilder;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    plot_spoke1_flux_barrier()?;
+    plot_slotted_with_and_without_flux_barrier()?;
+    return Ok(());
+}
+
+fn plot_spoke1_flux_barrier() -> Result<(), Box<dyn std::error::Error>> {
+    let distance = 0.03;
+
+    let fb = Spoke1FluxBarrier {
+        air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
+        yoke_leakage_path_width: Length::new::<millimeter>(1.0),
+        relief_path_air_gap_width: Length::new::<millimeter>(3.0),
+        magnet_space_width: Length::new::<millimeter>(10.0),
+        height_split: Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(1.0)),
+        glue_gap: Length::new::<millimeter>(0.2),
+        magnet_material: Some(Default::default()),
+        cache: None,
+    };
+
+    let lin_core: LinCore = LinCoreBuilder {
+        height: Length::new::<millimeter>(20.0),
+        width: Length::new::<millimeter>(150.0),
+        axial_length: Length::new::<millimeter>(100.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        skew_angle: 0.0,
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 3,
+        air_gap: Box::new(PlainAirGap::default()),
+        flux_barrier: Some(Box::new(fb.clone())),
+    }
+    .try_into()?;
+
+    let rot_core: RotCore = RotCoreBuilder {
+        air_gap_radius: Length::new::<millimeter>(40.0),
+        yoke_radius: Length::new::<millimeter>(19.0),
+        axial_length: Length::new::<millimeter>(165.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 3,
+        skew_angle: 0.0,
+        air_gap: Box::new(PlainAirGap::default()),
+        flux_barrier: Some(Box::new(fb)),
+    }
+    .try_into()?;
+
+    let fp = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join(&format!("docs/img/lin_and_rot_core_spoke1.svg"));
+
+    let ag_radius = rot_core.air_gap_radius().get::<meter>();
+    let width = lin_core.width().get::<meter>();
+    let xshift = width + distance + ag_radius;
+    let yshift = 0.5 * lin_core.height().get::<meter>();
+    let bb = BoundingBox::new(
+        0.0,
+        xshift + ag_radius,
+        -ag_radius + yshift,
+        ag_radius + yshift,
+    );
+
+    let view = Viewport::from_bounding_box(&bb, SideLength::Long(800));
+    view.write_to_file(&fp, |cr| {
+        cr.set_source_rgb(1.0, 1.0, 1.0);
+        cr.paint()?;
+
+        lin_core.drawable().draw(cr)?;
+        for m in lin_core.interior_magnets(true) {
+            m.into_drawable().draw(cr)?;
+        }
+
+        cr.translate(width + distance + ag_radius, yshift);
+
+        rot_core.drawable().draw(cr)?;
+        for m in rot_core.interior_magnets(true) {
+            m.into_drawable().draw(cr)?;
+        }
+
+        return Ok(());
+    })?;
+    return Ok(());
+}
+
+fn plot_slotted_with_and_without_flux_barrier() -> Result<(), Box<dyn std::error::Error>> {
     let slot: SemiTrapezoidSlot = SemiTrapezoidWidthsAndHeightsBuilder {
         bottom_width: Length::new::<millimeter>(6.76),
         bottom_side_width: Length::new::<millimeter>(6.76),

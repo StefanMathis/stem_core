@@ -28,6 +28,15 @@ impl PositionedMagnetShape {
         };
         return Drawable::new(self.shape, style);
     }
+
+    pub fn as_drawable<'a>(&'a self) -> DrawableRef<'a> {
+        let style = if self.is_north {
+            stem_magnet::NORTH_POLE_STYLE
+        } else {
+            stem_magnet::SOUTH_POLE_STYLE
+        };
+        return DrawableRef::new(&self.shape, style);
+    }
 }
 
 impl From<PositionedMagnetShape> for Drawable {

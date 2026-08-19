@@ -1,3 +1,27 @@
+/*!
+This module provides the [`Spoke1FluxBarrier`] struct and the
+[`Spoke1HeightSplit`] helper enum. When combined with a [`RotCore`], this flux
+barrier resembles a wheel with spokes, hence the name. As shown in the image
+below, this flux barrier might hold interior magnets.
+ */
+#![cfg_attr(feature = "doc-images", doc = "")]
+#![cfg_attr(
+    feature = "doc-images",
+    doc = "![Linear and rotary core with a Spoke1FluxBarrier][lin_and_rot_core_spoke1.svg]"
+)]
+#![cfg_attr(feature = "doc-images",
+cfg_attr(all(),
+doc = ::embed_doc_image::embed_image!("lin_and_rot_core_spoke1.svg", "docs/img/lin_and_rot_core_spoke1.svg"),
+))]
+#![cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/*!
+This struct implements the [`FluxBarrier`] trait and can therefore be used to
+build magnetic cores. See the struct docstring for more.
+*/
+
 use std::{
     f64::consts::{FRAC_PI_2, PI, TAU},
     sync::Arc,
@@ -120,7 +144,49 @@ impl Spoke1HeightSplit {
     }
 }
 
-/// TODO
+/**
+A flux barrier with rectangular cutouts which resembles the spokes of a wheel
+when combined with a [`RotCore`].
+
+ */
+#[doc = ""]
+#[cfg_attr(
+    feature = "doc-images",
+    doc = "![Linear and rotary core with a Spoke1FluxBarrier][lin_and_rot_core_spoke1]"
+)]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image(
+        "lin_and_rot_core_spoke1",
+        "docs/img/lin_and_rot_core_spoke1.svg"
+    )
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/**
+
+This is a pretty basic flux barrier type which - as shown in the image above -
+is compatible with both [`LinCore`] and [`RotCore`]. It consists of a
+rectangular magnet space which is perpendicular to the air gap surface. Inside
+the magnet space, it can hold a single [`BlockMagnet`], hence the "1" in the
+name (see [`Spoke1FluxBarrier::magnet_material`]).
+
+In addition, it can have a "relief path" between the magnet space and the air
+gap leakage path. A relief path is a leakage path which partially consists of
+air and therefore doesn't exist due to mechanical reasons, but instead protects
+the magnet against large magnetic fields originating from the stator by
+providing a "relief valve" for the magnetic flux while offering a high enough
+magnetiuc resistance so the magnet flux doesn't get short-circuited. For a
+throughout explanation of the concept, see [\[1\]](#spoke1_fb_1).
+
+Constructing a [`Spoke1FluxBarrier`] requires specifying some geometric
+dimensions, while other dimensions are calculated later when
+[combined](FluxBarrier::combine) with a magnetic core. The drawing below shows
+the definition of all dimensions of this flux barrier type:
+ */
 #[doc = ""]
 #[cfg_attr(feature = "doc-images", doc = "![Spoke1 drawing][cad_spoke1]")]
 #[cfg_attr(
@@ -132,8 +198,72 @@ impl Spoke1HeightSplit {
     doc = "**Doc images not enabled**. Compile docs with
     `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
-///
-/// When building -> Cache to None.
+/**
+
+During the combination, the calculated dimensions are stored within a [`Cache`]
+which is then put into [`Spoke1FluxBarrier::cache`]. When constructing a
+[`Spoke1FluxBarrier`], this field therefore should be simply set to `None` (it
+is not possible to create a [`Cache`] directly anyway). Once the cache has been
+populated, the calculated dimensions can be accessed from it.
+
+# Literature
+<a id="spoke1_fb_1">\[1\]</a>
+Mathis, S.: Permanentmagneterregte Line-Start-Antriebe in Ferrittechnik,
+PhD thesis, Shaker, 2019, URL:
+<https://kluedo.ub.rptu.de/frontdoor/index/index/docId/8192>
+
+# Examples
+
+The following example creates the rotary core shown in the first image of this
+documentation and compares the core surface area with and without the flux
+barrier.
+
+```
+use std::sync::Arc;
+use approxim::assert_abs_diff_eq;
+use stem_core::prelude::*;
+
+// Create the core without flux barrier first
+let mut core: RotCore = RotCoreBuilder {
+    air_gap_radius: Length::new::<millimeter>(40.0),
+    yoke_radius: Length::new::<millimeter>(19.0),
+    axial_length: Length::new::<millimeter>(165.0),
+    axial_coil_overhang: Length::new::<millimeter>(0.0),
+    iron_fill_factor: 1.0,
+    material: Arc::new(Material::default()),
+    pole_pairs: 3,
+    skew_angle: 0.0,
+    air_gap: Box::new(PlainAirGap::default()),
+    flux_barrier: None, // Flux barrier will be added later.
+}.try_into().expect("valid dimensions");
+
+// Core surface area without flux barrier
+assert_abs_diff_eq!(core.cross_section_area().get::<square_millimeter>(), 3892.433, epsilon=1e-3);
+
+// Add the flux barrier
+let fb = Spoke1FluxBarrier {
+    air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
+    yoke_leakage_path_width: Length::new::<millimeter>(1.0),
+    relief_path_air_gap_width: Length::new::<millimeter>(3.0),
+    magnet_space_width: Length::new::<millimeter>(10.0),
+    height_split: Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(1.0)),
+    glue_gap: Length::new::<millimeter>(0.2),
+    magnet_material: Some(Default::default()),
+    cache: None, // As stated, must be initialized to None.
+};
+core.set_flux_barrier(Some(Box::new(fb))).expect("is compatible to core");
+
+// Core surface area is now considerably smaller due to the cutouts
+assert_abs_diff_eq!(core.cross_section_area().get::<square_millimeter>(), 2738.480, epsilon=1e-3);
+
+// Cache has been populated and data can be read out.
+let binding = core.flux_barrier().expect("exists");
+let any = binding as &dyn std::any::Any;
+let fb_read_out = any.downcast_ref::<Spoke1FluxBarrier>().expect("is a Spoke1FluxBarrier");
+let cache = fb_read_out.cache.as_ref().expect("has been populated");
+assert_abs_diff_eq!(cache.relief_path_width.get::<millimeter>(), 1.0, epsilon=1e-3);
+```
+ */
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Spoke1FluxBarrier {
