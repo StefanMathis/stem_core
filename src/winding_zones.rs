@@ -307,10 +307,37 @@ This struct is essentially a builder for a [`WindingZones`] iterator which
 groups the zone contours of the same slot together and ensures an equidistant
 distribution of the slots over the air gap surface. It can be used for both
 linear (`LIN = true`) and rotary cores (`LIN = false`) and provides a bunch of
-constuctors for either defining it from scratch or for particular
+constructors for either defining it from scratch or for particular
 [`AirGap`](crate::air_gap::AirGap) types.
 
-TODO: Explain distribution algorithm
+The following image demonstrates how the iterator works using the example of a
+linear core with three slots, an [air gap winding](crate::air_gap::PlainAirGap)
+on the left side and a [slotted air gap](crate::air_gap::SlottedAirGap) on the
+right side. The [`WindingZonesEqSpaced::new`] constructor receives a "prototype"
+`zones` argument consisting of the zone contours (shown together with their
+coordinate system in red). These zones are then copied into new coordinate
+systems which are distributed evenly along the air gap surface, starting from
+the left. In case the core begins and ends in the middle of a slot, the layers
+are distributed accordingly as shown for the right-side core.
+*/
+#[doc = ""]
+#[cfg_attr(
+    feature = "doc-images",
+    doc = "![How WindingZonesEqSpaced distributes the winding zones][cad_winding_zones_eq_spaced]"
+)]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image(
+        "cad_winding_zones_eq_spaced",
+        "docs/img/cad_winding_zones_eq_spaced.svg"
+    )
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/**
 
 # Examples
 
@@ -361,8 +388,69 @@ impl<T: Transformation + Clone, const LIN: bool> WindingZonesEqSpaced<T, LIN> {
     ///   interpreted as a layer, i.e. `zones.len() == self.layers()`.
     /// - `slots`: Number of slots along the air gap. The `zones` will be
     ///   distributed `slots` times along the `air_gap_length`.
-    /// - `starts_in_slot_middle`: Whether the middle of the first slot is at
-    ///   the zero point of the `air_gap_length`.
+    /// - `starts_in_slot_middle`: If true, the first slot starts at the
+    ///   reference point of the core (which is the left side for a
+    ///   [`LinCore`](crate::core::LinCore) and the x-axis for a
+    ///   [`RotCore`](crate::core::RotCore). If false, it starts at an offset of
+    ///   `air_gap_length / (2*slots)`.
+    ///
+    /// In the following example, `slots` is 3 for both the left side showing
+    /// an [air gap winding](crate::air_gap::PlainAirGap) and for the right side
+    /// representing a [slotted air gap](crate::air_gap::SlottedAirGap). The
+    /// `zones` argument is a vector of two contours as shown in the image. The
+    /// `air_gap_length` is identical for both and `starts_in_slot_middle` is
+    /// false for the left and true for the right side.
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![How WindingZonesEqSpaced distributes the winding zones][cad_winding_zones_eq_spaced]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image(
+            "cad_winding_zones_eq_spaced",
+            "docs/img/cad_winding_zones_eq_spaced.svg"
+        )
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    ///
+    /// # Examples
+    /// ```
+    /// use stem_core::prelude::*;
+    /// use planar_geo::prelude::*;
+    ///
+    /// // Dummy contours defining the lower and the upper layer of a winding.
+    /// let lower = Contour::new(Polysegment::new());
+    /// let upper = Contour::new(Polysegment::new());
+    ///
+    /// // Left side
+    /// let mut left = WindingZonesEqSpaced::<Contour, true>::new(
+    ///     Length::new::<millimeter>(100.0),
+    ///     vec![lower.clone(), upper.clone()],
+    ///     3,
+    ///     false
+    /// );
+    ///
+    /// // Two layers and three slots -> Total number of elements should be 6.
+    /// assert_eq!(left.slots() * left.layers(), 6);
+    /// assert_eq!(left.count(), 6);
+    ///
+    /// // Right side
+    /// let mut right = WindingZonesEqSpaced::<Contour, true>::new(
+    ///     Length::new::<millimeter>(100.0),
+    ///     vec![lower, upper],
+    ///     3,
+    ///     true
+    /// );
+    ///
+    /// // Two layers and three slots -> Total number of elements should be 6.
+    /// assert_eq!(right.slots() * right.layers(), 6);
+    /// assert_eq!(right.count(), 6);
+    /// ```
     pub fn new(
         air_gap_length: Length,
         zones: Vec<T>,
@@ -512,9 +600,13 @@ impl<const LIN: bool> WindingZonesEqSpaced<Polysegment, LIN> {
     /// Returns an iterator over the [`Slot::outline`]s distributed evenly along
     /// the `air_gap_length`.
     ///
-    /// TODO: Helper constructor for
-    /// [`SlottedAirGap`](crate::air_gap::SlottedAirGap), exposed cause it
-    /// might be useful when defining other [`AirGap`](crate::air_gap::AirGap)s.
+    /// This constructor is specifically used for creating the
+    /// [`SlottedAirGap`](crate::air_gap::SlottedAirGap) shape. It uses the
+    /// `slot` to get the [`Slot::outline`], flips it vertically for an inner
+    /// rotary core and then forwards the resulting [`Polysegment`] into the
+    /// `zones` argument of [`WindingZonesEqSpaced::new`] along with the
+    /// other arguments. See [`WindingZonesEqSpaced::new`] for more details
+    /// and examples.
     pub fn from_slot<S: Slot + ?Sized>(
         air_gap_length: Length,
         slots: u16,
@@ -536,7 +628,7 @@ impl<const LIN: bool> WindingZonesEqSpaced<Polysegment, LIN> {
 
         let mut slot_outline: Polysegment = slot.outline().into_owned();
 
-        if !outer_core {
+        if !LIN && !outer_core {
             slot_outline.line_reflection([0.0, 0.0], [1.0, 0.0])
         };
 
@@ -554,7 +646,12 @@ impl<const LIN: bool> WindingZonesEqSpaced<Contour, LIN> {
     /// Returns an iterator over the [`Slot::layer_contours`]s distributed
     /// evenly along the `air_gap_length`.
     ///
-    /// TODO
+    /// This constructor creates the `zones` argument of
+    /// [`WindingZonesEqSpaced::new`] with `slot.layer_contours(coil_layout)`,
+    /// flips it vertically for an inner rotary core and and then forwards the
+    /// resulting [`Vec<Contour>`] into the `zones` argument of
+    /// [`WindingZonesEqSpaced::new`] along with the other arguments. See
+    /// [`WindingZonesEqSpaced::new`] for more details and examples.
     pub fn from_slot<S: Slot + ?Sized>(
         air_gap_length: Length,
         slots: u16,
@@ -602,7 +699,7 @@ impl<const LIN: bool> WindingZonesEqSpaced<Contour, LIN> {
                     .sqrt();
             mod_radius * TAU
         };
-        if !outer_core {
+        if !LIN && !outer_core {
             zones
                 .iter_mut()
                 .for_each(|c| c.line_reflection([0.0, 0.0], [1.0, 0.0]));
@@ -620,7 +717,58 @@ impl<const LIN: bool> WindingZonesEqSpaced<Contour, LIN> {
     /// Returns an iterator over the [`PositionedZoneContour`]s of an air gap
     /// winding distributed evenly along the `air_gap_length`.
     ///
-    /// TODO
+    /// This method creates the air gap winding zone [`Contour`]s from the
+    /// `air_gap_winding_height`, `winding_coverage` and `coil_layout` as shown
+    /// in the image below (for a rotary core, the zones are curved instead):
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![Air gap winding dimensions][cad_plain_air_gap_winding]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image(
+            "cad_plain_air_gap_winding",
+            "docs/img/cad_plain_air_gap_winding.svg"
+        )
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    ///
+    /// The origin of the created segments is at the air gap surface. If
+    /// `outer_core` is true, they are flipped.
+    ///
+    /// The resulting [`Vec<Contour>`] is then provided as `zones` argument to
+    /// [`WindingZonesEqSpaced::new`] along with the other arguments. See
+    /// [`WindingZonesEqSpaced::new`] for more details and examples.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use stem_core::prelude::*;
+    /// use planar_geo::prelude::*;
+    ///
+    /// let coil_layout = CoilLayout::DoubleVertical;
+    /// let slots = 12;
+    ///
+    /// let wz = WindingZonesEqSpaced::<Contour, true>::from_air_gap_winding(
+    ///     Length::new::<millimeter>(100.0),
+    ///     slots,
+    ///     Length::new::<millimeter>(6.0),
+    ///     0.8,
+    ///     &coil_layout,
+    ///     false,
+    ///     true,
+    /// );
+    ///
+    /// // Two layers and three slots -> Total number of elements should be 24.
+    /// let num_contours = wz.count();
+    /// assert_eq!(num_contours, usize::from(slots * coil_layout.layers()));
+    /// assert_eq!(num_contours, 24);
+    /// ```
     pub fn from_air_gap_winding(
         air_gap_length: Length,
         slots: u16,
