@@ -1,3 +1,27 @@
+/*!
+This module provides the [`V1rFluxBarrier`] struct. This flux barrier is
+V-shaped with a variable angle between the sides and a single (optional) relief
+path in the center (hence the "1r" in the name). As shown in the image below,
+this flux barrier might hold interior magnets.
+ */
+#![cfg_attr(feature = "doc-images", doc = "")]
+#![cfg_attr(
+    feature = "doc-images",
+    doc = "![Linear and rotary core with a V1rFluxBarrier][lin_and_rot_core_v1r.svg]"
+)]
+#![cfg_attr(feature = "doc-images",
+cfg_attr(all(),
+doc = ::embed_doc_image::embed_image!("lin_and_rot_core_v1r.svg", "docs/img/lin_and_rot_core_v1r.svg"),
+))]
+#![cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/*!
+This struct implements the [`FluxBarrier`] trait and can therefore be used to
+build magnetic cores. See the struct docstring for more.
+*/
+
 use std::{
     f64::consts::{FRAC_PI_2, PI, TAU},
     sync::Arc,
@@ -54,7 +78,10 @@ pub struct V1rFluxBarrier {
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub yoke_distance: Length,
-    /// Length of the air gap in the relief path
+    /// Width of the air gap part in the relief path. Must not be negative
+    /// (`relief_path_air_gap_width >= 0 m`). If set to zero, the sides of the
+    /// "V" are split in two and there is an additional leakage path in the
+    /// middle.
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub relief_path_air_gap_width: Length,
@@ -78,7 +105,9 @@ pub struct V1rFluxBarrier {
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub magnet_space_height: Length,
-    // Glue gap around the magnet space
+    /// Glue gap width. The glue gap is an optional "margin" between the magnet
+    /// and the flux barrier sides and can be used to provide space for glue and
+    /// easier assembly. Must not be negative (`glue_gap >= 0 m`).
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub glue_gap: Length,

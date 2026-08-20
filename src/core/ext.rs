@@ -860,13 +860,14 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///
     /// If a core [`is_windable`](CoreExt::is_windable), this iterator returns
     /// the contours of all of its winding zones positioned relative to the
-    /// [`CoreExt::shape`] of `self`. The winding zone contours depend on the
-    /// [`AirGap`] of the core: For example, the winding zones of a
-    /// [`SlottedAirGap`](crate::air_gap::SlottedAirGap) are inside its slots,
-    /// whereas those of a [`PlainAirGap`](crate::air_gap::PlainAirGap) are
-    /// located on the top of the air gap contour / inside the air gap itself.
-    /// The image below shows the contours and their return order for the
-    /// aforementioned examples of a slotted and a plain air gap with
+    /// [`CoreExt::shape`] of `self`. The winding zone contours shape and
+    /// positions depend on the [`AirGap`] of the core: For example, the winding
+    /// zones of a [`SlottedAirGap`](crate::air_gap::SlottedAirGap) are inside
+    /// its slots, whereas those of a
+    /// [`PlainAirGap`](crate::air_gap::PlainAirGap) are located on the top of
+    /// the air gap contour / inside the air gap itself. The image below
+    /// shows the contours and their return order for the aforementioned
+    /// examples of a slotted and a plain air gap with
     /// a [`CoilLayout::DoubleVertical`].
     #[doc = ""]
     #[cfg_attr(
@@ -885,7 +886,9 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// _This image was produced with `examples/winding_zones.rs`._
     ///
     /// This method forwards to [`AirGap::winding_zones`], using `self` as the
-    /// second and `coil_layout` as the third argument.
+    /// second and `coil_layout` as the third argument. The
+    /// [`winding_zones`](crate::winding_zones) module provides the returned
+    /// [`WindingZones`] iterator and has further information.
     ///
     /// # Examples
     ///

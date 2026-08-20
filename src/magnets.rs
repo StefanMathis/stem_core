@@ -20,6 +20,7 @@ pub struct PositionedMagnetShape {
 }
 
 impl PositionedMagnetShape {
+    #[cfg(feature = "cairo")]
     pub fn into_drawable(self) -> Drawable {
         let style = if self.is_north {
             stem_magnet::NORTH_POLE_STYLE
@@ -29,12 +30,25 @@ impl PositionedMagnetShape {
         return Drawable::new(self.shape, style);
     }
 
+    #[cfg(feature = "cairo")]
+    pub fn into_drawable_with_style(self, style: planar_geo::draw::Style) -> Drawable {
+        Drawable::new(self.shape, style)
+    }
+
+    #[cfg(feature = "cairo")]
     pub fn as_drawable<'a>(&'a self) -> DrawableRef<'a> {
         let style = if self.is_north {
             stem_magnet::NORTH_POLE_STYLE
         } else {
             stem_magnet::SOUTH_POLE_STYLE
         };
+        return DrawableRef::new(&self.shape, style);
+    }
+
+    /// Wraps [`PositionedMagnetShape::shape`] into a [`DrawableRef`] using
+    /// the provided `style`.
+    #[cfg(feature = "cairo")]
+    pub fn as_drawable_with_style<'a>(&'a self, style: planar_geo::draw::Style) -> DrawableRef<'a> {
         return DrawableRef::new(&self.shape, style);
     }
 }

@@ -479,28 +479,24 @@ impl AirGap for SlottedAirGap {
 
     fn winding_zones(&self, core: CoreRef<'_>, coil_layout: &CoilLayout) -> WindingZones {
         match core {
-            CoreRef::Lin(_) => WindingZones::WindingZonesEqSpacedLin(WindingZonesEqSpaced::<
-                Contour,
-                true,
-            >::from_slot(
+            CoreRef::Lin(_) => WindingZonesEqSpaced::<Contour, true>::from_slot(
                 core.air_gap_length(),
                 core.slots(),
                 &*self.slot,
                 coil_layout,
                 self.starts_in_slot_middle,
                 true,
-            )),
-            CoreRef::Rot(rot) => WindingZones::WindingZonesEqSpacedRot(WindingZonesEqSpaced::<
-                Contour,
-                false,
-            >::from_slot(
+            )
+            .into(),
+            CoreRef::Rot(rot) => WindingZonesEqSpaced::<Contour, false>::from_slot(
                 core.air_gap_length(),
                 core.slots(),
                 &*self.slot,
                 coil_layout,
                 self.starts_in_slot_middle,
                 rot.is_outer(),
-            )),
+            )
+            .into(),
         }
     }
 

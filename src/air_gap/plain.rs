@@ -289,10 +289,7 @@ impl AirGap for PlainAirGap {
 
     fn winding_zones(&self, core: CoreRef<'_>, coil_layout: &CoilLayout) -> WindingZones {
         match core {
-            CoreRef::Lin(lin) => WindingZones::WindingZonesEqSpacedLin(WindingZonesEqSpaced::<
-                Contour,
-                true,
-            >::from_air_gap_winding(
+            CoreRef::Lin(lin) => WindingZonesEqSpaced::<Contour, true>::from_air_gap_winding(
                 lin.air_gap_length(),
                 lin.slots(),
                 self.air_gap_winding_height,
@@ -300,11 +297,9 @@ impl AirGap for PlainAirGap {
                 coil_layout,
                 self.starts_in_slot_middle,
                 true,
-            )),
-            CoreRef::Rot(rot) => WindingZones::WindingZonesEqSpacedRot(WindingZonesEqSpaced::<
-                Contour,
-                false,
-            >::from_air_gap_winding(
+            )
+            .into(),
+            CoreRef::Rot(rot) => WindingZonesEqSpaced::<Contour, false>::from_air_gap_winding(
                 rot.air_gap_length(),
                 rot.slots(),
                 self.air_gap_winding_height,
@@ -312,7 +307,8 @@ impl AirGap for PlainAirGap {
                 coil_layout,
                 self.starts_in_slot_middle,
                 rot.is_outer(),
-            )),
+            )
+            .into(),
         }
     }
 

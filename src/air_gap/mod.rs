@@ -447,16 +447,13 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// zone contours should not "hover" over the core shape, but instead be
     /// attached to it.
     ///
-    /// The [`crate::winding_zones`] module contains some predefined iterators
-    /// to simplify the implementation of this method, see e.g. the source code
-    /// of [`PlainAirGap::winding_zones`] for an example.
+    /// The [`winding_zones`](crate::winding_zones) module provides the
+    /// [`WindingZones`] iterator and has further information. See e.g. the
+    /// source code of [`PlainAirGap::winding_zones`] for an implementation
+    /// example.
     fn winding_zones(&self, _core: CoreRef<'_>, _coil_layout: &CoilLayout) -> WindingZones {
         // Dummy implementation, to be overwritten.
-        WindingZones::WindingZonesEqSpacedLin(WindingZonesEqSpaced::<
-            planar_geo::prelude::Contour,
-            true,
-        >::no_slots())
-        .into()
+        WindingZonesEqSpaced::<planar_geo::prelude::Contour, true>::no_slots().into()
     }
 
     /// Returns the tooth height of the core.

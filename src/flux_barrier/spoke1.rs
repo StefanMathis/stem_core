@@ -1,8 +1,8 @@
 /*!
 This module provides the [`Spoke1FluxBarrier`] struct and the
-[`Spoke1HeightSplit`] helper enum. When combined with a [`RotCore`], this flux
-barrier resembles a wheel with spokes, hence the name. As shown in the image
-below, this flux barrier might hold interior magnets.
+[`Spoke1HeightSplit`] helper enum. When combined with a [`RotCore`], the
+resulting shape resembles a wheel with spokes, hence the name. As shown in the
+image below, this flux barrier might hold interior magnets.
  */
 #![cfg_attr(feature = "doc-images", doc = "")]
 #![cfg_attr(
@@ -167,6 +167,7 @@ when combined with a [`RotCore`].
     `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
 /**
+_This image was produced with `examples/flux_barrier_plots.rs`._
 
 This is a pretty basic flux barrier type which - as shown in the image above -
 is compatible with both [`LinCore`] and [`RotCore`]. It consists of a
@@ -277,9 +278,9 @@ pub struct Spoke1FluxBarrier {
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub yoke_leakage_path_width: Length,
-    /// Width of the relief path. Must not be negative
-    /// (`relief_path_air_gap_width >= 0 m`). If set to zero, no leakage path
-    /// exists.
+    /// Width of the air gap part in the relief path. Must not be negative
+    /// (`relief_path_air_gap_width >= 0 m`). If set to zero, the relief path
+    /// becomes part of the air gap leakage path.
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub relief_path_air_gap_width: Length,

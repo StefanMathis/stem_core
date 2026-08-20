@@ -1,27 +1,163 @@
+/*!
+A module providing iterators for positioning winding zones inside magnetic
+cores.
+
+A winding [`Zone`] is the space where one coil of a winding is located. A "slot"
+is a group of zones layered next to each other as defined by a [`CoilLayout`].
+If a core is [slotted](crate::air_gap::SlottedAirGap), this group is located
+inside an actual [`Slot`], whereas e.g. for an
+[air gap winding](crate::air_gap::PlainAirGap), the coils are located on top of
+the air gap surface of the core:
+
+ */
+#![cfg_attr(feature = "doc-images", doc = "")]
+#![cfg_attr(
+    feature = "doc-images",
+    doc = "![Winding zone positioning (plain air gap and slotted air gap)][winding_zones_with_zone_pos.svg]"
+)]
+#![cfg_attr(feature = "doc-images",
+cfg_attr(all(),
+doc = ::embed_doc_image::embed_image!("winding_zones_with_zone_pos.svg", "docs/img/winding_zones_with_zone_pos.svg"),
+))]
+#![cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/*!
+_This image was produced with `examples/winding_zone_plots.rs`._
+
+The [`Contour`]s of the winding zones are positioned relative to the core via
+the [`WindingZones`] iterator, which in turn is created by
+[`CoreExt::winding_zones`](crate::core::CoreExt::winding_zones). The positioning
+depends on the [`AirGap`](crate::air_gap::AirGap) of the core, see
+[`AirGap::winding_zones`](crate::air_gap::AirGap::winding_zones).
+[`WindingZones`] returns an [`PositionedZoneContour`] struct, which contains the
+positioned contour as well as the [`Zone`] indices shown in the image above.
+[`PositionedZoneContour`] therefore provides the geometrical constraints for a
+winding: For example, it tells how much space is available for the lower layer
+in slot 23 of a double-layer winding.
+
+[`WindingZones`] itself is an enum wrapping a bunch of predefined iterators
+(such as [`WindingZonesEqSpaced`] which themselves implement
+`Iterator<Item=PositionedZoneContour`>). It is possible to define custom
+iterators for custom [`AirGap`](crate::air_gap::AirGap)s via the
+[`WindingZones::Other`] escape hatch, which allows using any iterator which
+returns [`PositionedZoneContour`]s.
+
+`examples/winding_zone_plots.rs` demonstrates how to utilize the
+[`WindingZones`] iterator for creating the above image. The following snippet in
+particular shows how to to draw the [`PositionedZoneContour`]s.
+
+```ignore
+// "cr" is a cairo::Context
+for w in core.winding_zones(&CoilLayout::DoubleVertical) {
+    w.as_drawable().draw(cr)?;
+    let slot_text = Text {
+        text: format!("Slot: {}", w.zone.slot),
+        anchor: Anchor::Center,
+        fixed_anchor_offset: [0.0, -7.0],
+        scaled_anchor_offset: w.contour.centroid(),
+        color: Color {
+            r: 0.0,
+            g: 0.0,
+            b: 0.0,
+            a: 1.0,
+        },
+        font_size: 12.0,
+        angle: 0.0,
+    };
+    slot_text.draw(cr)?;
+
+    let layer_text = Text {
+        text: format!("Layer: {}", w.zone.layer),
+        anchor: Anchor::Center,
+        fixed_anchor_offset: [0.0, 7.0],
+        scaled_anchor_offset: w.contour.centroid(),
+        color: Color {
+            r: 0.0,
+            g: 0.0,
+            b: 0.0,
+            a: 1.0,
+        },
+        font_size: 12.0,
+        angle: 0.0,
+    };
+    layer_text.draw(cr)?;
+}
+```
+ */
+
 use crate::planar_geo;
 use planar_geo::DEFAULT_EPSILON;
 use planar_geo::prelude::{Polysegment, ToBoundingBox};
 use planar_geo::segment::ArcSegment;
 use planar_geo::{Transformation, contour::Contour};
 use std::f64::consts::{FRAC_1_SQRT_2, FRAC_PI_2, TAU};
-use stem_slot::planar_geo::draw::Drawable;
 use stem_slot::prelude::*;
 use stem_slot::{coil_layout::CoilLayout, slot::Slot};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-/**
-A "zone" is a position in the zone plan defined by `slot` and `layer`
- */
+#[cfg(feature = "cairo")]
+use stem_slot::planar_geo::draw::{Drawable, DrawableRef};
+
+/// An index for a coil / "zone" of a winding.
+///
+/// The coils of a winding are placed inside "slots". Depending on the
+/// [`CoilLayout`] of a winding, multiple coils may share one slot and occupy
+/// different "layers" within that slot. This struct is an index to a particular
+/// winding zone defined by [`slot`](Zone::slot) and [`layer`](Zone::layer)
+/// index which can contain a coil. The following image shows the winding zones
+/// for an air gap winding and a winding mounted on a slotted core:
+#[doc = ""]
+#[cfg_attr(
+    feature = "doc-images",
+    doc = "![Linear and rotary core with a Spoke1FluxBarrier][lin_and_rot_core_spoke1]"
+)]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image(
+        "lin_and_rot_core_spoke1",
+        "docs/img/lin_and_rot_core_spoke1.svg"
+    )
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+///
+/// _This image was produced with `examples/winding_zone_plots.rs`._
+///
+/// [`Zone`] implements [`Ord`]: A zone is said to be greater than another one
+/// if its [`slot`](Zone::slot) index is larger. If the [`slot`](Zone::slot)
+/// indices are equal, the zone with the larger [`layer`](Zone::layer) index is
+/// greater.
+///
+/// # Examples
+///
+/// ```
+/// use stem_core::winding_zones::Zone;
+///
+/// let zone_a = Zone {slot: 0, layer: 0};
+/// let zone_b = Zone {slot: 1, layer: 0};
+/// let zone_c = Zone {slot: 0, layer: 1};
+/// assert!(zone_a < zone_b);
+/// assert!(zone_a < zone_c);
+/// assert!(zone_c < zone_b);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Zone {
+    /// Slot index of the zone.
     pub slot: u16,
+    /// Layer index of the zone.
     pub layer: u16,
 }
 
 impl Zone {
+    /// Returns a new [`Zone`].
     pub fn new(slot: u16, layer: u16) -> Self {
         return Self { slot, layer };
     }
@@ -66,21 +202,54 @@ impl std::fmt::Display for Zone {
     }
 }
 
+/// [`Contour`] and [`Zone`] index of a winding zone.
+///
+/// This struct is returned by the [`WindingZones`] iterator and contains the
+/// contour of the zone positioned relative to the magnetic core which created
+/// [`WindingZones`] via
+/// [`CoreExt::winding_zones`](crate::core::CoreExt::winding_zones). In
+/// addition, it also provides the [`Zone`] index.
+///
+/// This struct implements the [`Transformation`] trait. The trait methods are
+/// applied to [`PositionedZoneContour::contour`] using the implementation
+/// of that trait for [`Contour`].
+///
+/// See the [module documentation](crate::winding_zones) for examples.
 #[derive(Debug, Clone)]
 pub struct PositionedZoneContour {
+    /// Positioned contour of the zone.
     pub contour: Contour,
+    /// Index of the zone.
     pub zone: Zone,
 }
 
 impl PositionedZoneContour {
+    /// Converts [`PositionedZoneContour::contour`] into a [`Drawable`] using
+    /// the default [`stem_slot::SLOT_STYLE`].
     #[cfg(feature = "cairo")]
     pub fn into_drawable(self) -> Drawable {
         Drawable::new(self.contour, stem_slot::SLOT_STYLE)
     }
 
+    /// Converts [`PositionedZoneContour::contour`] into a [`Drawable`] using
+    /// the provided `style`.
     #[cfg(feature = "cairo")]
     pub fn into_drawable_with_style(self, style: planar_geo::draw::Style) -> Drawable {
         Drawable::new(self.contour, style)
+    }
+
+    /// Wraps [`PositionedZoneContour::contour`] into a [`DrawableRef`] using
+    /// the default [`stem_slot::SLOT_STYLE`].
+    #[cfg(feature = "cairo")]
+    pub fn as_drawable<'a>(&'a self) -> DrawableRef<'a> {
+        return DrawableRef::new(&self.contour, stem_slot::SLOT_STYLE);
+    }
+
+    /// Wraps [`PositionedZoneContour::contour`] into a [`DrawableRef`] using
+    /// the provided `style`.
+    #[cfg(feature = "cairo")]
+    pub fn as_drawable_with_style<'a>(&'a self, style: planar_geo::draw::Style) -> DrawableRef<'a> {
+        return DrawableRef::new(&self.contour, style);
     }
 }
 
@@ -131,8 +300,39 @@ impl ToBoundingBox for PositionedZoneContour {
 }
 
 /**
-ccw on a rotary core means counter-clockwise
-ccw on a linear core means from left to right
+An iterator over the [`PositionedZoneContour`]s of a magnetic core where the
+individual slots are distributed over the air gap surface.
+
+This struct is essentially a builder for a [`WindingZones`] iterator which
+groups the zone contours of the same slot together and ensures an equidistant
+distribution of the slots over the air gap surface. It can be used for both
+linear (`LIN = true`) and rotary cores (`LIN = false`) and provides a bunch of
+constuctors for either defining it from scratch or for particular
+[`AirGap`](crate::air_gap::AirGap) types.
+
+TODO: Explain distribution algorithm
+
+# Examples
+
+```
+use stem_core::prelude::*;
+use planar_geo::prelude::*;
+
+// Dummy contours defining the lower and the upper layer of a winding.
+let lower = Contour::new(Polysegment::new());
+let upper = Contour::new(Polysegment::new());
+
+let mut wz = WindingZonesEqSpaced::<Contour, true>::new(
+    Length::new::<millimeter>(100.0),
+    vec![lower, upper],
+    12,
+    false
+);
+
+// Two layers and twelve slots -> Total number of elements should be 24.
+assert_eq!(wz.slots() * wz.layers(), 24);
+assert_eq!(wz.count(), 24);
+```
  */
 #[derive(Debug, Clone)]
 pub struct WindingZonesEqSpaced<T: Transformation + Clone, const LIN: bool> {
@@ -144,6 +344,25 @@ pub struct WindingZonesEqSpaced<T: Transformation + Clone, const LIN: bool> {
 }
 
 impl<T: Transformation + Clone, const LIN: bool> WindingZonesEqSpaced<T, LIN> {
+    /// Creates a new [`WindingZonesEqSpaced`].
+    ///
+    /// This is the "raw" constructor for a [`WindingZonesEqSpaced`] which can
+    /// be used if the constructors with an higher abstraction level such as
+    /// [`WindingZonesEqSpaced::from_slot`] and
+    /// [`WindingZonesEqSpaced::from_air_gap_winding`] are not applicable. These
+    /// constructors usually create `zones` and then call
+    /// [`WindingZonesEqSpaced::new`]. See the
+    /// [struct-level](WindingZonesEqSpaced) documentation for details.
+    ///
+    /// - `air_gap_length`: The cross-section length of the air gap surface
+    ///   along which the zones will be distributed. See
+    ///   [`CoreExt::air_gap_length`](crate::core::CoreExt::air_gap_length).
+    /// - `zones`: The geometric entities to be distributed. Each element is
+    ///   interpreted as a layer, i.e. `zones.len() == self.layers()`.
+    /// - `slots`: Number of slots along the air gap. The `zones` will be
+    ///   distributed `slots` times along the `air_gap_length`.
+    /// - `starts_in_slot_middle`: Whether the middle of the first slot is at
+    ///   the zero point of the `air_gap_length`.
     pub fn new(
         air_gap_length: Length,
         zones: Vec<T>,
@@ -159,6 +378,23 @@ impl<T: Transformation + Clone, const LIN: bool> WindingZonesEqSpaced<T, LIN> {
         };
     }
 
+    /// Returns a "dummy" iterator which will only yield `None`.
+    ///
+    /// This constructor is useful for creating an "empty" iterator (e.g. for
+    /// implementing
+    /// [`CoreExt::winding_zones`](crate::core::CoreExt::winding_zones) for a
+    /// non-windable air gap). It calls [`WindingZonesEqSpaced::new`] with
+    /// `slots` being zero and `zones` being an empty vector.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use stem_core::prelude::*;
+    /// use planar_geo::prelude::*;
+    ///
+    /// let mut wz = WindingZonesEqSpaced::<Contour, true>::no_slots();
+    /// assert!(wz.next().is_none());
+    /// ```
     pub fn no_slots() -> Self {
         return Self {
             slots: 0,
@@ -169,8 +405,56 @@ impl<T: Transformation + Clone, const LIN: bool> WindingZonesEqSpaced<T, LIN> {
         };
     }
 
+    /// Returns the number of layers within a single slot.
+    ///
+    /// When iterated over, `self` will return `self.layers() * self.slots()`
+    /// items.
     pub fn layers(&self) -> usize {
         return self.zones.len();
+    }
+
+    /// Returns the number of slots.
+    ///
+    /// When iterated over, `self` will return `self.layers() * self.slots()`
+    /// items.
+    pub fn slots(&self) -> usize {
+        return self.slots.into();
+    }
+
+    /// Resets the iterator.
+    ///
+    /// After "resetting" the iterator, the next yielded item is again the first
+    /// zone (`Zone {slot: 0, layer: 0}`);
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use stem_core::prelude::*;
+    /// use planar_geo::prelude::*;
+    ///
+    /// // Dummy contours defining the lower and the upper layer of a winding.
+    /// let lower = Contour::new(Polysegment::new());
+    /// let upper = Contour::new(Polysegment::new());
+    ///
+    /// let mut wz = WindingZonesEqSpaced::<Contour, true>::new(
+    ///     Length::new::<millimeter>(100.0),
+    ///     vec![lower, upper],
+    ///     12,
+    ///     false
+    /// );
+    ///
+    /// // Start iterating
+    /// assert_eq!(wz.next().unwrap().zone, Zone {slot: 0, layer: 0});
+    /// assert_eq!(wz.next().unwrap().zone, Zone {slot: 0, layer: 1});
+    /// assert_eq!(wz.next().unwrap().zone, Zone {slot: 1, layer: 0});
+    /// // ...
+    ///
+    /// // Now reset the iterator
+    /// wz.reset();
+    /// assert_eq!(wz.next().unwrap().zone, Zone {slot: 0, layer: 0});
+    /// ```
+    pub fn reset(&mut self) {
+        self.index = 0;
     }
 }
 
@@ -198,7 +482,7 @@ impl<T: Transformation + Clone + ToBoundingBox, const LIN: bool> WindingZonesEqS
             // case the slot starts in the tooth middle
             let factor = if current_slot == 0.0
                 && self.starts_in_slot_middle
-                && geom.bounding_box().xmax() <= DEFAULT_EPSILON.sqrt()
+                && geom.bounding_box().xmax() <= DEFAULT_EPSILON
             {
                 1.0
             } else {
@@ -225,6 +509,12 @@ impl<T: Transformation + Clone + ToBoundingBox, const LIN: bool> WindingZonesEqS
 }
 
 impl<const LIN: bool> WindingZonesEqSpaced<Polysegment, LIN> {
+    /// Returns an iterator over the [`Slot::outline`]s distributed evenly along
+    /// the `air_gap_length`.
+    ///
+    /// TODO: Helper constructor for
+    /// [`SlottedAirGap`](crate::air_gap::SlottedAirGap), exposed cause it
+    /// might be useful when defining other [`AirGap`](crate::air_gap::AirGap)s.
     pub fn from_slot<S: Slot + ?Sized>(
         air_gap_length: Length,
         slots: u16,
@@ -261,6 +551,10 @@ impl<const LIN: bool> WindingZonesEqSpaced<Polysegment, LIN> {
 }
 
 impl<const LIN: bool> WindingZonesEqSpaced<Contour, LIN> {
+    /// Returns an iterator over the [`Slot::layer_contours`]s distributed
+    /// evenly along the `air_gap_length`.
+    ///
+    /// TODO
     pub fn from_slot<S: Slot + ?Sized>(
         air_gap_length: Length,
         slots: u16,
@@ -323,6 +617,10 @@ impl<const LIN: bool> WindingZonesEqSpaced<Contour, LIN> {
         };
     }
 
+    /// Returns an iterator over the [`PositionedZoneContour`]s of an air gap
+    /// winding distributed evenly along the `air_gap_length`.
+    ///
+    /// TODO
     pub fn from_air_gap_winding(
         air_gap_length: Length,
         slots: u16,
@@ -642,38 +940,126 @@ impl<const LIN: bool> Iterator for WindingZonesEqSpaced<Contour, LIN> {
     }
 }
 
-pub enum WindingZones {
+/**
+An iterator over the [`PositionedZoneContour`]s of a magnetic core.
+
+If a magnetic core provides space for the coils of a winding ("zones"), this
+iterator returns the [`Contour`]s describing that space for each [`Zone`] of the
+winding. The [`Zone`]s are strictly monotonic increasing:
+
+```
+use std::sync::Arc;
+use stem_core::prelude::*;
+
+let core: LinCore = LinCoreBuilder {
+    height: Length::new::<millimeter>(15.0),
+    width: Length::new::<millimeter>(50.0),
+    axial_length: Length::new::<millimeter>(1.0),
+    axial_coil_overhang: Length::new::<millimeter>(0.0),
+    skew_angle: 0.0,
+    iron_fill_factor: 1.0,
+    material: Arc::new(Default::default()),
+    pole_pairs: 1,
+    air_gap: Box::new(PlainAirGap {
+        num_segments: 0,
+        air_gap_winding_height: Length::new::<millimeter>(8.0),
+        winding_coverage: 0.7,
+        starts_in_slot_middle: false,
+        slots: 3,
+    }),
+    flux_barrier: None,
+}
+.try_into().expect("valid dimensions");
+
+// Single-layer winding
+let mut wz_single = core.winding_zones(&CoilLayout::Single);
+assert_eq!(wz_single.next().unwrap().zone, Zone {slot: 0, layer: 0});
+assert_eq!(wz_single.next().unwrap().zone, Zone {slot: 1, layer: 0});
+assert_eq!(wz_single.next().unwrap().zone, Zone {slot: 2, layer: 0});
+assert!(wz_single.next().is_none());
+
+// Double-layer winding
+let mut wz_double = core.winding_zones(&CoilLayout::DoubleVertical);
+assert_eq!(wz_double.next().unwrap().zone, Zone {slot: 0, layer: 0});
+assert_eq!(wz_double.next().unwrap().zone, Zone {slot: 0, layer: 1});
+assert_eq!(wz_double.next().unwrap().zone, Zone {slot: 1, layer: 0});
+assert_eq!(wz_double.next().unwrap().zone, Zone {slot: 1, layer: 1});
+assert_eq!(wz_double.next().unwrap().zone, Zone {slot: 2, layer: 0});
+assert_eq!(wz_double.next().unwrap().zone, Zone {slot: 2, layer: 1});
+assert!(wz_double.next().is_none());
+```
+
+As shown in the example above, this iterator is not meant to be constructed
+directly, but should instead be created with the
+[`CoreExt::winding_zones`](crate::core::CoreExt::winding_zones) method. All
+predefined specialized iterators (such as [`WindingZonesEqSpaced`]) can be
+converted into a [`WindingZones`] via its [`From`] implementation.
+
+When implementing
+[`AirGap::winding_zones`](crate::air_gap::AirGap::winding_zones) (which drives
+[`CoreExt::winding_zones`](crate::core::CoreExt::winding_zones)), the
+[`WindingZones::from_iter`] method can be used for wrapping a custom
+iterator. The custom iterator should provide the zones in the same ascending
+order as shown in the example (i.e. the nth + 1 [`PositionedZoneContour::zone`]
+should be greater than the nth [`PositionedZoneContour::zone`] according to the
+[`Ord`] implementation for [`Zone`]). See [`Zone`] for details.
+ */
+pub struct WindingZones(WindingZonesInner);
+
+impl WindingZones {
+    /// Creates a `WindingZones` from a custom iterator.
+    ///
+    /// The iterator must yield [`PositionedZoneContour`]s in strictly
+    /// increasing [`Zone`] order. See the [`Zone`] documentation for
+    /// details.
+    pub fn from_iter<I>(iter: I) -> Self
+    where
+        I: Iterator<Item = PositionedZoneContour> + 'static,
+    {
+        Self(WindingZonesInner::Other(Box::new(iter)))
+    }
+}
+
+enum WindingZonesInner {
+    /// A wrapper variant around [`WindingZonesEqSpaced`] for a linear core.
     WindingZonesEqSpacedLin(WindingZonesEqSpaced<Contour, true>),
+    /// A wrapper variant around [`WindingZonesEqSpaced`] for a rotary core.
     WindingZonesEqSpacedRot(WindingZonesEqSpaced<Contour, false>),
     Other(Box<dyn Iterator<Item = PositionedZoneContour>>),
+}
+
+impl From<WindingZonesInner> for WindingZones {
+    fn from(value: WindingZonesInner) -> Self {
+        Self(value)
+    }
 }
 
 impl Iterator for WindingZones {
     type Item = PositionedZoneContour;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self {
-            WindingZones::WindingZonesEqSpacedLin(i) => i.next(),
-            WindingZones::WindingZonesEqSpacedRot(i) => i.next(),
-            WindingZones::Other(i) => i.next(),
+        match &mut self.0 {
+            WindingZonesInner::WindingZonesEqSpacedLin(i) => i.next(),
+            WindingZonesInner::WindingZonesEqSpacedRot(i) => i.next(),
+            WindingZonesInner::Other(i) => i.next(),
         }
     }
 }
 
 impl From<WindingZonesEqSpaced<Contour, true>> for WindingZones {
     fn from(value: WindingZonesEqSpaced<Contour, true>) -> Self {
-        Self::WindingZonesEqSpacedLin(value)
+        WindingZonesInner::WindingZonesEqSpacedLin(value).into()
     }
 }
 
 impl From<WindingZonesEqSpaced<Contour, false>> for WindingZones {
     fn from(value: WindingZonesEqSpaced<Contour, false>) -> Self {
-        Self::WindingZonesEqSpacedRot(value)
+        WindingZonesInner::WindingZonesEqSpacedRot(value).into()
     }
 }
 
 impl From<Box<dyn Iterator<Item = PositionedZoneContour>>> for WindingZones {
     fn from(value: Box<dyn Iterator<Item = PositionedZoneContour>>) -> Self {
-        Self::Other(value)
+        WindingZonesInner::Other(value).into()
     }
 }

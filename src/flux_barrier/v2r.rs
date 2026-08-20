@@ -1,3 +1,27 @@
+/*!
+This module provides the [`V2rFluxBarrier`] struct. This flux barrier is
+V-shaped with a variable angle between the sides and two (optional) relief
+path at the ends of the V (hence the "2r" in the name). As shown in the image
+below, this flux barrier might hold interior magnets.
+ */
+#![cfg_attr(feature = "doc-images", doc = "")]
+#![cfg_attr(
+    feature = "doc-images",
+    doc = "![Linear and rotary core with a V1rFluxBarrier][lin_and_rot_core_v2r.svg]"
+)]
+#![cfg_attr(feature = "doc-images",
+cfg_attr(all(),
+doc = ::embed_doc_image::embed_image!("lin_and_rot_core_v2r.svg", "docs/img/lin_and_rot_core_v2r.svg"),
+))]
+#![cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/*!
+This struct implements the [`FluxBarrier`] trait and can therefore be used to
+build magnetic cores. See the struct docstring for more.
+*/
+
 use std::{
     f64::consts::{FRAC_PI_2, PI, TAU},
     sync::Arc,
@@ -29,42 +53,57 @@ use crate::{
 #[cfg(feature = "serde")]
 use serde_mosaic::{deserialize_opt_arc_link, serialize_opt_arc_link};
 
+/// Can only be combined with a rotary core
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct V2rFluxBarrier {
-    /// Distance between the core yoke and the center of the flux barrier
+    /// Distance between the yoke surface and the center of the "V". Must be
+    /// positive (`yoke_distance > 0 m`).
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub yoke_distance: Length,
-    /// Length of the air gap in the relief path
+    /// Width of the air gap part in the relief path. Must not be negative
+    /// (`relief_path_air_gap_width >= 0 m`). If set to zero, the relief path
+    /// becomes part of the air gap leakage path.
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub relief_path_air_gap_width: Length,
-    // Length of the core material part in the relief path
+    /// Length of the core material part in the relief path. Must not be
+    /// negative (`relief_path_length >= 0 m`). If set to zero, the leakage
+    /// path length is equal to
+    /// [`V2rFluxBarrier::relief_path_air_gap_width`]
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub relief_path_length: Length,
-    // Width of the core material part in the relief path
+    /// Width of the relief path. Must not be negative (`relief_path_width >=
+    /// 0 m`). If set to zero, no relief path exists.
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub relief_path_width: Length,
-    // Opening angle between the sides
+    /// Opening angle between the sides of the V. Must be between zero and pi
+    /// (`0 <= opening_angle <= PI`).
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_angle"))]
     pub opening_angle: f64,
-    // Width of the magnet space
+    /// Width of the space available for an interior magnet. Must be positive
+    /// (`magnet_space_width > 0 m`).
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub magnet_space_width: Length,
-    // Height of the magnet space
+    /// Height of the space available for an interior magnet. Must be positive
+    /// (`magnet_space_height > 0 m`).
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub magnet_space_height: Length,
     /**
-    Fillet at the intersection between the extension of the q-axis sided magnet height and
-    the q-axis sided line perpendicular to the flux leakage path. If this value is set None,
-    no intersection is calculated and the magnet height and flux leakage path are instead
-    connected by a straight line
+    Fillet radius at [`Cache::pt_q_leakage`].
+
+    [`Cache::pt_q_leakage`] is the intersection between the extension of the
+    magnet space and a line perpendicular to leakage and relief path on the
+    q-axis side of the flux barrier. If
+    [`V2rFluxBarrier::fillet_q_side_leakage_space`] is set to `None`, no
+    intersection is calculated; instead magnet space and and relief path are
+    connected by a straight line.
      */
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_opt_quantity"))]
     #[cfg_attr(
@@ -73,11 +112,14 @@ pub struct V2rFluxBarrier {
     )]
     #[cfg_attr(feature = "serde", serde(default))]
     pub fillet_q_side_leakage_space: Option<Length>,
-    // Glue gap around the magnet space
+    /// Glue gap width. The glue gap is an optional "margin" between the magnet
+    /// and the flux barrier sides and can be used to provide space for glue and
+    /// easier assembly. Must not be negative (`glue_gap >= 0 m`).
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub glue_gap: Length,
-    // Width of the leakage path between the motor air gap and the flux barrier
+    /// Width of the leakage path between the sides of the V and the air gap.
+    /// Must be positive (`leakage_path_width > 0 m`).
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub leakage_path_width: Length,
