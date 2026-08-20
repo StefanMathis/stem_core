@@ -670,7 +670,7 @@ fn test_plain_core_90deg_no_relief() {
 }
 
 #[test]
-fn test_6_poles() {
+fn test_var_poles() {
     let fb = V2rFluxBarrier {
         yoke_distance: Length::new::<millimeter>(3.0),
         relief_path_air_gap_width: Length::new::<millimeter>(2.0),
@@ -686,37 +686,43 @@ fn test_6_poles() {
         cache: None,
     };
 
-    let rot_core: RotCore = RotCoreBuilder {
-        air_gap_radius: Length::new::<millimeter>(40.0),
-        yoke_radius: Length::new::<millimeter>(19.0),
-        axial_length: Length::new::<millimeter>(165.0),
-        axial_coil_overhang: Length::new::<millimeter>(0.0),
-        iron_fill_factor: 1.0,
-        material: Arc::new(Material::default()),
-        pole_pairs: 3,
-        skew_angle: 0.0,
-        air_gap: Box::new(PlainAirGap::default()),
-        flux_barrier: Some(Box::new(fb)),
+    for pole_pairs in 1..4 {
+        let rot_core: RotCore = RotCoreBuilder {
+            air_gap_radius: Length::new::<millimeter>(40.0),
+            yoke_radius: Length::new::<millimeter>(19.0),
+            axial_length: Length::new::<millimeter>(165.0),
+            axial_coil_overhang: Length::new::<millimeter>(0.0),
+            iron_fill_factor: 1.0,
+            material: Arc::new(Material::default()),
+            pole_pairs,
+            skew_angle: 0.0,
+            air_gap: Box::new(PlainAirGap::default()),
+            flux_barrier: Some(Box::new(fb.clone())),
+        }
+        .try_into()
+        .expect("valid core");
+
+        let drawable = rot_core.drawable();
+
+        let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
+        let path_string = format!(
+            "tests/img/v2r_flux_barrier_rot/{}_poles_core_with_magnets.png",
+            pole_pairs
+        );
+        let path = std::path::Path::new(&path_string);
+        let callback = |path: &std::path::Path| {
+            return view.write_to_file(path, |cr| {
+                cr.set_source_rgb(1.0, 1.0, 1.0);
+                cr.paint()?;
+                drawable.draw(cr)?;
+                for m in rot_core.interior_magnets(true) {
+                    m.clone().into_drawable().draw(cr)?;
+                }
+                return Ok(());
+            });
+        };
+        assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
-    .try_into()
-    .expect("valid core");
-
-    let drawable = rot_core.drawable();
-
-    let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-    let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_with_magnets_6.png");
-    let callback = |path: &std::path::Path| {
-        return view.write_to_file(path, |cr| {
-            cr.set_source_rgb(1.0, 1.0, 1.0);
-            cr.paint()?;
-            drawable.draw(cr)?;
-            for m in rot_core.interior_magnets(true) {
-                m.clone().into_drawable().draw(cr)?;
-            }
-            return Ok(());
-        });
-    };
-    assert!(compare_or_create(path, &callback, 0.98).is_ok());
 }
 
 #[test]
