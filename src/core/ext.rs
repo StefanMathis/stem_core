@@ -1205,7 +1205,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
             Some(fb) => fb.interior_magnets(self.as_core_ref(), split),
             None => {
                 // Empty iterator
-                Magnets::Other(Box::new([].into_iter()))
+                Magnets::from_iter([].into_iter())
             }
         }
     }

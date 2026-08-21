@@ -155,7 +155,7 @@ fn plot_v2r_flux_barrier() -> Result<(), Box<dyn std::error::Error>> {
         glue_gap: Length::new::<millimeter>(0.2),
         leakage_path_width: Length::new::<millimeter>(1.0),
         magnet_material: Some(Arc::new(Material::default())),
-        fillet_q_side_leakage_space: None,
+        q_axis_fillet: None,
         cache: None,
     };
 

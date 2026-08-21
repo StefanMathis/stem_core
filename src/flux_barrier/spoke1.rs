@@ -47,7 +47,7 @@ use planar_geo::prelude::*;
 use crate::{
     core::{CoreExt, CoreRef},
     error::Error,
-    magnets::{EvenlyDistributedMagnets, Magnets},
+    magnets::{Magnets, MagnetsEqSpaced},
 };
 
 #[cfg(feature = "serde")]
@@ -713,11 +713,11 @@ impl FluxBarrier for Spoke1FluxBarrier {
     fn interior_magnets(&self, core: CoreRef<'_>, split: bool) -> Magnets {
         let c = match self.cache.as_ref() {
             Some(c) => c,
-            None => return Magnets::Other(Box::new([].into_iter())).into(),
+            None => return Magnets::from_iter([].into_iter()),
         };
         let magnet = match self.magnet() {
             Some(m) => m,
-            None => return Magnets::Other(Box::new([].into_iter())).into(),
+            None => return Magnets::from_iter([].into_iter()),
         };
 
         let mut shapes: Vec<PositionedMagnetShape> = if split {
@@ -757,7 +757,7 @@ impl FluxBarrier for Spoke1FluxBarrier {
 
                 // Since only every second pole has a flux barrier, use the
                 // number of pole pairs as number of poles
-                return EvenlyDistributedMagnets::<true>::new(
+                return MagnetsEqSpaced::<true>::new(
                     core.poles().into(),
                     lin_core.air_gap_length(),
                     shapes,
@@ -786,7 +786,7 @@ impl FluxBarrier for Spoke1FluxBarrier {
                     s.rotate([0.0, -radius], angle);
                 });
 
-                return EvenlyDistributedMagnets::<false>::new(
+                return MagnetsEqSpaced::<false>::new(
                     core.poles().into(),
                     Length::new::<meter>(radius * TAU),
                     shapes,

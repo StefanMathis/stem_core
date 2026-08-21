@@ -47,17 +47,26 @@ use planar_geo::prelude::*;
 use crate::{
     core::{CoreExt, CoreRef},
     error::Error,
-    magnets::{EvenlyDistributedMagnets, Magnets},
+    magnets::{Magnets, MagnetsEqSpaced},
 };
 
 #[cfg(feature = "serde")]
 use serde_mosaic::{deserialize_opt_arc_link, serialize_opt_arc_link};
 
-/// This type defines a flux barrier as used in the "V"-shape of [Mat19] with
-/// one flux leakage path in its middle. The flux barrier may or may contain two
-/// magnets in the sides of the V.
-///
-/// V1r = V-shape, 1 relief path (in the center)
+/**
+In addition, it can have a "relief path" between the magnet space and the air
+gap leakage path. A relief path is a leakage path which partially consists of
+air and therefore doesn't exist due to mechanical reasons, but instead protects
+the magnet against large magnetic fields originating from the stator by
+providing a "relief valve" for the magnetic flux while offering a high enough
+magnetic resistance so the magnet flux doesn't get short-circuited. For a
+throughout explanation of the concept, see [\[1\]](#v1r_fb_1).
+
+Constructing a [`Spoke1FluxBarrier`] requires specifying some geometric
+dimensions, while other dimensions are calculated later when
+[combined](FluxBarrier::combine) with a magnetic core. The drawing below shows
+the definition of all dimensions of this flux barrier type:
+ */
 #[doc = ""]
 #[cfg_attr(feature = "doc-images", doc = "![V1r drawing][cad_v1r]")]
 #[cfg_attr(
@@ -69,39 +78,59 @@ use serde_mosaic::{deserialize_opt_arc_link, serialize_opt_arc_link};
     doc = "**Doc images not enabled**. Compile docs with
     `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
+/**
+
+# Literature
+<a id="v1r_fb_1">\[1\]</a>
+Mathis, S.: Permanentmagneterregte Line-Start-Antriebe in Ferrittechnik,
+PhD thesis, Shaker, 2019, URL:
+<https://kluedo.ub.rptu.de/frontdoor/index/index/docId/8192>
+ */
+
+/// This type defines a flux barrier as used in the "V"-shape of [Mat19] with
+/// one flux leakage path in its middle. The flux barrier may or may contain two
+/// magnets in the sides of the V.
+///
+/// V1r = V-shape, 1 relief path (in the center)
+
 ///
 /// TODO
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct V1rFluxBarrier {
-    /// Distance between the gap of the relief path and the core yoke
+    /// Distance between the yoke surface and the center of the "V". Must be
+    /// positive (`yoke_distance > 0 m`).
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub yoke_distance: Length,
     /// Width of the air gap part in the relief path. Must not be negative
-    /// (`relief_path_air_gap_width >= 0 m`). If set to zero, the sides of the
-    /// "V" are split in two and there is an additional leakage path in the
-    /// middle.
+    /// (`relief_path_air_gap_width >= 0 m`). If set to zero, no relief path
+    /// exists.
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub relief_path_air_gap_width: Length,
-    // Length of the core material part in the relief path
+    /// Length of the core material part in the relief path. Must not be
+    /// negative (`relief_path_length >= 0 m`).
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub relief_path_length: Length,
-    // Width of the core material part in the relief path
+    /// Width of the relief path. Must not be negative (`relief_path_width >=
+    /// 0 m`). If set to zero, no relief path exists.
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub relief_path_width: Length,
-    // Opening angle between the sides
+    /// Opening angle between the sides of the V. Must be between zero and pi
+    /// (`0 <= opening_angle <= PI`).
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_angle"))]
     pub opening_angle: f64,
-    // Width of the magnet space
+    /// Width of the space available for an interior magnet. Must be positive
+    /// (`magnet_space_width > 0 m`).
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub magnet_space_width: Length,
-    // Height of the magnet space
+    /// Height of the space available for an interior magnet. Must be positive
+    /// (`magnet_space_height > 0 m`).
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub magnet_space_height: Length,
@@ -111,10 +140,23 @@ pub struct V1rFluxBarrier {
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub glue_gap: Length,
-    // Width of the leakage path between the motor air gap and the flux barrier
+    /// Width of the leakage path between the sides of the V and the air gap.
+    /// Must be positive (`leakage_path_width > 0 m`).
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub leakage_path_width: Length,
+    /// Material of the magnet, if the flux barrier has one.
+    ///
+    /// If a material is given, a [`BlockMagnet`] is created by
+    /// [`FluxBarrier::combine`] whose dimensions are defined by
+    /// [`V1rFluxBarrier::magnet_space_width`] and
+    /// [`V1rFluxBarrier::magnet_space_height`]. This
+    /// magnet can be accessed with [`V1rFluxBarrier::magnet`] or via
+    /// [`FluxBarrier::magnet_assemblies`]. Changing this field after
+    /// [`FluxBarrier::combine`] does not magically create a new magnet. In
+    /// practice, this doesn't really matter, since a flux barrier is not meant
+    /// to be used stand-alone and [`FluxBarrier::combine`] runs anyway when
+    /// inserting the flux barrier into a core.
     #[cfg_attr(
         feature = "serde",
         serde(
@@ -148,13 +190,29 @@ pub struct V1rFluxBarrier {
 /// another one.
 #[derive(Debug, Clone)]
 pub struct Cache {
+    /// Right-side corner of the "lip" reaching into the relief path.
     pub pt_relief_path_lip: [f64; 2],
+    /// Right-side corner at the inner (d-axis) transition from relief path to
+    /// magnet space.
     pub pt_magnet_relief_d: [f64; 2],
+    /// Right-side corner at the inner (d-axis) transition from magnet space to
+    /// leakage area.
     pub pt_magnet_leakage_d: [f64; 2],
+    /// Right-side corner at the outer (q-axis) transition from leakage area to
+    /// magnet space.
     pub pt_magnet_leakage_q: [f64; 2],
+    /// Lower q-axis corner of the right V-leg. Might be equal to
+    /// [`Cache::pt_corner_relief_q`] if [`V1rFluxBarrier::magnet_space_width`]
+    /// is small enough.
     pub pt_magnet_relief_q: [f64; 2],
+    /// Right-side corner at the outer (q-axis) transition from magnet space to
+    /// relief path. Might be equal to [`Cache::pt_magnet_relief_q`] if
+    /// [`V1rFluxBarrier::magnet_space_width`] is small enough.
     pub pt_corner_relief_q: [f64; 2],
+    /// Segment of the flux barrier contour which borders the leakage path.
     pub leakage_segment: Segment,
+    /// Number of pole pairs (copied from the `core` argument of
+    /// [`FluxBarrier::combine`]).
     pub pole_pairs: u16,
     magnets: Option<[MagnetAssembly; 1]>,
 }
@@ -166,10 +224,18 @@ impl V1rFluxBarrier {
         return self.relief_path_air_gap_width <= Length::new::<meter>(0.0);
     }
 
+    /// Returns the total magnet space width.
+    ///
+    /// This is [`V1rFluxBarrier::magnet_space_width`] plus twice the
+    /// [`V1rFluxBarrier::glue_gap`].
     pub fn total_magnet_space_width(&self) -> Length {
         return self.magnet_space_width + 2.0 * self.glue_gap;
     }
 
+    /// Returns the total magnet space height.
+    ///
+    /// This is [`V1rFluxBarrier::magnet_space_height`] plus twice the
+    /// [`V1rFluxBarrier::glue_gap`].
     pub fn total_magnet_space_height(&self) -> Length {
         return self.magnet_space_height + 2.0 * self.glue_gap;
     }
@@ -204,7 +270,13 @@ impl V1rFluxBarrier {
         }
     }
 
-    // LAST THING TO BE DOCUMENTED HERE
+    /// Returns the interior [`BlockMagnet`], if the flux barrier holds one.
+    ///    
+    /// If the cache has been created (i.e. if [`FluxBarrier::combine`] has been
+    /// called) and if [`V1rFluxBarrier::magnet_material`] isn't `None`, a
+    /// [`BlockMagnet`] is stored in the cache and can be accessed either
+    /// indirectly with [`FluxBarrier::magnet_assemblies`] or directly with
+    /// this method.
     pub fn magnet(&self) -> Option<&BlockMagnet> {
         self.cache
             .as_ref()
@@ -555,11 +627,11 @@ impl FluxBarrier for V1rFluxBarrier {
     fn interior_magnets(&self, core: CoreRef<'_>, split: bool) -> Magnets {
         let c = match self.cache.as_ref() {
             Some(c) => c,
-            None => return Magnets::Other(Box::new([].into_iter())).into(),
+            None => return Magnets::from_iter([].into_iter()),
         };
         let magnet = match self.magnet() {
             Some(m) => m,
-            None => return Magnets::Other(Box::new([].into_iter())).into(),
+            None => return Magnets::from_iter([].into_iter()),
         };
 
         let mut shapes: Vec<PositionedMagnetShape> = if split {
@@ -603,7 +675,7 @@ impl FluxBarrier for V1rFluxBarrier {
             shapes.push(shape);
         }
 
-        return EvenlyDistributedMagnets::<false>::new(
+        return MagnetsEqSpaced::<false>::new(
             core.poles().into(),
             Length::new::<meter>(radius * TAU),
             shapes,

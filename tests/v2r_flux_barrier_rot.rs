@@ -68,7 +68,7 @@ fn test_slotted_core_180deg() {
         leakage_path_width: Length::new::<millimeter>(1.0),
         magnet_material: Some(Arc::new(Material::default())),
         cache: None,
-        fillet_q_side_leakage_space: Some(Length::new::<millimeter>(3.0)),
+        q_axis_fillet: Some(Length::new::<millimeter>(3.0)),
     };
 
     {
@@ -188,7 +188,7 @@ fn test_slotted_core_90deg() {
         leakage_path_width: Length::new::<millimeter>(1.0),
         magnet_material: Some(Arc::new(Material::default())),
         cache: None,
-        fillet_q_side_leakage_space: Some(Length::new::<millimeter>(3.0)),
+        q_axis_fillet: Some(Length::new::<millimeter>(3.0)),
     };
 
     {
@@ -300,7 +300,7 @@ fn test_plain_core_180deg() {
         leakage_path_width: Length::new::<millimeter>(1.0),
         magnet_material: Some(Arc::new(Material::default())),
         cache: None,
-        fillet_q_side_leakage_space: Some(Length::new::<millimeter>(3.0)),
+        q_axis_fillet: Some(Length::new::<millimeter>(3.0)),
     };
 
     {
@@ -424,7 +424,7 @@ fn test_plain_core_90deg() {
         leakage_path_width: Length::new::<millimeter>(1.0),
         magnet_material: Some(Arc::new(Material::default())),
         cache: None,
-        fillet_q_side_leakage_space: None,
+        q_axis_fillet: None,
     };
 
     {
@@ -548,7 +548,7 @@ fn test_plain_core_90deg_no_relief() {
         leakage_path_width: Length::new::<millimeter>(1.0),
         magnet_material: Some(Arc::new(Material::default())),
         cache: None,
-        fillet_q_side_leakage_space: None,
+        q_axis_fillet: None,
     };
 
     {
@@ -682,7 +682,7 @@ fn test_var_poles() {
         glue_gap: Length::new::<millimeter>(0.2),
         leakage_path_width: Length::new::<millimeter>(1.0),
         magnet_material: Some(Arc::new(Material::default())),
-        fillet_q_side_leakage_space: None,
+        q_axis_fillet: None,
         cache: None,
     };
 

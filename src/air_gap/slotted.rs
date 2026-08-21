@@ -41,7 +41,7 @@ use crate::{
     air_gap::AirGap,
     core::{CoreExt, CoreRef, LinCore, RotCore},
     error::Error,
-    magnets::{EvenlyDistributedMagnets, Magnets},
+    magnets::{MagnetsEqSpaced, Magnets},
     winding_zones::{WindingZones, WindingZonesEqSpaced},
 };
 
@@ -515,7 +515,7 @@ impl AirGap for SlottedAirGap {
         split: bool,
     ) -> Magnets {
         match core {
-            CoreRef::Lin(_) => EvenlyDistributedMagnets::<true>::from_magnet_assembly(
+            CoreRef::Lin(_) => MagnetsEqSpaced::<true>::from_magnet_assembly(
                 core.poles().into(),
                 core.air_gap_length(),
                 magnet_assembly,
@@ -524,7 +524,7 @@ impl AirGap for SlottedAirGap {
                 core.d_axis_offset(),
             )
             .into(),
-            CoreRef::Rot(core_rot) => EvenlyDistributedMagnets::<false>::from_magnet_assembly(
+            CoreRef::Rot(core_rot) => MagnetsEqSpaced::<false>::from_magnet_assembly(
                 core.poles().into(),
                 core.air_gap_length(),
                 magnet_assembly,

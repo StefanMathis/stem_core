@@ -8,7 +8,7 @@ use planar_geo::{
     draw::*,
     prelude::{BoundingBox, ToBoundingBox},
 };
-use stem_core::magnets::{EvenlyDistributedMagnets, pole_coverage_angle};
+use stem_core::magnets::{MagnetsEqSpaced, pole_coverage_angle};
 use stem_magnet::{
     arc::{AngleOrWidth, ArcParallelMagnet, ArcSegmentMagnet, SideHeightOrThickness},
     assembly::MagnetAssembly,
@@ -66,7 +66,7 @@ fn lin() {
     .unwrap();
 
     compare_to_reference(
-        EvenlyDistributedMagnets::<true>::from_magnet_assembly(
+        MagnetsEqSpaced::<true>::from_magnet_assembly(
             4,
             Length::new::<millimeter>(400.0),
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
@@ -81,7 +81,7 @@ fn lin() {
     );
 
     compare_to_reference(
-        EvenlyDistributedMagnets::<true>::from_magnet_assembly(
+        MagnetsEqSpaced::<true>::from_magnet_assembly(
             6,
             Length::new::<millimeter>(400.0),
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 2.try_into().unwrap()),
@@ -96,7 +96,7 @@ fn lin() {
     );
 
     compare_to_reference(
-        EvenlyDistributedMagnets::<true>::from_magnet_assembly(
+        MagnetsEqSpaced::<true>::from_magnet_assembly(
             6,
             Length::new::<millimeter>(400.0),
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 2.try_into().unwrap()),
@@ -123,7 +123,7 @@ fn rot_inner() {
     .unwrap();
 
     compare_to_reference(
-        EvenlyDistributedMagnets::<false>::from_magnet_assembly(
+        MagnetsEqSpaced::<false>::from_magnet_assembly(
             4,
             Length::new::<millimeter>(85.0) * TAU,
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
@@ -138,7 +138,7 @@ fn rot_inner() {
     );
 
     let bb = BoundingBox::from_bounded_entities(
-        EvenlyDistributedMagnets::<false>::from_magnet_assembly(
+        MagnetsEqSpaced::<false>::from_magnet_assembly(
             4,
             Length::new::<millimeter>(85.0) * TAU,
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
@@ -164,7 +164,7 @@ fn rot_inner() {
     .unwrap();
 
     compare_to_reference(
-        EvenlyDistributedMagnets::<false>::from_magnet_assembly(
+        MagnetsEqSpaced::<false>::from_magnet_assembly(
             4,
             Length::new::<millimeter>(85.0) * TAU,
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
@@ -179,7 +179,7 @@ fn rot_inner() {
     );
 
     let bb = BoundingBox::from_bounded_entities(
-        EvenlyDistributedMagnets::<false>::from_magnet_assembly(
+        MagnetsEqSpaced::<false>::from_magnet_assembly(
             4,
             Length::new::<millimeter>(85.0) * TAU,
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
@@ -205,7 +205,7 @@ fn rot_inner() {
     .unwrap();
 
     compare_to_reference(
-        EvenlyDistributedMagnets::<false>::from_magnet_assembly(
+        MagnetsEqSpaced::<false>::from_magnet_assembly(
             4,
             Length::new::<millimeter>(85.0) * TAU,
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
@@ -232,7 +232,7 @@ fn rot_outer() {
     .unwrap();
 
     compare_to_reference(
-        EvenlyDistributedMagnets::<false>::from_magnet_assembly(
+        MagnetsEqSpaced::<false>::from_magnet_assembly(
             4,
             Length::new::<millimeter>(85.0) * TAU,
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
@@ -247,7 +247,7 @@ fn rot_outer() {
     );
 
     let bb = BoundingBox::from_bounded_entities(
-        EvenlyDistributedMagnets::<false>::from_magnet_assembly(
+        MagnetsEqSpaced::<false>::from_magnet_assembly(
             4,
             Length::new::<millimeter>(85.0) * TAU,
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
@@ -273,7 +273,7 @@ fn rot_outer() {
     .unwrap();
 
     compare_to_reference(
-        EvenlyDistributedMagnets::<false>::from_magnet_assembly(
+        MagnetsEqSpaced::<false>::from_magnet_assembly(
             4,
             Length::new::<millimeter>(85.0) * TAU,
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
@@ -288,7 +288,7 @@ fn rot_outer() {
     );
 
     let bb = BoundingBox::from_bounded_entities(
-        EvenlyDistributedMagnets::<false>::from_magnet_assembly(
+        MagnetsEqSpaced::<false>::from_magnet_assembly(
             4,
             Length::new::<millimeter>(85.0) * TAU,
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
@@ -314,7 +314,7 @@ fn rot_outer() {
     .unwrap();
 
     compare_to_reference(
-        EvenlyDistributedMagnets::<false>::from_magnet_assembly(
+        MagnetsEqSpaced::<false>::from_magnet_assembly(
             4,
             Length::new::<millimeter>(85.0) * TAU,
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),

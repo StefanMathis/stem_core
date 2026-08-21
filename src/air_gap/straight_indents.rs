@@ -41,7 +41,7 @@ use crate::{
     air_gap::AirGap,
     core::{CoreExt, CoreRef, LinCore, RotCore},
     error::Error,
-    magnets::{EvenlyDistributedMagnets, Magnets},
+    magnets::{MagnetsEqSpaced, Magnets},
     winding_zones::{WindingZones, WindingZonesEqSpaced},
 };
 
@@ -610,7 +610,7 @@ impl AirGap for StraightIndentsAirGap {
                     s.translate([0.0, self.indent_depth.get::<meter>()]);
                 });
 
-                return EvenlyDistributedMagnets::<true>::new(
+                return MagnetsEqSpaced::<true>::new(
                     core.poles().into(),
                     lin_core.air_gap_length(),
                     magnet_shapes,
@@ -637,7 +637,7 @@ impl AirGap for StraightIndentsAirGap {
                     }
                 }
 
-                return EvenlyDistributedMagnets::<false>::new(
+                return MagnetsEqSpaced::<false>::new(
                     core.poles().into(),
                     indent_center_radius * TAU,
                     magnet_shapes,

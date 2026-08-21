@@ -47,13 +47,45 @@ use planar_geo::prelude::*;
 use crate::{
     core::{CoreExt, CoreRef},
     error::Error,
-    magnets::{EvenlyDistributedMagnets, Magnets},
+    magnets::{Magnets, MagnetsEqSpaced},
 };
 
 #[cfg(feature = "serde")]
 use serde_mosaic::{deserialize_opt_arc_link, serialize_opt_arc_link};
 
-/// Can only be combined with a rotary core
+/**
+In addition, it can have a "relief path" between the magnet space and the air
+gap leakage path. A relief path is a leakage path which partially consists of
+air and therefore doesn't exist due to mechanical reasons, but instead protects
+the magnet against large magnetic fields originating from the stator by
+providing a "relief valve" for the magnetic flux while offering a high enough
+magnetic resistance so the magnet flux doesn't get short-circuited. For a
+throughout explanation of the concept, see [\[1\]](#v2r_fb_1).
+
+Constructing a [`Spoke1FluxBarrier`] requires specifying some geometric
+dimensions, while other dimensions are calculated later when
+[combined](FluxBarrier::combine) with a magnetic core. The drawing below shows
+the definition of all dimensions of this flux barrier type:
+ */
+#[doc = ""]
+#[cfg_attr(feature = "doc-images", doc = "![V2r drawing][cad_v2r]")]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image("cad_v2r", "docs/img/cad_v2r.svg")
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/**
+
+# Literature
+<a id="v2r_fb_1">\[1\]</a>
+Mathis, S.: Permanentmagneterregte Line-Start-Antriebe in Ferrittechnik,
+PhD thesis, Shaker, 2019, URL:
+<https://kluedo.ub.rptu.de/frontdoor/index/index/docId/8192>
+ */
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct V2rFluxBarrier {
@@ -96,12 +128,12 @@ pub struct V2rFluxBarrier {
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub magnet_space_height: Length,
     /**
-    Fillet radius at [`Cache::pt_q_leakage`].
+    Fillet radius at [`Cache::pt_q_axis_fillet`].
 
-    [`Cache::pt_q_leakage`] is the intersection between the extension of the
+    [`Cache::pt_q_axis_fillet`] is the intersection between the extension of the
     magnet space and a line perpendicular to leakage and relief path on the
     q-axis side of the flux barrier. If
-    [`V2rFluxBarrier::fillet_q_side_leakage_space`] is set to `None`, no
+    [`V2rFluxBarrier::q_axis_fillet`] is set to `None`, no
     intersection is calculated; instead magnet space and and relief path are
     connected by a straight line.
      */
@@ -111,7 +143,7 @@ pub struct V2rFluxBarrier {
         serde(deserialize_with = "deserialize_opt_quantity")
     )]
     #[cfg_attr(feature = "serde", serde(default))]
-    pub fillet_q_side_leakage_space: Option<Length>,
+    pub q_axis_fillet: Option<Length>,
     /// Glue gap width. The glue gap is an optional "margin" between the magnet
     /// and the flux barrier sides and can be used to provide space for glue and
     /// easier assembly. Must not be negative (`glue_gap >= 0 m`).
@@ -123,6 +155,18 @@ pub struct V2rFluxBarrier {
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub leakage_path_width: Length,
+    /// Material of the magnet, if the flux barrier has one.
+    ///
+    /// If a material is given, a [`BlockMagnet`] is created by
+    /// [`FluxBarrier::combine`] whose dimensions are defined by
+    /// [`V2rFluxBarrier::magnet_space_width`] and
+    /// [`V2rFluxBarrier::magnet_space_height`]. This
+    /// magnet can be accessed with [`V2rFluxBarrier::magnet`] or via
+    /// [`FluxBarrier::magnet_assemblies`]. Changing this field after
+    /// [`FluxBarrier::combine`] does not magically create a new magnet. In
+    /// practice, this doesn't really matter, since a flux barrier is not meant
+    /// to be used stand-alone and [`FluxBarrier::combine`] runs anyway when
+    /// inserting the flux barrier into a core.
     #[cfg_attr(
         feature = "serde",
         serde(
@@ -156,25 +200,50 @@ pub struct V2rFluxBarrier {
 /// another one.
 #[derive(Debug, Clone)]
 pub struct Cache {
+    /// Upper (d-axis) corner where the "legs" of the V connect.
     pub pt_magnet_center_d: [f64; 2],
+    /// Right-side corner at the inner (d-axis) transition from magnet space to
+    /// relief path.
     pub pt_magnet_relief_d: [f64; 2],
-    pub pt_magnet_relief_q: [f64; 2],
+    /// Right-side corner at the inner (d-axis) leakage path lip.
     pub pt_relief_outer_corner_d: [f64; 2],
+    /// Right-side corner at the inner (d-axis) transition from relief path to
+    /// leakage path.
     pub pt_relief_inner_corner_d: [f64; 2],
-    pub pt_relief_outer_corner_q: [f64; 2],
+    /// Right-side corner at the outer (q-axis) transition from relief path to
+    /// leakage path.
     pub pt_relief_inner_corner_q: [f64; 2],
-    pub pt_q_leakage: Option<[f64; 2]>,
+    /// Right-side corner at the outer (q-axis) leakage path lip.
+    pub pt_relief_outer_corner_q: [f64; 2],
+    /// Right-side corner at the outer (q-axis) transition from relief path to
+    /// magnet space.
+    pub pt_magnet_relief_q: [f64; 2],
+    /// Corner of the [`V2rFluxBarrier::q_axis_fillet`]. If the former is
+    /// `None`, this value will be `None` as well.
+    pub pt_q_axis_fillet: Option<[f64; 2]>,
+    /// Lower (q-axis) corner where the "legs" of the V connect.
     pub pt_magnet_center_q: [f64; 2],
+    /// Segment of the flux barrier contour which borders the leakage path.
     pub leakage_segment: Segment,
+    /// Number of pole pairs (copied from the `core` argument of
+    /// [`FluxBarrier::combine`]).
     pub pole_pairs: u16,
     magnets: Option<[MagnetAssembly; 1]>,
 }
 
 impl V2rFluxBarrier {
+    /// Returns the total magnet space width.
+    ///
+    /// This is [`V2rFluxBarrier::magnet_space_width`] plus twice the
+    /// [`V2rFluxBarrier::glue_gap`].
     pub fn total_magnet_space_width(&self) -> Length {
         return self.magnet_space_width + 2.0 * self.glue_gap;
     }
 
+    /// Returns the total magnet space height.
+    ///
+    /// This is [`V2rFluxBarrier::magnet_space_height`] plus twice the
+    /// [`V2rFluxBarrier::glue_gap`].
     pub fn total_magnet_space_height(&self) -> Length {
         return self.magnet_space_height + 2.0 * self.glue_gap;
     }
@@ -187,9 +256,6 @@ impl V2rFluxBarrier {
         );
     }
 
-    /**
-    Return the distance between the yoke side of the magnet space and the q-axis.
-     */
     pub fn barrier_to_q_axis_at_yoke(&self) -> Length {
         match self.cache.as_ref() {
             Some(c) => Length::new::<meter>(dist_to_q_axis(c.pt_magnet_relief_q, c.pole_pairs)),
@@ -197,14 +263,11 @@ impl V2rFluxBarrier {
         }
     }
 
-    /**
-    Return the distance between the air gap side of the magnet space and the q-axis.
-     */
     pub fn distance_to_q_axis_at_leakage_to_magnet_transition(&self) -> Length {
         match self.cache.as_ref() {
             Some(c) => {
-                if let Some(pt_q_leakage) = c.pt_q_leakage {
-                    return Length::new::<meter>(dist_to_q_axis(pt_q_leakage, c.pole_pairs));
+                if let Some(pt_q_axis_fillet) = c.pt_q_axis_fillet {
+                    return Length::new::<meter>(dist_to_q_axis(pt_q_axis_fillet, c.pole_pairs));
                 } else {
                     return self.distance_to_q_axis_at_yoke();
                 }
@@ -213,9 +276,6 @@ impl V2rFluxBarrier {
         }
     }
 
-    /**
-    Return the distance between the air gap side of the magnet space and the q-axis.
-     */
     pub fn distance_to_q_axis_at_air_gap(&self) -> Length {
         match self.cache.as_ref() {
             Some(c) => {
@@ -225,13 +285,10 @@ impl V2rFluxBarrier {
         }
     }
 
-    /**
-    Return the distance between the air gap side of the magnet space and the q-axis.
-     */
     pub fn distance_to_q_axis_at_yoke(&self) -> Length {
         match self.cache.as_ref() {
             Some(c) => {
-                if let Some(q_corner) = c.pt_q_leakage {
+                if let Some(q_corner) = c.pt_q_axis_fillet {
                     return Length::new::<meter>(dist_to_q_axis(q_corner, c.pole_pairs));
                 } else {
                     return Length::new::<meter>(dist_to_q_axis(
@@ -244,7 +301,13 @@ impl V2rFluxBarrier {
         }
     }
 
-    // LAST THING TO BE DOCUMENTED HERE
+    /// Returns the interior [`BlockMagnet`], if the flux barrier holds one.
+    ///    
+    /// If the cache has been created (i.e. if [`FluxBarrier::combine`] has been
+    /// called) and if [`V2rFluxBarrier::magnet_material`] isn't `None`, a
+    /// [`BlockMagnet`] is stored in the cache and can be accessed either
+    /// indirectly with [`FluxBarrier::magnet_assemblies`] or directly with
+    /// this method.
     pub fn magnet(&self) -> Option<&BlockMagnet> {
         self.cache
             .as_ref()
@@ -405,7 +468,7 @@ impl V2rFluxBarrier {
         If a fillet is specified, calculate the point where it is going to be placed
          */
         let pt_q_leakage_and_fillet_radius: Option<([f64; 2], f64)> = self
-            .fillet_q_side_leakage_space
+            .q_axis_fillet
             .map(|f| {
                 let angle = LineSegment::new(leakage_segment.stop(), leakage_segment.start())
                     .map_or(0.0, |l| l.angle())
@@ -461,7 +524,7 @@ impl V2rFluxBarrier {
             pt_magnet_relief_q,
             pt_magnet_center_q,
             leakage_segment: leakage_segment.clone(),
-            pt_q_leakage: pt_q_leakage_and_fillet_radius.map(|t| t.0),
+            pt_q_axis_fillet: pt_q_leakage_and_fillet_radius.map(|t| t.0),
             pole_pairs: core.pole_pairs(),
             magnets,
         });
@@ -490,10 +553,10 @@ impl V2rFluxBarrier {
             ps.push_back(segment.into());
         }
 
-        if let Some((pt_q_leakage, fillet_radius)) = pt_q_leakage_and_fillet_radius {
+        if let Some((pt_q_axis_fillet, fillet_radius)) = pt_q_leakage_and_fillet_radius {
             if let Ok(arc) = ArcSegment::fillet(
                 pt_relief_outer_corner_q,
-                pt_q_leakage,
+                pt_q_axis_fillet,
                 pt_magnet_relief_q,
                 fillet_radius,
             ) {
@@ -561,11 +624,11 @@ impl FluxBarrier for V2rFluxBarrier {
     fn interior_magnets(&self, core: CoreRef<'_>, split: bool) -> Magnets {
         let c = match self.cache.as_ref() {
             Some(c) => c,
-            None => return Magnets::Other(Box::new([].into_iter())).into(),
+            None => return Magnets::from_iter([].into_iter()),
         };
         let magnet = match self.magnet() {
             Some(m) => m,
-            None => return Magnets::Other(Box::new([].into_iter())).into(),
+            None => return Magnets::from_iter([].into_iter()),
         };
 
         let mut shapes: Vec<PositionedMagnetShape> = if split {
@@ -609,7 +672,7 @@ impl FluxBarrier for V2rFluxBarrier {
             shapes.push(shape);
         }
 
-        return EvenlyDistributedMagnets::<false>::new(
+        return MagnetsEqSpaced::<false>::new(
             core.poles().into(),
             Length::new::<meter>(radius * TAU),
             shapes,

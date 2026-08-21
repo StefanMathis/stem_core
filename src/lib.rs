@@ -1,3 +1,5 @@
+// #![deny(missing_docs)]
+
 pub mod error;
 pub mod magnets;
 pub mod winding_zones;

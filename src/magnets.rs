@@ -80,22 +80,39 @@ impl Transformation for PositionedMagnetShape {
 // =============================================================================
 // Core with a smooth surface
 
+#[doc = ""]
+#[cfg_attr(
+    feature = "doc-images",
+    doc = "![How MagnetsEqSpaced distributes the winding zones][cad_magnets_eq_spaced]"
+)]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image(
+        "cad_magnets_eq_spaced",
+        "docs/img/cad_magnets_eq_spaced.svg"
+    )
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
 #[derive(Debug, Clone)]
-pub struct EvenlyDistributedMagnets<const LIN: bool> {
+pub struct MagnetsEqSpaced<const LIN: bool> {
     poles: usize,
     dist_width_or_circumference: Length,
-    magnet_shapes: Vec<PositionedMagnetShape>,
+    magnets: Vec<PositionedMagnetShape>,
     magnet_coverage: f64, // If LIN, this is a length, otherwise it is an angle
     num_tangential: usize,
     index: usize,
     d_axis_offset: f64,
 }
 
-impl<const LIN: bool> EvenlyDistributedMagnets<LIN> {
+impl<const LIN: bool> MagnetsEqSpaced<LIN> {
     pub fn new(
         poles: usize,
         dist_width_or_circumference: Length,
-        magnet_shapes: Vec<PositionedMagnetShape>,
+        magnets: Vec<PositionedMagnetShape>,
         magnet_coverage: f64,
         num_tangential: usize,
         d_axis_offset: f64,
@@ -103,7 +120,7 @@ impl<const LIN: bool> EvenlyDistributedMagnets<LIN> {
         Self {
             poles,
             dist_width_or_circumference,
-            magnet_shapes,
+            magnets,
             num_tangential,
             magnet_coverage,
             index: 0,
@@ -111,22 +128,22 @@ impl<const LIN: bool> EvenlyDistributedMagnets<LIN> {
         }
     }
 
-    /// magnet_shapes must have one or 2 entries (otherwise panic!)
+    /// magnets must have one or 2 entries (otherwise panic!)
     pub fn with_calculated_coverage(
         poles: usize,
         dist_width_or_circumference: Length,
-        magnet_shapes: Vec<PositionedMagnetShape>,
+        magnets: Vec<PositionedMagnetShape>,
         num_tangential: usize,
         d_axis_offset: f64,
     ) -> Self {
         let magnet_coverage = if LIN {
-            BoundingBox::from_bounded_entities(magnet_shapes.iter().map(|p| &p.shape))
+            BoundingBox::from_bounded_entities(magnets.iter().map(|p| &p.shape))
                 .map(|m| m.width())
                 .unwrap_or(0.0)
         } else {
             let radius = dist_width_or_circumference.get::<meter>() / TAU;
             pole_coverage_angle(
-                magnet_shapes.iter().map(|p| &p.shape),
+                magnets.iter().map(|p| &p.shape),
                 radius,
                 Length::new::<meter>(0.0),
             )
@@ -135,7 +152,7 @@ impl<const LIN: bool> EvenlyDistributedMagnets<LIN> {
         Self {
             poles,
             dist_width_or_circumference,
-            magnet_shapes,
+            magnets,
             num_tangential,
             magnet_coverage,
             index: 0,
@@ -153,7 +170,7 @@ impl<const LIN: bool> EvenlyDistributedMagnets<LIN> {
     ) -> Self {
         if LIN {
             let num_tangential = assembly.num_tangential();
-            let mut magnet_shapes = if split {
+            let mut magnets = if split {
                 assembly
                     .magnet()
                     .north_south_shapes()
@@ -164,14 +181,14 @@ impl<const LIN: bool> EvenlyDistributedMagnets<LIN> {
                 vec![assembly.magnet().shape().into_owned()]
             };
 
-            magnet_shapes.iter_mut().for_each(|s| {
+            magnets.iter_mut().for_each(|s| {
                 s.line_reflection([0.0, 0.0], [1.0, 0.0]);
             });
 
             return Self::with_calculated_coverage(
                 poles,
                 air_gap_length,
-                magnet_shapes
+                magnets
                     .into_iter()
                     .enumerate()
                     .map(|(i, shape)| PositionedMagnetShape {
@@ -185,7 +202,7 @@ impl<const LIN: bool> EvenlyDistributedMagnets<LIN> {
             );
         } else {
             let num_tangential = assembly.num_tangential();
-            let mut magnet_shapes = if split {
+            let mut magnets = if split {
                 assembly
                     .magnet()
                     .north_south_shapes()
@@ -197,7 +214,7 @@ impl<const LIN: bool> EvenlyDistributedMagnets<LIN> {
             };
 
             if outer_core {
-                for s in magnet_shapes.iter_mut() {
+                for s in magnets.iter_mut() {
                     s.line_reflection([0.0, 0.0], [1.0, 0.0]);
                 }
             }
@@ -205,7 +222,7 @@ impl<const LIN: bool> EvenlyDistributedMagnets<LIN> {
             return Self::with_calculated_coverage(
                 poles,
                 air_gap_length,
-                magnet_shapes
+                magnets
                     .into_iter()
                     .enumerate()
                     .map(|(i, shape)| PositionedMagnetShape {
@@ -221,26 +238,26 @@ impl<const LIN: bool> EvenlyDistributedMagnets<LIN> {
     }
 }
 
-impl<const LIN: bool> Iterator for EvenlyDistributedMagnets<LIN> {
+impl<const LIN: bool> Iterator for MagnetsEqSpaced<LIN> {
     type Item = PositionedMagnetShape;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.index >= self.num_tangential * self.poles * self.magnet_shapes.len() {
+        if self.index >= self.num_tangential * self.poles * self.magnets.len() {
             return None;
         }
 
-        let current_pole = self.index / (self.num_tangential * self.magnet_shapes.len());
+        let current_pole = self.index / (self.num_tangential * self.magnets.len());
 
         // Index counter repeats from zero to the number of shapes per pole
         let pole_idx = self
             .index
-            .rem_euclid(self.num_tangential * self.magnet_shapes.len());
-        let tan_idx = pole_idx / self.magnet_shapes.len();
-        let shape_idx = pole_idx.rem_euclid(self.magnet_shapes.len());
+            .rem_euclid(self.num_tangential * self.magnets.len());
+        let tan_idx = pole_idx / self.magnets.len();
+        let shape_idx = pole_idx.rem_euclid(self.magnets.len());
 
         self.index = self.index + 1;
 
-        let mut shape = self.magnet_shapes[shape_idx].clone();
+        let mut shape = self.magnets[shape_idx].clone();
 
         if LIN {
             let width_per_pole =
@@ -268,27 +285,49 @@ impl<const LIN: bool> Iterator for EvenlyDistributedMagnets<LIN> {
 
 // =============================================================================
 
-pub enum Magnets {
-    EvenlyDistributedMagnetsLin(EvenlyDistributedMagnets<true>),
-    EvenlyDistributedMagnetsRot(EvenlyDistributedMagnets<false>),
-    Other(Box<dyn Iterator<Item = PositionedMagnetShape>>),
-}
+pub struct Magnets(MagnetsInner);
 
-impl From<EvenlyDistributedMagnets<true>> for Magnets {
-    fn from(value: EvenlyDistributedMagnets<true>) -> Self {
-        Self::EvenlyDistributedMagnetsLin(value)
+impl Magnets {
+    /// Creates a `Magnets` from a custom iterator.
+    ///
+    /// The iterator must yield [`PositionedMagnetShape`]s in strictly
+    /// increasing pole order. See the [`PositionedMagnetShape`] documentation
+    /// for/ details.
+    pub fn from_iter<I>(iter: I) -> Self
+    where
+        I: Iterator<Item = PositionedMagnetShape> + 'static,
+    {
+        Self(MagnetsInner::Other(Box::new(iter)))
     }
 }
 
-impl From<EvenlyDistributedMagnets<false>> for Magnets {
-    fn from(value: EvenlyDistributedMagnets<false>) -> Self {
-        Self::EvenlyDistributedMagnetsRot(value)
+enum MagnetsInner {
+    MagnetsEqSpacedLin(MagnetsEqSpaced<true>),
+    MagnetsEqSpacedRot(MagnetsEqSpaced<false>),
+    Other(Box<dyn Iterator<Item = PositionedMagnetShape>>),
+}
+
+impl From<MagnetsInner> for Magnets {
+    fn from(value: MagnetsInner) -> Self {
+        Self(value)
+    }
+}
+
+impl From<MagnetsEqSpaced<true>> for Magnets {
+    fn from(value: MagnetsEqSpaced<true>) -> Self {
+        MagnetsInner::MagnetsEqSpacedLin(value).into()
+    }
+}
+
+impl From<MagnetsEqSpaced<false>> for Magnets {
+    fn from(value: MagnetsEqSpaced<false>) -> Self {
+        MagnetsInner::MagnetsEqSpacedRot(value).into()
     }
 }
 
 impl From<Box<dyn Iterator<Item = PositionedMagnetShape>>> for Magnets {
     fn from(value: Box<dyn Iterator<Item = PositionedMagnetShape>>) -> Self {
-        Self::Other(value)
+        MagnetsInner::Other(value).into()
     }
 }
 
@@ -296,10 +335,10 @@ impl Iterator for Magnets {
     type Item = PositionedMagnetShape;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self {
-            Magnets::EvenlyDistributedMagnetsLin(i) => i.next(),
-            Magnets::EvenlyDistributedMagnetsRot(i) => i.next(),
-            Magnets::Other(i) => i.next(),
+        match &mut self.0 {
+            MagnetsInner::MagnetsEqSpacedLin(i) => i.next(),
+            MagnetsInner::MagnetsEqSpacedRot(i) => i.next(),
+            MagnetsInner::Other(i) => i.next(),
         }
     }
 }
@@ -308,12 +347,12 @@ impl Iterator for Magnets {
 /// TODO: Explain that this can deal with negative radii (as might be reported
 /// from some magnets such as ArcSegmentMagnet to signal convex / concave)
 pub fn pole_coverage_angle<'a, I: Iterator<Item = &'a Shape> + Clone>(
-    magnet_shapes: I,
+    magnets: I,
     radius: f64,
     gap_between_partial_magnets: Length,
 ) -> f64 {
     // Based on the shape points, calculate the preliminary coverage angle
-    let mut angle = magnet_shapes
+    let mut angle = magnets
         .clone()
         .map(|shape| shape.contour().points())
         .flatten()
@@ -332,10 +371,7 @@ pub fn pole_coverage_angle<'a, I: Iterator<Item = &'a Shape> + Clone>(
     segments can be ignored, since the construction of angle already ensures
     that the first case cannot happen for them.
      */
-    for s in magnet_shapes
-        .map(|shape| shape.contour().segments())
-        .flatten()
-    {
+    for s in magnets.map(|shape| shape.contour().segments()).flatten() {
         'angle_increment: while angle < PI {
             let line = Line::from_point_angle([0.0, -radius], angle);
 

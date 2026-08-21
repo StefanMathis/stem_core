@@ -1,5 +1,5 @@
 /*!
-A module providing iterators for positioning winding zones inside magnetic
+A module providing iterators for positioning winding zones inside or on magnetic
 cores.
 
 A winding [`Zone`] is the space where one coil of a winding is located. A "slot"
@@ -311,14 +311,15 @@ constructors for either defining it from scratch or for particular
 [`AirGap`](crate::air_gap::AirGap) types.
 
 The following image demonstrates how the iterator works using the example of a
-linear core with three slots, an [air gap winding](crate::air_gap::PlainAirGap)
-on the left side and a [slotted air gap](crate::air_gap::SlottedAirGap) on the
-right side. The [`WindingZonesEqSpaced::new`] constructor receives a "prototype"
-`zones` argument consisting of the zone contours (shown together with their
-coordinate system in red). These zones are then copied into new coordinate
-systems which are distributed evenly along the air gap surface, starting from
-the left. In case the core begins and ends in the middle of a slot, the layers
-are distributed accordingly as shown for the right-side core.
+linear and a rotary core with three slots with an
+[air gap winding](crate::air_gap::PlainAirGap) on the left side and a
+[slotted air gap](crate::air_gap::SlottedAirGap) on the right side. The
+[`WindingZonesEqSpaced::new`] constructor receives a "prototype" `zones`
+argument consisting of the zone contours (shown together with their coordinate
+system in red). These zones are then copied into new coordinate systems which
+are distributed evenly along the air gap surface, starting from the left. In
+case the core begins and ends in the middle of a slot, the layers are
+distributed accordingly as shown for the right-side core.
 */
 #[doc = ""]
 #[cfg_attr(
@@ -1169,9 +1170,7 @@ impl WindingZones {
 }
 
 enum WindingZonesInner {
-    /// A wrapper variant around [`WindingZonesEqSpaced`] for a linear core.
     WindingZonesEqSpacedLin(WindingZonesEqSpaced<Contour, true>),
-    /// A wrapper variant around [`WindingZonesEqSpaced`] for a rotary core.
     WindingZonesEqSpacedRot(WindingZonesEqSpaced<Contour, false>),
     Other(Box<dyn Iterator<Item = PositionedZoneContour>>),
 }
