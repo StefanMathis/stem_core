@@ -374,7 +374,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// attached to it.
     /// - Since there is only one type of magnet assembly located on the air gap
     /// surface by definition,
-    /// [`PositionedMagnetShape::magnet_idx`](crate::magnets::PositionedMagnetShape::magnet_idx)
+    /// [`PositionedMagnetShape::magnet_type`](crate::magnets::PositionedMagnetShape::magnet_type)
     /// should always be zero.
     /// - If `split` is true, each magnet should be separated in its north and
     /// south shape using

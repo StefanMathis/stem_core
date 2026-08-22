@@ -960,7 +960,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// therefore `magnet_assembly.num_tangential() * (1 + split) *
     /// self.poles()`. Since there is only one type of magnet assembly on the
     /// surface by definition,
-    /// [`PositionedMagnetShape::magnet_idx`](crate::magnets::PositionedMagnetShape::magnet_idx)
+    /// [`PositionedMagnetShape::magnet_type`](crate::magnets::PositionedMagnetShape::magnet_type)
     /// is always 0.
     ///
     /// The positioning itself is done by [`AirGap::surface_magnets`], using
@@ -1024,7 +1024,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// assert_eq!(magnets.len(), (1 + usize::from(split)) * usize::from(core.poles()) * usize::from(surface_magnets.num_tangential()));
     /// assert_eq!(magnets.len(), 16);
     /// for m in magnets.iter() {
-    ///     assert_eq!(m.magnet_idx, 0);
+    ///     assert_eq!(m.magnet_type, 0);
     /// }
     ///
     /// let split = false;
@@ -1032,7 +1032,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// assert_eq!(magnets.len(), (1 + usize::from(split)) * usize::from(core.poles()) * usize::from(surface_magnets.num_tangential()));
     /// assert_eq!(magnets.len(), 8);
     /// for m in magnets.iter() {
-    ///     assert_eq!(m.magnet_idx, 0);
+    ///     assert_eq!(m.magnet_type, 0);
     /// }
     /// ```
     fn surface_magnets(&self, magnet_assembly: &MagnetAssembly, split: bool) -> Magnets {

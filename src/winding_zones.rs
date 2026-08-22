@@ -39,14 +39,14 @@ in slot 23 of a double-layer winding.
 
 [`WindingZones`] itself is an enum wrapping a bunch of predefined iterators
 (such as [`WindingZonesEqSpaced`] which themselves implement
-`Iterator<Item=PositionedZoneContour`>). It is possible to define custom
-iterators for custom [`AirGap`](crate::air_gap::AirGap)s via the
-[`WindingZones::Other`] escape hatch, which allows using any iterator which
-returns [`PositionedZoneContour`]s.
+`Iterator<Item=PositionedZoneContour`>). It is possible to wrap custom iterators
+via [`WindingZones::from_iter`], which allows using any iterator returning
+[`PositionedZoneContour`]s for implementing
+[`AirGap::winding_zones`](crate::air_gap::AirGap::winding_zones).
 
 `examples/winding_zone_plots.rs` demonstrates how to utilize the
 [`WindingZones`] iterator for creating the above image. The following snippet in
-particular shows how to to draw the [`PositionedZoneContour`]s.
+particular shows how to to draw the [`PositionedZoneContour`]s:
 
 ```ignore
 // "cr" is a cairo::Context
@@ -1138,11 +1138,8 @@ assert_eq!(wz_double.next().unwrap().zone, Zone {slot: 2, layer: 1});
 assert!(wz_double.next().is_none());
 ```
 
-As shown in the example above, this iterator is not meant to be constructed
-directly, but should instead be created with the
-[`CoreExt::winding_zones`](crate::core::CoreExt::winding_zones) method. All
-predefined specialized iterators (such as [`WindingZonesEqSpaced`]) can be
-converted into a [`WindingZones`] via its [`From`] implementation.
+All predefined specialized iterators (such as [`WindingZonesEqSpaced`]) can be
+converted into [`WindingZones`] via its [`From`] implementations.
 
 When implementing
 [`AirGap::winding_zones`](crate::air_gap::AirGap::winding_zones) (which drives

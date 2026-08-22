@@ -277,7 +277,7 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     ///
     /// The [crate::magnets::PositionedMagnetShape] elements returned by the
     /// iterator have a
-    /// [`magnet_idx`](crate::magnets::PositionedMagnetShape::magnet_idx). By
+    /// [`magnet_type`](crate::magnets::PositionedMagnetShape::magnet_type). By
     /// indexing into the slice returned by [`FluxBarrier::magnet_assemblies`],
     /// the assembly type to which the shape belongs can be found.
     ///
@@ -298,11 +298,11 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     /// [`core.shape()`](CoreExt::Shape). This can be checked using
     /// [`CoreExt::assembly_check`].
     /// - The element indices
-    /// ([`PositionedMagnetShape::magnet_idx`](crate::magnets::PositionedMagnetShape::magnet_idx))
+    /// ([`PositionedMagnetShape::magnet_type`](crate::magnets::PositionedMagnetShape::magnet_type))
     /// must indicate the magnet assembly type to which the returned shape
     /// belongs. For example, if `self.magnet_assemblies().len() == 2` and the
-    /// `magnet_idx` of a returned shape is 1, that shape belongs to the second
-    /// magnet assembly in the slice. Returning a `magnet_idx` which is out of
+    /// `magnet_type` of a returned shape is 1, that shape belongs to the second
+    /// magnet assembly in the slice. Returning a `magnet_type` which is out of
     /// bounds of the slice will result in a panic when calling some methods
     /// like e.g. [`CoreExt::mass_interior_magnets`].
     /// - If `split` is true, each magnet should be separated in its north and
@@ -343,10 +343,10 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
 
     The [`FluxBarrier::interior_magnets`] returns an iterator over the shapes
     of all interior magnets within `self`. By indexing into this slice with
-    [`PositionedMagnetShape::magnet_idx`](crate::magnets::PositionedMagnetShape::magnet_idx),
+    [`PositionedMagnetShape::magnet_type`](crate::magnets::PositionedMagnetShape::magnet_type),
     the magnet assembly to which a particular shape belongs can be determined.
     For example, if `self.magnet_assemblies().len() == 2` and the
-    `PositionedMagnetShape::magnet_idx` of a returned shape is 1, that shape
+    `PositionedMagnetShape::magnet_type` of a returned shape is 1, that shape
     belongs to the second magnet assembly in the slice. This can e.g. be used to
     calculate the total mass of all interior magnets (see source code of
     [`CoreExt::mass_interior_magnets`]. When implementing [`FluxBarrier`] for

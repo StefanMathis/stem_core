@@ -1,3 +1,54 @@
+/*!
+A module providing iterators for positioning surface and interior magnets inside
+or on magnetic cores.
+
+Two types of magnets: Surface and interior magnets. Why know where they are positioned?
+- Simulations (FEM)
+- Visualization
+- Collision detection
+
+Their shapes relative to the core which is holding them created by:
+
+[`CoreExt::surface_magnets`](crate::core::CoreExt::surface_magnets) or
+[`CoreExt::interior_magnets`](crate::core::CoreExt::interior_magnets)
+
+// IMG smooth lin 2 with core and with interior magnets (using alphabet for interior magnet enumeration)?
+
+[`Magnets`] itself is an enum wrapping a bunch of predefined iterators
+(such as [`MagnetsEqSpaced`] which themselves implement
+`Iterator<Item=PositionedMagnetShape`>). It is possible to wrap custom iterators
+via [`Magnets::from_iter`], which allows using any iterator returning
+[`PositionedMagnetShape`]s for implementing
+[`CoreExt::surface_magnets`](crate::core::CoreExt::surface_magnets) or
+[`CoreExt::interior_magnets`](crate::core::CoreExt::interior_magnets).
+
+`examples/magnet_plots.rs` demonstrates how to utilize the
+[`Magnets`] iterator for creating the above image. The following snippet in
+particular shows how to to draw the [`PositionedMagnetShape`]s:
+
+```ignore
+// "cr" is a cairo::Context
+for (idx, m) in core.interior_magnets(true).enumerate() {
+    m.as_drawable().draw(cr)?;
+    let text = Text {
+        text: format!("Magnet: {}", idx),
+        anchor: Anchor::Center,
+        fixed_anchor_offset: [0.0, -7.0],
+        scaled_anchor_offset: w.contour.centroid(),
+        color: Color {
+            r: 0.0,
+            g: 0.0,
+            b: 0.0,
+            a: 1.0,
+        },
+        font_size: 12.0,
+        angle: 0.0,
+    };
+    text.draw(cr)?;
+}
+```
+*/
+
 use crate::planar_geo;
 use num::Integer;
 use planar_geo::prelude::*;
@@ -232,6 +283,110 @@ impl<const LIN: bool> Iterator for MagnetsEqSpaced<LIN> {
 
 // =============================================================================
 
+/**
+An iterator over the surface or interior [`PositionedMagnetShape`]s of a
+magnetic core.
+
+This iterator is created from the
+[`CoreExt::surface_magnets`](crate::core::CoreExt::surface_magnets) or
+[`CoreExt::interior_magnets`](crate::core::CoreExt::interior_magnets) methods
+and returns the [`PositionedMagnetShape`]s for all surface / interior magnets
+mounted on the core, starting with the magnets at the first pole and ending with
+those of the last. Hence, [`PositionedMagnetShape::is_north`] is inverted for
+every odd pole:
+
+```
+use std::sync::Arc;
+use stem_core::prelude::*;
+
+let fb = Spoke1FluxBarrier {
+    air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
+    yoke_leakage_path_width: Length::new::<millimeter>(1.0),
+    relief_path_air_gap_width: Length::new::<millimeter>(3.0),
+    magnet_space_width: Length::new::<millimeter>(10.0),
+    height_split: Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(1.0)),
+    glue_gap: Length::new::<millimeter>(0.2),
+    magnet_material: Some(Default::default()),
+    cache: None,
+};
+
+let core: LinCore = LinCoreBuilder {
+    height: Length::new::<millimeter>(15.0),
+    width: Length::new::<millimeter>(200.0),
+    axial_length: Length::new::<millimeter>(1.0),
+    axial_coil_overhang: Length::new::<millimeter>(0.0),
+    skew_angle: 0.0,
+    iron_fill_factor: 1.0,
+    material: Arc::new(Default::default()),
+    pole_pairs: 2,
+    air_gap: Box::new(PlainAirGap {
+        num_segments: 0,
+        air_gap_winding_height: Length::new::<millimeter>(8.0),
+        winding_coverage: 0.7,
+        starts_in_slot_middle: false,
+        slots: 3,
+    }),
+    flux_barrier: Some(Box::new(fb)),
+}
+.try_into().expect("valid dimensions");
+
+// To illustrate the inversion of PositionedMagnetShape::is_north, the magnets
+// are not splitted in a north and south part.
+
+// Surface magnets: Two magnets per pole -> 8 positioned shapes in total
+let magnet = BreadLoafMagnet::new(
+    Length::new::<millimeter>(165.0),
+    Length::new::<millimeter>(20.0),
+    Length::new::<millimeter>(10.0),
+    Length::new::<millimeter>(50.0),
+    Arc::new(Default::default()),
+)
+.unwrap();
+let surface_mag_assembly = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 2.try_into().unwrap());
+let mut surface_magnets = core.surface_magnets(&surface_mag_assembly, false);
+
+// First pole (north pole)
+assert!(surface_magnets.next().unwrap().is_north);
+assert!(surface_magnets.next().unwrap().is_north);
+
+// Second pole (south pole)
+assert!(!surface_magnets.next().unwrap().is_north);
+assert!(!surface_magnets.next().unwrap().is_north);
+
+// Third pole (north pole)
+assert!(surface_magnets.next().unwrap().is_north);
+assert!(surface_magnets.next().unwrap().is_north);
+
+// Fourth pole (south pole)
+assert!(!surface_magnets.next().unwrap().is_north);
+assert!(!surface_magnets.next().unwrap().is_north);
+
+// Core has eight surface magnets in total, hence the iterator is now exhausted
+assert!(surface_magnets.next().is_none());
+
+// Interior magnets: One magnet per pole -> 4 positioned shapes in total
+let mut interior_magnets = core.interior_magnets(false);
+assert!(interior_magnets.next().unwrap().is_north); // First pole (north pole)
+assert!(!interior_magnets.next().unwrap().is_north); // Second pole (south pole)
+assert!(interior_magnets.next().unwrap().is_north); // Third pole (north pole)
+assert!(!interior_magnets.next().unwrap().is_north); // Fourth pole (south pole)
+
+// Core has four interior magnets in total, hence the iterator is now exhausted
+assert!(interior_magnets.next().is_none());
+```
+
+All predefined specialized iterators (such as [`MagnetsEqSpaced`]) can be
+converted into [`Magnets`] via its [`From`] implementations.
+
+When implementing
+[`AirGap::surface_magnets`](crate::air_gap::AirGap::surface_magnets) or
+[`FluxBarrier::interior_magnets`](crate::flux_barrier::FluxBarrier::interior_magnets)
+(which drive [`CoreExt::surface_magnets`](crate::core::CoreExt::surface_magnets)
+and [`CoreExt::interior_magnets`](crate::core::CoreExt::interior_magnets), the
+[`Magnets::from_iter`] method can be used for wrapping a custom iterator. The
+custom iterator should produce the [`PositionedMagnetShape`]s in ascending pole
+order as shown in the example.
+ */
 pub struct Magnets(MagnetsInner);
 
 impl Magnets {

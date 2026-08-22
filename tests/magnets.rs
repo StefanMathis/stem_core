@@ -74,7 +74,7 @@ fn test_lin() {
         None,
     );
     compare_to_reference(
-        MagnetsEqSpaced::<true>::new(4, Length::new::<millimeter>(400.0), shapes, FRAC_PI_2)
+        MagnetsEqSpaced::<true>::new(Length::new::<millimeter>(400.0), shapes, 4, FRAC_PI_2)
             .map(From::from)
             .collect(),
         "tests/img/magnets/smooth_lin_1.png",
@@ -87,7 +87,7 @@ fn test_lin() {
         None,
     );
     compare_to_reference(
-        MagnetsEqSpaced::<true>::new(6, Length::new::<millimeter>(400.0), shapes, FRAC_PI_2)
+        MagnetsEqSpaced::<true>::new(Length::new::<millimeter>(400.0), shapes, 6, FRAC_PI_2)
             .map(From::from)
             .collect(),
         "tests/img/magnets/smooth_lin_2.png",
@@ -100,7 +100,7 @@ fn test_lin() {
         None,
     );
     compare_to_reference(
-        MagnetsEqSpaced::<true>::new(6, Length::new::<millimeter>(400.0), shapes, FRAC_PI_2)
+        MagnetsEqSpaced::<true>::new(Length::new::<millimeter>(400.0), shapes, 6, FRAC_PI_2)
             .map(From::from)
             .collect(),
         "tests/img/magnets/smooth_lin_3.png",
@@ -129,9 +129,9 @@ fn rot_inner() {
         );
         compare_to_reference(
             MagnetsEqSpaced::<false>::new(
-                4,
                 Length::new::<millimeter>(85.0) * TAU,
                 shapes.clone(),
+                4,
                 FRAC_PI_2,
             )
             .map(From::from)
@@ -142,9 +142,9 @@ fn rot_inner() {
 
         let bb = BoundingBox::from_bounded_entities(
             MagnetsEqSpaced::<false>::new(
-                4,
                 Length::new::<millimeter>(85.0) * TAU,
                 shapes,
+                4,
                 FRAC_PI_2,
             )
             .map(|s| s.shape.bounding_box()),
@@ -174,9 +174,9 @@ fn rot_inner() {
         );
         compare_to_reference(
             MagnetsEqSpaced::<false>::new(
-                4,
                 Length::new::<millimeter>(85.0) * TAU,
                 shapes.clone(),
+                4,
                 FRAC_PI_2,
             )
             .map(From::from)
@@ -187,9 +187,9 @@ fn rot_inner() {
 
         let bb = BoundingBox::from_bounded_entities(
             MagnetsEqSpaced::<false>::new(
-                4,
                 Length::new::<millimeter>(85.0) * TAU,
                 shapes,
+                4,
                 FRAC_PI_2,
             )
             .map(|s| s.shape.bounding_box()),
@@ -219,9 +219,9 @@ fn rot_inner() {
         );
         compare_to_reference(
             MagnetsEqSpaced::<false>::new(
-                4,
                 Length::new::<millimeter>(85.0) * TAU,
                 shapes.clone(),
+                4,
                 FRAC_PI_2,
             )
             .map(From::from)
@@ -253,9 +253,9 @@ fn rot_outer() {
         );
         compare_to_reference(
             MagnetsEqSpaced::<false>::new(
-                4,
                 Length::new::<millimeter>(85.0) * TAU,
                 shapes.clone(),
+                4,
                 FRAC_PI_2,
             )
             .map(From::from)
@@ -266,9 +266,9 @@ fn rot_outer() {
 
         let bb = BoundingBox::from_bounded_entities(
             MagnetsEqSpaced::<false>::new(
-                4,
                 Length::new::<millimeter>(85.0) * TAU,
                 shapes.clone(),
+                4,
                 FRAC_PI_2,
             )
             .map(|s| s.shape.bounding_box()),
@@ -298,9 +298,9 @@ fn rot_outer() {
         );
         compare_to_reference(
             MagnetsEqSpaced::<false>::new(
-                4,
                 Length::new::<millimeter>(85.0) * TAU,
                 shapes.clone(),
+                4,
                 FRAC_PI_2,
             )
             .map(From::from)
@@ -311,9 +311,9 @@ fn rot_outer() {
 
         let bb = BoundingBox::from_bounded_entities(
             MagnetsEqSpaced::<false>::new(
-                4,
                 Length::new::<millimeter>(85.0) * TAU,
                 shapes.clone(),
+                4,
                 FRAC_PI_2,
             )
             .map(|s| s.shape.bounding_box()),
@@ -343,15 +343,14 @@ fn rot_outer() {
         );
         compare_to_reference(
             MagnetsEqSpaced::<false>::new(
-                4,
                 Length::new::<millimeter>(85.0) * TAU,
                 shapes.clone(),
+                4,
                 FRAC_PI_2,
             )
             .map(From::from)
             .collect(),
-            "tests/img/magnets/smooth_rot_outer_3
-            .png",
+            "tests/img/magnets/smooth_rot_outer_3.png",
             None,
         );
     }
