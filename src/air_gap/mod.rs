@@ -388,17 +388,15 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// of [`PlainAirGap::surface_magnets`] for an example.
     fn surface_magnets(
         &self,
-        magnet_assembly: &MagnetAssembly,
+        _magnet_assembly: &MagnetAssembly,
         core: CoreRef<'_>,
-        split: bool,
+        _split: bool,
     ) -> Magnets {
         // Dummy implementation, to be overwritten.
-        return crate::magnets::MagnetsEqSpaced::<true>::from_magnet_assembly(
+        return crate::magnets::MagnetsEqSpaced::<true>::new(
             0,
             Length::new::<millimeter>(0.0),
-            magnet_assembly,
-            split,
-            true,
+            Vec::new(),
             core.d_axis_offset(),
         )
         .into();

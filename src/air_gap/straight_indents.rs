@@ -27,9 +27,11 @@ use std::{
     num::NonZero,
 };
 
-use crate::{magnets::PositionedMagnetShape, planar_geo};
+use crate::{
+    magnets::{surface_magnet_assembly_shapes_lin, surface_magnet_assembly_shapes_rot},
+    planar_geo,
+};
 use compare_variables::compare_variables;
-use num::Integer;
 use planar_geo::prelude::*;
 use stem_magnet::prelude::*;
 use stem_slot::coil_layout::CoilLayout;
@@ -41,7 +43,7 @@ use crate::{
     air_gap::AirGap,
     core::{CoreExt, CoreRef, LinCore, RotCore},
     error::Error,
-    magnets::{MagnetsEqSpaced, Magnets},
+    magnets::{Magnets, MagnetsEqSpaced},
     winding_zones::{WindingZones, WindingZonesEqSpaced},
 };
 
@@ -580,45 +582,24 @@ impl AirGap for StraightIndentsAirGap {
         core: CoreRef<'_>,
         split: bool,
     ) -> Magnets {
-        let num_tangential = magnet_assembly.num_tangential();
-        let mut magnet_shapes: Vec<PositionedMagnetShape> = if split {
-            magnet_assembly
-                .magnet()
-                .north_south_shapes()
-                .into_iter()
-                .enumerate()
-                .map(|(i, m)| PositionedMagnetShape {
-                    shape: m.into_owned(),
-                    is_north: i.is_even(),
-                    magnet_idx: 0,
-                })
-                .collect()
-        } else {
-            vec![PositionedMagnetShape {
-                shape: magnet_assembly.magnet().shape().into_owned(),
-                is_north: true,
-                magnet_idx: 0,
-            }]
-        };
-
         match core {
-            CoreRef::Lin(lin_core) => {
-                let magnet_coverage = self.indent_width.get::<meter>();
-
-                magnet_shapes.iter_mut().for_each(|s| {
-                    s.line_reflection([0.0, 0.0], [1.0, 0.0]);
-                    s.translate([0.0, self.indent_depth.get::<meter>()]);
+            CoreRef::Lin(_) => {
+                let mut magnets = surface_magnet_assembly_shapes_lin(
+                    magnet_assembly,
+                    split,
+                    Some(self.indent_width),
+                );
+                magnets.iter_mut().for_each(|m| {
+                    m.translate([0.0, self.indent_depth.get::<meter>()]);
                 });
 
-                return MagnetsEqSpaced::<true>::new(
+                MagnetsEqSpaced::<true>::new(
                     core.poles().into(),
-                    lin_core.air_gap_length(),
-                    magnet_shapes,
-                    magnet_coverage,
-                    num_tangential,
+                    core.air_gap_length(),
+                    magnets,
                     core.d_axis_offset(),
                 )
-                .into();
+                .into()
             }
             CoreRef::Rot(rot_core) => {
                 let indent_center_radius =
@@ -631,21 +612,20 @@ impl AirGap for StraightIndentsAirGap {
                         .get::<ratio>()
                         .asin();
 
-                if rot_core.is_outer() {
-                    for s in magnet_shapes.iter_mut() {
-                        s.line_reflection([0.0, 0.0], [1.0, 0.0]);
-                    }
-                }
-
-                return MagnetsEqSpaced::<false>::new(
+                let magnets = surface_magnet_assembly_shapes_rot(
+                    magnet_assembly,
+                    split,
+                    indent_center_radius,
+                    rot_core.is_outer(),
+                    Some(magnet_coverage),
+                );
+                MagnetsEqSpaced::<false>::new(
                     core.poles().into(),
                     indent_center_radius * TAU,
-                    magnet_shapes,
-                    magnet_coverage,
-                    num_tangential,
+                    magnets,
                     core.d_axis_offset(),
                 )
-                .into();
+                .into()
             }
         }
     }

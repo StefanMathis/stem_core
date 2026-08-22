@@ -322,8 +322,6 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
             Length::new::<meter>(0.0),
             Vec::new(),
             0.0,
-            0,
-            0.0,
         )
         .into();
     }

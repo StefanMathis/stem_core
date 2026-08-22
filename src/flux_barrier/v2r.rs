@@ -676,8 +676,6 @@ impl FluxBarrier for V2rFluxBarrier {
             core.poles().into(),
             Length::new::<meter>(radius * TAU),
             shapes,
-            0.0,
-            1,
             core.d_axis_offset(),
         )
         .into();

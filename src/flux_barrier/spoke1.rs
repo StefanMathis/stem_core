@@ -761,8 +761,6 @@ impl FluxBarrier for Spoke1FluxBarrier {
                     core.poles().into(),
                     lin_core.air_gap_length(),
                     shapes,
-                    0.0,
-                    1,
                     core.d_axis_offset(),
                 )
                 .into();
@@ -790,8 +788,6 @@ impl FluxBarrier for Spoke1FluxBarrier {
                     core.poles().into(),
                     Length::new::<meter>(radius * TAU),
                     shapes,
-                    0.0,
-                    1,
                     core.d_axis_offset(),
                 )
                 .into();

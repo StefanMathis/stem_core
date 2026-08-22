@@ -20,6 +20,9 @@ pub struct PositionedMagnetShape {
 }
 
 impl PositionedMagnetShape {
+    /// Converts [`PositionedMagnetShape::shape`] into a [`Drawable`] using
+    /// [`stem_magnet::NORTH_POLE_STYLE`] if [`PositionedMagnetShape::is_north`]
+    /// is true and [`stem_magnet::SOUTH_POLE_STYLE`] otherwise.
     #[cfg(feature = "cairo")]
     pub fn into_drawable(self) -> Drawable {
         let style = if self.is_north {
@@ -30,11 +33,16 @@ impl PositionedMagnetShape {
         return Drawable::new(self.shape, style);
     }
 
+    /// Converts [`PositionedMagnetShape::shape`] into a [`Drawable`] using
+    /// the provided `style`.
     #[cfg(feature = "cairo")]
     pub fn into_drawable_with_style(self, style: planar_geo::draw::Style) -> Drawable {
         Drawable::new(self.shape, style)
     }
 
+    /// Wraps [`PositionedMagnetShape::shape`] into a [`DrawableRef`] using
+    /// [`stem_magnet::NORTH_POLE_STYLE`] if [`PositionedMagnetShape::is_north`]
+    /// is true and [`stem_magnet::SOUTH_POLE_STYLE`] otherwise.
     #[cfg(feature = "cairo")]
     pub fn as_drawable<'a>(&'a self) -> DrawableRef<'a> {
         let style = if self.is_north {
@@ -102,139 +110,29 @@ pub struct MagnetsEqSpaced<const LIN: bool> {
     poles: usize,
     dist_width_or_circumference: Length,
     magnets: Vec<PositionedMagnetShape>,
-    magnet_coverage: f64, // If LIN, this is a length, otherwise it is an angle
-    num_tangential: usize,
     index: usize,
     d_axis_offset: f64,
 }
 
 impl<const LIN: bool> MagnetsEqSpaced<LIN> {
+    /// TODO:
     pub fn new(
         poles: usize,
         dist_width_or_circumference: Length,
         magnets: Vec<PositionedMagnetShape>,
-        magnet_coverage: f64,
-        num_tangential: usize,
         d_axis_offset: f64,
     ) -> Self {
         Self {
             poles,
             dist_width_or_circumference,
             magnets,
-            num_tangential,
-            magnet_coverage,
             index: 0,
             d_axis_offset,
         }
     }
 
-    /// magnets must have one or 2 entries (otherwise panic!)
-    pub fn with_calculated_coverage(
-        poles: usize,
-        dist_width_or_circumference: Length,
-        magnets: Vec<PositionedMagnetShape>,
-        num_tangential: usize,
-        d_axis_offset: f64,
-    ) -> Self {
-        let magnet_coverage = if LIN {
-            BoundingBox::from_bounded_entities(magnets.iter().map(|p| &p.shape))
-                .map(|m| m.width())
-                .unwrap_or(0.0)
-        } else {
-            let radius = dist_width_or_circumference.get::<meter>() / TAU;
-            pole_coverage_angle(
-                magnets.iter().map(|p| &p.shape),
-                radius,
-                Length::new::<meter>(0.0),
-            )
-        };
-
-        Self {
-            poles,
-            dist_width_or_circumference,
-            magnets,
-            num_tangential,
-            magnet_coverage,
-            index: 0,
-            d_axis_offset,
-        }
-    }
-
-    pub fn from_magnet_assembly(
-        poles: usize,
-        air_gap_length: Length,
-        assembly: &MagnetAssembly,
-        split: bool,
-        outer_core: bool,
-        d_axis_offset: f64,
-    ) -> Self {
-        if LIN {
-            let num_tangential = assembly.num_tangential();
-            let mut magnets = if split {
-                assembly
-                    .magnet()
-                    .north_south_shapes()
-                    .into_iter()
-                    .map(|c| c.into_owned())
-                    .collect()
-            } else {
-                vec![assembly.magnet().shape().into_owned()]
-            };
-
-            magnets.iter_mut().for_each(|s| {
-                s.line_reflection([0.0, 0.0], [1.0, 0.0]);
-            });
-
-            return Self::with_calculated_coverage(
-                poles,
-                air_gap_length,
-                magnets
-                    .into_iter()
-                    .enumerate()
-                    .map(|(i, shape)| PositionedMagnetShape {
-                        shape,
-                        is_north: i.is_even(),
-                        magnet_idx: 0,
-                    })
-                    .collect(),
-                num_tangential,
-                d_axis_offset,
-            );
-        } else {
-            let num_tangential = assembly.num_tangential();
-            let mut magnets = if split {
-                assembly
-                    .magnet()
-                    .north_south_shapes()
-                    .into_iter()
-                    .map(|c| c.into_owned())
-                    .collect()
-            } else {
-                vec![assembly.magnet().shape().into_owned()]
-            };
-
-            if outer_core {
-                for s in magnets.iter_mut() {
-                    s.line_reflection([0.0, 0.0], [1.0, 0.0]);
-                }
-            }
-
-            return Self::with_calculated_coverage(
-                poles,
-                air_gap_length,
-                magnets
-                    .into_iter()
-                    .enumerate()
-                    .map(|(i, shape)| PositionedMagnetShape {
-                        shape,
-                        is_north: i.is_even(),
-                        magnet_idx: 0,
-                    })
-                    .collect(),
-                num_tangential,
-                d_axis_offset,
-            );
-        }
+    pub fn reset(&mut self) {
+        self.index = 0;
     }
 }
 
@@ -242,17 +140,14 @@ impl<const LIN: bool> Iterator for MagnetsEqSpaced<LIN> {
     type Item = PositionedMagnetShape;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.index >= self.num_tangential * self.poles * self.magnets.len() {
+        if self.index >= self.poles * self.magnets.len() {
             return None;
         }
 
-        let current_pole = self.index / (self.num_tangential * self.magnets.len());
+        let current_pole = self.index / (self.magnets.len());
 
         // Index counter repeats from zero to the number of shapes per pole
-        let pole_idx = self
-            .index
-            .rem_euclid(self.num_tangential * self.magnets.len());
-        let tan_idx = pole_idx / self.magnets.len();
+        let pole_idx = self.index.rem_euclid(self.magnets.len());
         let shape_idx = pole_idx.rem_euclid(self.magnets.len());
 
         self.index = self.index + 1;
@@ -262,16 +157,12 @@ impl<const LIN: bool> Iterator for MagnetsEqSpaced<LIN> {
         if LIN {
             let width_per_pole =
                 self.dist_width_or_circumference.get::<meter>() / self.poles as f64;
-            let offset = (self.d_axis_offset / PI + current_pole as f64) * width_per_pole
-                + (tan_idx as f64 - 0.5 * (self.num_tangential as f64 - 1.0))
-                    * self.magnet_coverage;
+            let offset = (self.d_axis_offset / PI + current_pole as f64) * width_per_pole;
             shape.translate([offset, 0.0]);
         } else {
             shape.translate([0.0, self.dist_width_or_circumference.get::<meter>() / TAU]);
             let angle_per_pole = TAU / self.poles as f64;
-            let angle = angle_per_pole * (0.5 + current_pole as f64)
-                + (tan_idx as f64 - 0.5 * (self.num_tangential as f64 - 1.0))
-                    * self.magnet_coverage;
+            let angle = angle_per_pole * (0.5 + current_pole as f64);
             shape.rotate([0.0, 0.0], -angle + self.d_axis_offset);
         }
 
@@ -341,6 +232,148 @@ impl Iterator for Magnets {
             MagnetsInner::Other(i) => i.next(),
         }
     }
+}
+
+#[doc = ""]
+#[cfg_attr(
+    feature = "doc-images",
+    doc = "![Creation of the shapes of a surface magnet assembly][cad_create_surface_mag_assembly]"
+)]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image(
+        "cad_create_surface_mag_assembly",
+        "docs/img/cad_create_surface_mag_assembly.svg"
+    )
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+pub fn surface_magnet_assembly_shapes_lin(
+    magnet_assembly: &MagnetAssembly,
+    split: bool,
+    coverage_single_magnet: Option<Length>,
+) -> Vec<PositionedMagnetShape> {
+    let mut proto_shapes: Vec<PositionedMagnetShape> = if split {
+        magnet_assembly
+            .magnet()
+            .north_south_shapes()
+            .into_iter()
+            .enumerate()
+            .map(|(i, m)| PositionedMagnetShape {
+                shape: m.into_owned(),
+                is_north: i.is_even(),
+                magnet_idx: 0,
+            })
+            .collect()
+    } else {
+        vec![PositionedMagnetShape {
+            shape: magnet_assembly.magnet().shape().into_owned(),
+            is_north: true,
+            magnet_idx: 0,
+        }]
+    };
+
+    for s in proto_shapes.iter_mut() {
+        s.line_reflection([0.0, 0.0], [1.0, 0.0]);
+    }
+
+    let magnet_coverage = coverage_single_magnet
+        .map(|l| l.get::<meter>())
+        .unwrap_or_else(|| {
+            BoundingBox::from_bounded_entities(proto_shapes.iter().map(|p| &p.shape))
+                .map(|m| m.width())
+                .unwrap_or(0.0)
+        });
+
+    let mut shapes = Vec::with_capacity(magnet_assembly.num_tangential() * proto_shapes.len());
+
+    for tan_idx in 0..magnet_assembly.num_tangential() {
+        for mut shape in proto_shapes.iter().cloned() {
+            let offset = (tan_idx as f64 - 0.5 * (magnet_assembly.num_tangential() as f64 - 1.0))
+                * magnet_coverage;
+            shape.translate([offset, 0.0]);
+            shapes.push(shape);
+        }
+    }
+
+    return shapes;
+}
+
+#[doc = ""]
+#[cfg_attr(
+    feature = "doc-images",
+    doc = "![Creation of the shapes of a surface magnet assembly][cad_create_surface_mag_assembly]"
+)]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image(
+        "cad_create_surface_mag_assembly",
+        "docs/img/cad_create_surface_mag_assembly.svg"
+    )
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/// coverage_single_magnet: angle
+pub fn surface_magnet_assembly_shapes_rot(
+    magnet_assembly: &MagnetAssembly,
+    split: bool,
+    radius: Length,
+    is_outer: bool,
+    coverage_single_magnet: Option<f64>,
+) -> Vec<PositionedMagnetShape> {
+    let mut proto_shapes: Vec<PositionedMagnetShape> = if split {
+        magnet_assembly
+            .magnet()
+            .north_south_shapes()
+            .into_iter()
+            .enumerate()
+            .map(|(i, m)| PositionedMagnetShape {
+                shape: m.into_owned(),
+                is_north: i.is_even(),
+                magnet_idx: 0,
+            })
+            .collect()
+    } else {
+        vec![PositionedMagnetShape {
+            shape: magnet_assembly.magnet().shape().into_owned(),
+            is_north: true,
+            magnet_idx: 0,
+        }]
+    };
+
+    if is_outer {
+        for s in proto_shapes.iter_mut() {
+            s.line_reflection([0.0, 0.0], [1.0, 0.0]);
+        }
+    }
+
+    let magnet_coverage = coverage_single_magnet.unwrap_or_else(|| {
+        let radius = radius.get::<meter>();
+        pole_coverage_angle(
+            proto_shapes.iter().map(|p| &p.shape),
+            radius,
+            Length::new::<meter>(0.0),
+        )
+    });
+
+    let mut shapes = Vec::with_capacity(magnet_assembly.num_tangential() * proto_shapes.len());
+
+    for tan_idx in 0..magnet_assembly.num_tangential() {
+        for mut shape in proto_shapes.iter().cloned() {
+            let angle = (tan_idx as f64 - 0.5 * (magnet_assembly.num_tangential() as f64 - 1.0))
+                * magnet_coverage;
+            shape.rotate([0.0, -radius.get::<meter>()], -angle);
+            shapes.push(shape);
+        }
+    }
+
+    return shapes;
 }
 
 /// Assumptions: shapes are as required by Magnet trait

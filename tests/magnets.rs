@@ -8,7 +8,10 @@ use planar_geo::{
     draw::*,
     prelude::{BoundingBox, ToBoundingBox},
 };
-use stem_core::magnets::{MagnetsEqSpaced, pole_coverage_angle};
+use stem_core::{
+    magnets::{MagnetsEqSpaced, pole_coverage_angle},
+    prelude::{surface_magnet_assembly_shapes_lin, surface_magnet_assembly_shapes_rot},
+};
 use stem_magnet::{
     arc::{AngleOrWidth, ArcParallelMagnet, ArcSegmentMagnet, SideHeightOrThickness},
     assembly::MagnetAssembly,
@@ -55,7 +58,7 @@ fn compare_to_reference<P: AsRef<std::path::Path>>(
 }
 
 #[test]
-fn lin() {
+fn test_lin() {
     let magnet = BreadLoafMagnet::new(
         Length::new::<millimeter>(165.0),
         Length::new::<millimeter>(20.0),
@@ -65,47 +68,41 @@ fn lin() {
     )
     .unwrap();
 
+    let shapes = surface_magnet_assembly_shapes_lin(
+        &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
+        false,
+        None,
+    );
     compare_to_reference(
-        MagnetsEqSpaced::<true>::from_magnet_assembly(
-            4,
-            Length::new::<millimeter>(400.0),
-            &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
-            false,
-            true,
-            FRAC_PI_2,
-        )
-        .map(From::from)
-        .collect(),
+        MagnetsEqSpaced::<true>::new(4, Length::new::<millimeter>(400.0), shapes, FRAC_PI_2)
+            .map(From::from)
+            .collect(),
         "tests/img/magnets/smooth_lin_1.png",
         None,
     );
 
+    let shapes = surface_magnet_assembly_shapes_lin(
+        &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 2.try_into().unwrap()),
+        false,
+        None,
+    );
     compare_to_reference(
-        MagnetsEqSpaced::<true>::from_magnet_assembly(
-            6,
-            Length::new::<millimeter>(400.0),
-            &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 2.try_into().unwrap()),
-            false,
-            true,
-            FRAC_PI_2,
-        )
-        .map(From::from)
-        .collect(),
+        MagnetsEqSpaced::<true>::new(6, Length::new::<millimeter>(400.0), shapes, FRAC_PI_2)
+            .map(From::from)
+            .collect(),
         "tests/img/magnets/smooth_lin_2.png",
         None,
     );
 
+    let shapes = surface_magnet_assembly_shapes_lin(
+        &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 2.try_into().unwrap()),
+        true,
+        None,
+    );
     compare_to_reference(
-        MagnetsEqSpaced::<true>::from_magnet_assembly(
-            6,
-            Length::new::<millimeter>(400.0),
-            &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 2.try_into().unwrap()),
-            true,
-            true,
-            FRAC_PI_2,
-        )
-        .map(From::from)
-        .collect(),
+        MagnetsEqSpaced::<true>::new(6, Length::new::<millimeter>(400.0), shapes, FRAC_PI_2)
+            .map(From::from)
+            .collect(),
         "tests/img/magnets/smooth_lin_3.png",
         None,
     );
@@ -113,220 +110,251 @@ fn lin() {
 
 #[test]
 fn rot_inner() {
-    let magnet = ArcParallelMagnet::with_const_thickness(
-        Length::new::<millimeter>(165.0),
-        Length::new::<millimeter>(85.0),
-        SideHeightOrThickness::Thickness(Length::new::<millimeter>(10.0)),
-        AngleOrWidth::Angle(10.0 / 180.0 * PI),
-        Arc::new(Default::default()),
-    )
-    .unwrap();
+    {
+        let magnet = ArcParallelMagnet::with_const_thickness(
+            Length::new::<millimeter>(165.0),
+            Length::new::<millimeter>(85.0),
+            SideHeightOrThickness::Thickness(Length::new::<millimeter>(10.0)),
+            AngleOrWidth::Angle(10.0 / 180.0 * PI),
+            Arc::new(Default::default()),
+        )
+        .unwrap();
 
-    compare_to_reference(
-        MagnetsEqSpaced::<false>::from_magnet_assembly(
-            4,
-            Length::new::<millimeter>(85.0) * TAU,
+        let shapes = surface_magnet_assembly_shapes_rot(
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
             true,
+            Length::new::<millimeter>(85.0),
             false,
-            FRAC_PI_2,
-        )
-        .map(From::from)
-        .collect(),
-        "tests/img/magnets/smooth_rot_inner_1.png",
-        None,
-    );
+            None,
+        );
+        compare_to_reference(
+            MagnetsEqSpaced::<false>::new(
+                4,
+                Length::new::<millimeter>(85.0) * TAU,
+                shapes.clone(),
+                FRAC_PI_2,
+            )
+            .map(From::from)
+            .collect(),
+            "tests/img/magnets/smooth_rot_inner_1.png",
+            None,
+        );
 
-    let bb = BoundingBox::from_bounded_entities(
-        MagnetsEqSpaced::<false>::from_magnet_assembly(
-            4,
-            Length::new::<millimeter>(85.0) * TAU,
+        let bb = BoundingBox::from_bounded_entities(
+            MagnetsEqSpaced::<false>::new(
+                4,
+                Length::new::<millimeter>(85.0) * TAU,
+                shapes,
+                FRAC_PI_2,
+            )
+            .map(|s| s.shape.bounding_box()),
+        )
+        .unwrap();
+        approxim::assert_abs_diff_eq!(bb.xmin(), -0.081831, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(bb.xmax(), 0.081831, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(bb.ymin(), -0.081831, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(bb.ymax(), 0.081831, epsilon = 1e-6);
+    }
+    {
+        let magnet = ArcSegmentMagnet::with_const_thickness(
+            Length::new::<millimeter>(165.0),
+            Length::new::<millimeter>(85.0),
+            Length::new::<millimeter>(10.0),
+            10.0 / 180.0 * PI,
+            Arc::new(Default::default()),
+        )
+        .unwrap();
+
+        let shapes = surface_magnet_assembly_shapes_rot(
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
             true,
+            Length::new::<millimeter>(85.0),
             false,
-            FRAC_PI_2,
+            None,
+        );
+        compare_to_reference(
+            MagnetsEqSpaced::<false>::new(
+                4,
+                Length::new::<millimeter>(85.0) * TAU,
+                shapes.clone(),
+                FRAC_PI_2,
+            )
+            .map(From::from)
+            .collect(),
+            "tests/img/magnets/smooth_rot_inner_2.png",
+            None,
+        );
+
+        let bb = BoundingBox::from_bounded_entities(
+            MagnetsEqSpaced::<false>::new(
+                4,
+                Length::new::<millimeter>(85.0) * TAU,
+                shapes,
+                FRAC_PI_2,
+            )
+            .map(|s| s.shape.bounding_box()),
         )
-        .map(|s| s.shape.bounding_box()),
-    )
-    .unwrap();
-    approxim::assert_abs_diff_eq!(bb.xmin(), -0.081831, epsilon = 1e-6);
-    approxim::assert_abs_diff_eq!(bb.xmax(), 0.081831, epsilon = 1e-6);
-    approxim::assert_abs_diff_eq!(bb.ymin(), -0.081831, epsilon = 1e-6);
-    approxim::assert_abs_diff_eq!(bb.ymax(), 0.081831, epsilon = 1e-6);
+        .unwrap();
+        approxim::assert_abs_diff_eq!(bb.xmin(), -0.082272, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(bb.xmax(), 0.082272, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(bb.ymin(), -0.082272, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(bb.ymax(), 0.082272, epsilon = 1e-6);
+    }
+    {
+        let magnet = BreadLoafMagnet::with_center_thickness(
+            Length::new::<millimeter>(165.0),
+            Length::new::<millimeter>(16.0),
+            Length::new::<millimeter>(10.0),
+            Length::new::<millimeter>(12.0),
+            Arc::new(Default::default()),
+        )
+        .unwrap();
 
-    let magnet = ArcSegmentMagnet::with_const_thickness(
-        Length::new::<millimeter>(165.0),
-        Length::new::<millimeter>(85.0),
-        Length::new::<millimeter>(10.0),
-        10.0 / 180.0 * PI,
-        Arc::new(Default::default()),
-    )
-    .unwrap();
-
-    compare_to_reference(
-        MagnetsEqSpaced::<false>::from_magnet_assembly(
-            4,
-            Length::new::<millimeter>(85.0) * TAU,
+        let shapes = surface_magnet_assembly_shapes_rot(
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
             true,
+            Length::new::<millimeter>(85.0),
             false,
-            FRAC_PI_2,
-        )
-        .map(From::from)
-        .collect(),
-        "tests/img/magnets/smooth_rot_inner_2.png",
-        None,
-    );
-
-    let bb = BoundingBox::from_bounded_entities(
-        MagnetsEqSpaced::<false>::from_magnet_assembly(
-            4,
-            Length::new::<millimeter>(85.0) * TAU,
-            &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
-            true,
-            false,
-            FRAC_PI_2,
-        )
-        .map(|s| s.shape.bounding_box()),
-    )
-    .unwrap();
-    approxim::assert_abs_diff_eq!(bb.xmin(), -0.082272, epsilon = 1e-6);
-    approxim::assert_abs_diff_eq!(bb.xmax(), 0.082272, epsilon = 1e-6);
-    approxim::assert_abs_diff_eq!(bb.ymin(), -0.082272, epsilon = 1e-6);
-    approxim::assert_abs_diff_eq!(bb.ymax(), 0.082272, epsilon = 1e-6);
-
-    let magnet = BreadLoafMagnet::with_center_thickness(
-        Length::new::<millimeter>(165.0),
-        Length::new::<millimeter>(16.0),
-        Length::new::<millimeter>(10.0),
-        Length::new::<millimeter>(12.0),
-        Arc::new(Default::default()),
-    )
-    .unwrap();
-
-    compare_to_reference(
-        MagnetsEqSpaced::<false>::from_magnet_assembly(
-            4,
-            Length::new::<millimeter>(85.0) * TAU,
-            &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
-            true,
-            false,
-            FRAC_PI_2,
-        )
-        .map(From::from)
-        .collect(),
-        "tests/img/magnets/smooth_rot_inner_3.png",
-        None,
-    );
+            None,
+        );
+        compare_to_reference(
+            MagnetsEqSpaced::<false>::new(
+                4,
+                Length::new::<millimeter>(85.0) * TAU,
+                shapes.clone(),
+                FRAC_PI_2,
+            )
+            .map(From::from)
+            .collect(),
+            "tests/img/magnets/smooth_rot_inner_3.png",
+            None,
+        );
+    }
 }
 
 #[test]
 fn rot_outer() {
-    let magnet = ArcParallelMagnet::with_const_thickness(
-        Length::new::<millimeter>(165.0),
-        -Length::new::<millimeter>(85.0),
-        SideHeightOrThickness::Thickness(Length::new::<millimeter>(10.0)),
-        AngleOrWidth::Angle(10.0 / 180.0 * PI),
-        Arc::new(Default::default()),
-    )
-    .unwrap();
+    {
+        let magnet = ArcParallelMagnet::with_const_thickness(
+            Length::new::<millimeter>(165.0),
+            -Length::new::<millimeter>(85.0),
+            SideHeightOrThickness::Thickness(Length::new::<millimeter>(10.0)),
+            AngleOrWidth::Angle(10.0 / 180.0 * PI),
+            Arc::new(Default::default()),
+        )
+        .unwrap();
 
-    compare_to_reference(
-        MagnetsEqSpaced::<false>::from_magnet_assembly(
-            4,
-            Length::new::<millimeter>(85.0) * TAU,
+        let shapes = surface_magnet_assembly_shapes_rot(
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
             true,
+            Length::new::<millimeter>(85.0),
             true,
-            FRAC_PI_2,
-        )
-        .map(From::from)
-        .collect(),
-        "tests/img/magnets/smooth_rot_outer_1.png",
-        None,
-    );
+            None,
+        );
+        compare_to_reference(
+            MagnetsEqSpaced::<false>::new(
+                4,
+                Length::new::<millimeter>(85.0) * TAU,
+                shapes.clone(),
+                FRAC_PI_2,
+            )
+            .map(From::from)
+            .collect(),
+            "tests/img/magnets/smooth_rot_outer_1.png",
+            None,
+        );
 
-    let bb = BoundingBox::from_bounded_entities(
-        MagnetsEqSpaced::<false>::from_magnet_assembly(
-            4,
-            Length::new::<millimeter>(85.0) * TAU,
+        let bb = BoundingBox::from_bounded_entities(
+            MagnetsEqSpaced::<false>::new(
+                4,
+                Length::new::<millimeter>(85.0) * TAU,
+                shapes.clone(),
+                FRAC_PI_2,
+            )
+            .map(|s| s.shape.bounding_box()),
+        )
+        .unwrap();
+        approxim::assert_abs_diff_eq!(bb.xmin(), -0.074584, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(bb.xmax(), 0.074584, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(bb.ymin(), -0.074584, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(bb.ymax(), 0.074584, epsilon = 1e-6);
+    }
+    {
+        let magnet = ArcSegmentMagnet::with_const_thickness(
+            Length::new::<millimeter>(165.0),
+            -Length::new::<millimeter>(85.0),
+            Length::new::<millimeter>(10.0),
+            10.0 / 180.0 * PI,
+            Arc::new(Default::default()),
+        )
+        .unwrap();
+
+        let shapes = surface_magnet_assembly_shapes_rot(
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
             true,
+            Length::new::<millimeter>(85.0),
             true,
-            FRAC_PI_2,
+            None,
+        );
+        compare_to_reference(
+            MagnetsEqSpaced::<false>::new(
+                4,
+                Length::new::<millimeter>(85.0) * TAU,
+                shapes.clone(),
+                FRAC_PI_2,
+            )
+            .map(From::from)
+            .collect(),
+            "tests/img/magnets/smooth_rot_outer_2.png",
+            None,
+        );
+
+        let bb = BoundingBox::from_bounded_entities(
+            MagnetsEqSpaced::<false>::new(
+                4,
+                Length::new::<millimeter>(85.0) * TAU,
+                shapes.clone(),
+                FRAC_PI_2,
+            )
+            .map(|s| s.shape.bounding_box()),
         )
-        .map(|s| s.shape.bounding_box()),
-    )
-    .unwrap();
-    approxim::assert_abs_diff_eq!(bb.xmin(), -0.074584, epsilon = 1e-6);
-    approxim::assert_abs_diff_eq!(bb.xmax(), 0.074584, epsilon = 1e-6);
-    approxim::assert_abs_diff_eq!(bb.ymin(), -0.074584, epsilon = 1e-6);
-    approxim::assert_abs_diff_eq!(bb.ymax(), 0.074584, epsilon = 1e-6);
+        .unwrap();
+        approxim::assert_abs_diff_eq!(bb.xmin(), -0.073612, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(bb.xmax(), 0.073612, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(bb.ymin(), -0.073612, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(bb.ymax(), 0.073612, epsilon = 1e-6);
+    }
+    {
+        let magnet = BreadLoafMagnet::with_center_thickness(
+            Length::new::<millimeter>(165.0),
+            Length::new::<millimeter>(16.0),
+            Length::new::<millimeter>(10.0),
+            Length::new::<millimeter>(12.0),
+            Arc::new(Default::default()),
+        )
+        .unwrap();
 
-    let magnet = ArcSegmentMagnet::with_const_thickness(
-        Length::new::<millimeter>(165.0),
-        -Length::new::<millimeter>(85.0),
-        Length::new::<millimeter>(10.0),
-        10.0 / 180.0 * PI,
-        Arc::new(Default::default()),
-    )
-    .unwrap();
-
-    compare_to_reference(
-        MagnetsEqSpaced::<false>::from_magnet_assembly(
-            4,
-            Length::new::<millimeter>(85.0) * TAU,
+        let shapes = surface_magnet_assembly_shapes_rot(
             &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
             true,
+            Length::new::<millimeter>(85.0),
             true,
-            FRAC_PI_2,
-        )
-        .map(From::from)
-        .collect(),
-        "tests/img/magnets/smooth_rot_outer_2.png",
-        None,
-    );
-
-    let bb = BoundingBox::from_bounded_entities(
-        MagnetsEqSpaced::<false>::from_magnet_assembly(
-            4,
-            Length::new::<millimeter>(85.0) * TAU,
-            &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
-            true,
-            true,
-            FRAC_PI_2,
-        )
-        .map(|s| s.shape.bounding_box()),
-    )
-    .unwrap();
-    approxim::assert_abs_diff_eq!(bb.xmin(), -0.073612, epsilon = 1e-6);
-    approxim::assert_abs_diff_eq!(bb.xmax(), 0.073612, epsilon = 1e-6);
-    approxim::assert_abs_diff_eq!(bb.ymin(), -0.073612, epsilon = 1e-6);
-    approxim::assert_abs_diff_eq!(bb.ymax(), 0.073612, epsilon = 1e-6);
-
-    let magnet = BreadLoafMagnet::with_center_thickness(
-        Length::new::<millimeter>(165.0),
-        Length::new::<millimeter>(16.0),
-        Length::new::<millimeter>(10.0),
-        Length::new::<millimeter>(12.0),
-        Arc::new(Default::default()),
-    )
-    .unwrap();
-
-    compare_to_reference(
-        MagnetsEqSpaced::<false>::from_magnet_assembly(
-            4,
-            Length::new::<millimeter>(85.0) * TAU,
-            &MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap()),
-            true,
-            true,
-            FRAC_PI_2,
-        )
-        .map(From::from)
-        .collect(),
-        "tests/img/magnets/smooth_rot_outer_3.png",
-        None,
-    );
+            None,
+        );
+        compare_to_reference(
+            MagnetsEqSpaced::<false>::new(
+                4,
+                Length::new::<millimeter>(85.0) * TAU,
+                shapes.clone(),
+                FRAC_PI_2,
+            )
+            .map(From::from)
+            .collect(),
+            "tests/img/magnets/smooth_rot_outer_3
+            .png",
+            None,
+        );
+    }
 }
 
 #[test]

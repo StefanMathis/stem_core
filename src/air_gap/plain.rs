@@ -22,7 +22,10 @@ magnetic cores. See the struct docstring for more.
 
 use std::f64::consts::PI;
 
-use crate::planar_geo;
+use crate::{
+    magnets::{surface_magnet_assembly_shapes_lin, surface_magnet_assembly_shapes_rot},
+    planar_geo,
+};
 use compare_variables::compare_variables;
 use stem_magnet::assembly::MagnetAssembly;
 use stem_slot::{coil_layout::CoilLayout, prelude::stem_material::prelude::*};
@@ -36,7 +39,7 @@ use crate::{
     air_gap::AirGap,
     core::{CoreExt, CoreRef},
     error::Error,
-    magnets::{MagnetsEqSpaced, Magnets},
+    magnets::{Magnets, MagnetsEqSpaced},
     winding_zones::{WindingZones, WindingZonesEqSpaced},
 };
 
@@ -326,24 +329,32 @@ impl AirGap for PlainAirGap {
         split: bool,
     ) -> Magnets {
         match core {
-            CoreRef::Lin(_) => MagnetsEqSpaced::<true>::from_magnet_assembly(
-                core.poles().into(),
-                core.air_gap_length(),
-                magnet_assembly,
-                split,
-                true, // Value is ignored anyway if LIN = true
-                core.d_axis_offset(),
-            )
-            .into(),
-            CoreRef::Rot(core_rot) => MagnetsEqSpaced::<false>::from_magnet_assembly(
-                core.poles().into(),
-                core.air_gap_length(),
-                magnet_assembly,
-                split,
-                core_rot.is_outer(),
-                core.d_axis_offset(),
-            )
-            .into(),
+            CoreRef::Lin(_) => {
+                let magnets = surface_magnet_assembly_shapes_lin(magnet_assembly, split, None);
+                MagnetsEqSpaced::<true>::new(
+                    core.poles().into(),
+                    core.air_gap_length(),
+                    magnets,
+                    core.d_axis_offset(),
+                )
+                .into()
+            }
+            CoreRef::Rot(core_rot) => {
+                let magnets = surface_magnet_assembly_shapes_rot(
+                    magnet_assembly,
+                    split,
+                    core_rot.air_gap_radius(),
+                    core_rot.is_outer(),
+                    None,
+                );
+                MagnetsEqSpaced::<false>::new(
+                    core.poles().into(),
+                    core.air_gap_length(),
+                    magnets,
+                    core.d_axis_offset(),
+                )
+                .into()
+            }
         }
     }
 
