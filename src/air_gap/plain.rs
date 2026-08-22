@@ -332,9 +332,9 @@ impl AirGap for PlainAirGap {
             CoreRef::Lin(_) => {
                 let magnets = surface_magnet_assembly_shapes_lin(magnet_assembly, split, None);
                 MagnetsEqSpaced::<true>::new(
-                    core.poles().into(),
                     core.air_gap_length(),
                     magnets,
+                    core.poles().into(),
                     core.d_axis_offset(),
                 )
                 .into()
@@ -348,9 +348,9 @@ impl AirGap for PlainAirGap {
                     None,
                 );
                 MagnetsEqSpaced::<false>::new(
-                    core.poles().into(),
                     core.air_gap_length(),
                     magnets,
+                    core.poles().into(),
                     core.d_axis_offset(),
                 )
                 .into()

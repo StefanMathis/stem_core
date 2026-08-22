@@ -4,9 +4,26 @@ use planar_geo::prelude::*;
 use std::f64::consts::{FRAC_PI_2, PI, TAU};
 use stem_magnet::prelude::*;
 
+/// A positioned magnet [`Shape`] with some metadata.
+///
+/// This struct is returned by the [`Magnets`] iterator and contains the
+/// [`Shape`] of the zone positioned relative to the magnetic core which created
+/// [`Magnets`] via the
+/// [`CoreExt::surface_magnets`](crate::core::CoreExt::surface_magnets) or
+/// [`CoreExt::interior_magnets`](crate::core::CoreExt::interior_magnets)
+/// method. Additionally, it provides some metadata such as the polarity of the
+/// magnet and the type index.
+///
+/// This struct implements the [`Transformation`] trait. The trait methods are
+/// applied to [`PositionedZoneContour::contour`] using the implementation
+/// of that trait for [`Contour`].
+///
+/// See the [module documentation](crate::magnets) for examples.
 #[derive(Debug, Clone)]
 pub struct PositionedMagnetShape {
+    /// Positioned magnet shape.
     pub shape: Shape,
+    /// Whether the shape represents a north or a south pole magnet.
     pub is_north: bool,
     /**
     A [`FluxBarrier`](crate::flux_barrier::FluxBarrier) can have multiple types
@@ -16,7 +33,7 @@ pub struct PositionedMagnetShape {
     that list. If the [`PositionedMagnetShape`] was created from an iterator
     over the surface magnets, this value is simply 0.
     */
-    pub magnet_idx: usize,
+    pub magnet_type: usize,
 }
 
 impl PositionedMagnetShape {
@@ -115,11 +132,10 @@ pub struct MagnetsEqSpaced<const LIN: bool> {
 }
 
 impl<const LIN: bool> MagnetsEqSpaced<LIN> {
-    /// TODO:
     pub fn new(
-        poles: usize,
         dist_width_or_circumference: Length,
         magnets: Vec<PositionedMagnetShape>,
+        poles: usize,
         d_axis_offset: f64,
     ) -> Self {
         Self {
@@ -131,6 +147,46 @@ impl<const LIN: bool> MagnetsEqSpaced<LIN> {
         }
     }
 
+    /// Resets the iterator.
+    ///
+    /// After "resetting" the iterator, the next yielded item is again the first
+    /// magnet.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use stem_core::prelude::*;
+    /// use planar_geo::prelude::*;
+    ///
+    /// // Dummy contours defining the lower and the upper layer of a winding.
+    /// let north_shape = Shape::from_outer(Contour::rectangle([0.0, 0.0], [1.0, 0.5])).expect("valid shape");
+    /// let north = PositionedMagnetShape {shape: north_shape, is_north: true, magnet_type: 0};
+    ///
+    /// let south_shape = Shape::from_outer(Contour::rectangle([0.0, 0.5], [1.0, 1.0])).expect("valid shape");
+    /// let south = PositionedMagnetShape {shape: south_shape, is_north: false, magnet_type: 0};
+    ///
+    /// let mut mags = MagnetsEqSpaced::<true>::new(
+    ///     Length::new::<millimeter>(100.0),
+    ///     vec![north, south],
+    ///     2,
+    ///     0.0,
+    /// );
+    ///
+    /// // First pole (positive pole)
+    /// assert_eq!(mags.next().unwrap().is_north, true);
+    /// assert_eq!(mags.next().unwrap().is_north, false);
+    ///
+    /// // Second pole (negative pole)
+    /// assert_eq!(mags.next().unwrap().is_north, false);
+    /// assert_eq!(mags.next().unwrap().is_north, true);
+    ///
+    /// // All poles are covered
+    /// assert!(mags.next().is_none());
+    ///
+    /// // Now reset the iterator
+    /// mags.reset();
+    /// assert_eq!(mags.next().unwrap().is_north, true);
+    /// ```
     pub fn reset(&mut self) {
         self.index = 0;
     }
@@ -179,11 +235,7 @@ impl<const LIN: bool> Iterator for MagnetsEqSpaced<LIN> {
 pub struct Magnets(MagnetsInner);
 
 impl Magnets {
-    /// Creates a `Magnets` from a custom iterator.
-    ///
-    /// The iterator must yield [`PositionedMagnetShape`]s in strictly
-    /// increasing pole order. See the [`PositionedMagnetShape`] documentation
-    /// for/ details.
+    /// Creates [`Magnets`] from a custom iterator.
     pub fn from_iter<I>(iter: I) -> Self
     where
         I: Iterator<Item = PositionedMagnetShape> + 'static,
@@ -265,14 +317,14 @@ pub fn surface_magnet_assembly_shapes_lin(
             .map(|(i, m)| PositionedMagnetShape {
                 shape: m.into_owned(),
                 is_north: i.is_even(),
-                magnet_idx: 0,
+                magnet_type: 0,
             })
             .collect()
     } else {
         vec![PositionedMagnetShape {
             shape: magnet_assembly.magnet().shape().into_owned(),
             is_north: true,
-            magnet_idx: 0,
+            magnet_type: 0,
         }]
     };
 
@@ -336,14 +388,14 @@ pub fn surface_magnet_assembly_shapes_rot(
             .map(|(i, m)| PositionedMagnetShape {
                 shape: m.into_owned(),
                 is_north: i.is_even(),
-                magnet_idx: 0,
+                magnet_type: 0,
             })
             .collect()
     } else {
         vec![PositionedMagnetShape {
             shape: magnet_assembly.magnet().shape().into_owned(),
             is_north: true,
-            magnet_idx: 0,
+            magnet_type: 0,
         }]
     };
 

@@ -202,11 +202,11 @@ impl std::fmt::Display for Zone {
     }
 }
 
-/// [`Contour`] and [`Zone`] index of a winding zone.
+/// A positioned [`Contour`] and its winding [`Zone`] index.
 ///
 /// This struct is returned by the [`WindingZones`] iterator and contains the
-/// contour of the zone positioned relative to the magnetic core which created
-/// [`WindingZones`] via
+/// [`Contour`] of the zone positioned relative to the magnetic core which
+/// created [`WindingZones`] via
 /// [`CoreExt::winding_zones`](crate::core::CoreExt::winding_zones). In
 /// addition, it also provides the [`Zone`] index.
 ///
@@ -513,7 +513,7 @@ impl<T: Transformation + Clone, const LIN: bool> WindingZonesEqSpaced<T, LIN> {
     /// Resets the iterator.
     ///
     /// After "resetting" the iterator, the next yielded item is again the first
-    /// zone (`Zone {slot: 0, layer: 0}`);
+    /// zone (`Zone {slot: 0, layer: 0}`).
     ///
     /// # Examples
     ///
@@ -1156,7 +1156,7 @@ should be greater than the nth [`PositionedZoneContour::zone`] according to the
 pub struct WindingZones(WindingZonesInner);
 
 impl WindingZones {
-    /// Creates a `WindingZones` from a custom iterator.
+    /// Creates [`WindingZones`] from a custom iterator.
     ///
     /// The iterator must yield [`PositionedZoneContour`]s in strictly
     /// increasing [`Zone`] order. See the [`Zone`] documentation for

@@ -318,9 +318,9 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     fn interior_magnets(&self, _core: CoreRef<'_>, _split: bool) -> Magnets {
         // Dummy implementation, to be overwritten.
         return crate::magnets::MagnetsEqSpaced::<true>::new(
-            0,
             Length::new::<meter>(0.0),
             Vec::new(),
+            0,
             0.0,
         )
         .into();

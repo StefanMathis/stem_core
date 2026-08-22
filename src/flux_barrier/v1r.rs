@@ -717,14 +717,14 @@ impl FluxBarrier for V1rFluxBarrier {
                 .map(|(i, m)| PositionedMagnetShape {
                     shape: m.into_owned(),
                     is_north: i.is_even(),
-                    magnet_idx: 0,
+                    magnet_type: 0,
                 })
                 .collect()
         } else {
             vec![PositionedMagnetShape {
                 shape: magnet.shape().into_owned(),
                 is_north: true,
-                magnet_idx: 0,
+                magnet_type: 0,
             }]
         };
 
@@ -751,9 +751,9 @@ impl FluxBarrier for V1rFluxBarrier {
         }
 
         return MagnetsEqSpaced::<false>::new(
-            core.poles().into(),
             Length::new::<meter>(radius * TAU),
             shapes,
+            core.poles().into(),
             core.d_axis_offset(),
         )
         .into();

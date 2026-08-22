@@ -205,7 +205,7 @@ During the combination, the calculated dimensions are stored within a [`Cache`]
 which is then put into [`Spoke1FluxBarrier::cache`]. When constructing a
 [`Spoke1FluxBarrier`], this field therefore should be simply set to `None` (it
 is not possible to create a [`Cache`] directly anyway). Once the cache has been
-populated, the calculated dimensions can be accessed from it.
+populated, the calculated dimensions can be retrieved from it.
 
 # Literature
 <a id="spoke1_fb_1">\[1\]</a>
@@ -728,14 +728,14 @@ impl FluxBarrier for Spoke1FluxBarrier {
                 .map(|(i, m)| PositionedMagnetShape {
                     shape: m.into_owned(),
                     is_north: i.is_even(),
-                    magnet_idx: 0,
+                    magnet_type: 0,
                 })
                 .collect()
         } else {
             vec![PositionedMagnetShape {
                 shape: magnet.shape().into_owned(),
                 is_north: true,
-                magnet_idx: 0,
+                magnet_type: 0,
             }]
         };
 
@@ -758,9 +758,9 @@ impl FluxBarrier for Spoke1FluxBarrier {
                 // Since only every second pole has a flux barrier, use the
                 // number of pole pairs as number of poles
                 return MagnetsEqSpaced::<true>::new(
-                    core.poles().into(),
                     lin_core.air_gap_length(),
                     shapes,
+                    core.poles().into(),
                     core.d_axis_offset(),
                 )
                 .into();
@@ -785,9 +785,9 @@ impl FluxBarrier for Spoke1FluxBarrier {
                 });
 
                 return MagnetsEqSpaced::<false>::new(
-                    core.poles().into(),
                     Length::new::<meter>(radius * TAU),
                     shapes,
+                    core.poles().into(),
                     core.d_axis_offset(),
                 )
                 .into();

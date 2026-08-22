@@ -594,9 +594,9 @@ impl AirGap for StraightIndentsAirGap {
                 });
 
                 MagnetsEqSpaced::<true>::new(
-                    core.poles().into(),
                     core.air_gap_length(),
                     magnets,
+                    core.poles().into(),
                     core.d_axis_offset(),
                 )
                 .into()
@@ -620,9 +620,9 @@ impl AirGap for StraightIndentsAirGap {
                     Some(magnet_coverage),
                 );
                 MagnetsEqSpaced::<false>::new(
-                    core.poles().into(),
                     indent_center_radius * TAU,
                     magnets,
+                    core.poles().into(),
                     core.d_axis_offset(),
                 )
                 .into()

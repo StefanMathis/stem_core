@@ -1,4 +1,29 @@
-// #![deny(missing_docs)]
+/*!
+TO BE REPLACED
+
+[`Slot`]: crate::slot::Slot
+[`Slot::leakage_coefficient_opening`]: crate::slot::Slot::leakage_coefficient_opening
+[`Slot::current_displacement_coefficients`]: crate::slot::Slot::current_displacement_coefficients
+[`RectangularSlot`]: crate::rectangular::RectangularSlot
+[`OpenTrapezoidSlot`]: crate::open_trapezoid::OpenTrapezoidSlot
+[`SemiTrapezoidSlot`]: crate::semi_trapezoid::SemiTrapezoidSlot
+
+Slot definition for stem - a Simulation Toolbox for Electric Motors.
+
+ */
+#![cfg_attr(feature = "doc-images",
+cfg_attr(all(),
+doc = ::embed_doc_image::embed_image!("current_displacement_coeffs_comp.svg", "docs/img/current_displacement_coeffs_comp.svg"),
+doc = ::embed_doc_image::embed_image!("double_layer_coil_layout.svg", "docs/img/double_layer_coil_layout.svg"),
+doc = ::embed_doc_image::embed_image!("slot_types_showcase.svg", "docs/img/slot_types_showcase.svg"),
+doc = ::embed_doc_image::embed_image!("magnetic_core.png", "docs/img/magnetic_core.png"),
+))]
+#![cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+#![doc = include_str!("../docs/main.md")]
+#![deny(missing_docs)]
 
 pub mod error;
 pub mod magnets;
@@ -13,11 +38,27 @@ pub use stem_magnet::stem_material;
 pub use stem_slot;
 pub use stem_slot::planar_geo;
 
+/// A discriminator for a linear or rotary entity (magnetic core, motor, ...).
+///
+/// This enum is created from functions such as
+/// [`CoreExt::lin_or_rot`](crate::core::CoreExt::lin_or_rot) and states if the
+/// entity (in this case a magnetic core) which created it is linear or rotary.
 pub enum LinOrRot {
+    /// Linear entity.
     Lin,
+    /// Rotary entity.
     Rot,
 }
 
+/**
+Standard [`Color`](planar_geo::draw::Color) for drawing magnetic cores.
+
+This color is used as the
+[`Style::background_color`](planar_geo::draw::Style::background_color)s of the
+[`DrawableRef`](planar_geo::draw::DrawableRef)s returned by
+[`CoreExt::drawable`](crate::core::CoreExt::drawable). All the core images
+throughout this create use this color.
+ */
 #[cfg(feature = "cairo")]
 pub const GRAY: planar_geo::draw::Color = planar_geo::draw::Color {
     r: 0.5,
@@ -27,6 +68,13 @@ pub const GRAY: planar_geo::draw::Color = planar_geo::draw::Color {
 };
 
 pub mod prelude {
+    /*!
+    This module reexports the core, air gap and flux barrier types defined in
+    this crate as well as the [`Magnets`] and [`WindingZones`] iterators. In
+    addition, it reexports the prelude modules of the [`stem_slot`] and
+    [`stem_magnet`] dependencies (and therefore also [`stem_material::prelude`]).
+     */
+
     pub use crate::magnets::*;
     pub use crate::winding_zones::*;
 

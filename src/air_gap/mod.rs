@@ -394,9 +394,9 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     ) -> Magnets {
         // Dummy implementation, to be overwritten.
         return crate::magnets::MagnetsEqSpaced::<true>::new(
-            0,
             Length::new::<millimeter>(0.0),
             Vec::new(),
+            0,
             core.d_axis_offset(),
         )
         .into();
