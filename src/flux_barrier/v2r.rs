@@ -54,15 +54,42 @@ use crate::{
 use serde_mosaic::{deserialize_opt_arc_link, serialize_opt_arc_link};
 
 /**
-In addition, it can have a "relief path" between the magnet space and the air
-gap leakage path. A relief path is a leakage path which partially consists of
-air and therefore doesn't exist due to mechanical reasons, but instead protects
-the magnet against large magnetic fields originating from the stator by
-providing a "relief valve" for the magnetic flux while offering a high enough
-magnetic resistance so the magnet flux doesn't get short-circuited. For a
-throughout explanation of the concept, see [\[1\]](#v2r_fb_1).
+A flux barrier with two rectangular cutouts forming a "V" shape at each pole and
+optional relief paths at the ends of the "V".
 
-Constructing a [`Spoke1FluxBarrier`] requires specifying some geometric
+*/
+#[doc = ""]
+#[cfg_attr(
+    feature = "doc-images",
+    doc = "![Rotary core with a V2rFluxBarrier][rot_core_v2r]"
+)]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image("rot_core_v2r", "docs/img/rot_core_v2r.svg")
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/**
+_This image was produced with `examples/flux_barrier_plots.rs`._
+
+The cutouts of this flux barrier ressemble a "V" at each pole of the core. Each
+pole cutout can hold two [`BlockMagnet`]s as shown in the image (see
+[`V2rFluxBarrier::magnet_material`]). At the ends of the "V", two reliefs paths
+can optionally be added between the cutouts and the leakage paths (hence the
+name "V2r" for a V-shape with two relief paths). This flux barrier is currently
+only compatible with [`RotCore`]s.
+
+A relief path is a leakage path which partially consists of air and therefore
+doesn't exist due to mechanical reasons, but instead protects the magnet against
+large magnetic fields originating from the stator by providing a "relief valve"
+for the magnetic flux while offering a high enough magnetic resistance so th
+ magnet flux doesn't get short-circuited. For a throughout explanation of the
+ concept, see [\[1\]](#v2r_fb_1).
+
+Constructing a [`V2rFluxBarrier`] requires specifying some geometric
 dimensions, while other dimensions are calculated later when
 [combined](FluxBarrier::combine) with a magnetic core. The drawing below shows
 the definition of all dimensions of this flux barrier type:
@@ -80,11 +107,75 @@ the definition of all dimensions of this flux barrier type:
 )]
 /**
 
+During the combination, the calculated dimensions are stored within a [`Cache`]
+which is then put into [`V2rFluxBarrier::cache`]. When constructing a
+[`V2rFluxBarrier`], this field therefore should be simply set to `None` (it
+is not possible to create a [`Cache`] directly anyway). Once the cache has been
+populated, the calculated dimensions can be retrieved from it.
+
 # Literature
 <a id="v2r_fb_1">\[1\]</a>
 Mathis, S.: Permanentmagneterregte Line-Start-Antriebe in Ferrittechnik,
 PhD thesis, Shaker, 2019, URL:
 <https://kluedo.ub.rptu.de/frontdoor/index/index/docId/8192>
+
+# Examples
+
+The following example creates the rotary core shown in the first image of this
+documentation and compares the core surface area with and without the flux
+barrier.
+
+```
+use std::f64::consts::FRAC_PI_2;
+use std::sync::Arc;
+
+use approxim::assert_abs_diff_eq;
+use stem_core::prelude::*;
+
+// Create the core without flux barrier first
+let mut core: RotCore = RotCoreBuilder {
+    air_gap_radius: Length::new::<millimeter>(40.0),
+    yoke_radius: Length::new::<millimeter>(19.0),
+    axial_length: Length::new::<millimeter>(165.0),
+    axial_coil_overhang: Length::new::<millimeter>(0.0),
+    iron_fill_factor: 1.0,
+    material: Arc::new(Material::default()),
+    pole_pairs: 3,
+    skew_angle: 0.0,
+    air_gap: Box::new(PlainAirGap::default()),
+    flux_barrier: None, // Flux barrier will be added later.
+}.try_into().expect("valid dimensions");
+
+// Core surface area without flux barrier
+assert_abs_diff_eq!(core.cross_section_area().get::<square_millimeter>(), 3892.433, epsilon=1e-3);
+
+// Add the flux barrier
+let fb = V2rFluxBarrier {
+    yoke_distance: Length::new::<millimeter>(3.0),
+    relief_path_air_gap_width: Length::new::<millimeter>(2.0),
+    relief_path_length: Length::new::<millimeter>(4.0),
+    relief_path_width: Length::new::<millimeter>(2.0),
+    opening_angle: FRAC_PI_2,
+    magnet_space_width: Length::new::<millimeter>(6.0),
+    magnet_space_height: Length::new::<millimeter>(13.0),
+    glue_gap: Length::new::<millimeter>(0.2),
+    leakage_path_width: Length::new::<millimeter>(1.0),
+    magnet_material: Some(Arc::new(Material::default())),
+    q_axis_fillet: None,
+    cache: None,
+};
+core.set_flux_barrier(Some(Box::new(fb))).expect("is compatible to core");
+
+// Core surface area is now considerably smaller due to the cutouts
+assert_abs_diff_eq!(core.cross_section_area().get::<square_millimeter>(), 2574.955, epsilon=1e-3);
+
+// Cache has been populated and data can be read out.
+let binding = core.flux_barrier().expect("exists");
+let any = binding as &dyn std::any::Any;
+let fb_read_out = any.downcast_ref::<V2rFluxBarrier>().expect("is a V2rFluxBarrier");
+let cache = fb_read_out.cache.as_ref().expect("has been populated");
+assert_abs_diff_eq!(cache.pt_magnet_center_d, [0.0, 0.026], epsilon=1e-3);
+```
  */
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -248,6 +339,8 @@ impl V2rFluxBarrier {
         return self.magnet_space_height + 2.0 * self.glue_gap;
     }
 
+    /// Returns the length of the leakage path, if [`V2rFluxBarrier::cache`] is
+    /// populated. Otherwise, this value is zero.
     pub fn flux_leakage_path_length(&self) -> Length {
         return Length::new::<meter>(
             self.cache
@@ -256,26 +349,21 @@ impl V2rFluxBarrier {
         );
     }
 
-    pub fn barrier_to_q_axis_at_yoke(&self) -> Length {
+    /// Returns the distance between the barrier and the q-axis at the yoke
+    /// height (where [`Cache::pt_magnet_relief_q`] is), if
+    /// [`V2rFluxBarrier::cache`] is populated. Otherwise, this
+    /// value is zero.
+    pub fn distance_to_q_axis_at_yoke(&self) -> Length {
         match self.cache.as_ref() {
             Some(c) => Length::new::<meter>(dist_to_q_axis(c.pt_magnet_relief_q, c.pole_pairs)),
             None => Length::new::<meter>(0.0),
         }
     }
 
-    pub fn distance_to_q_axis_at_leakage_to_magnet_transition(&self) -> Length {
-        match self.cache.as_ref() {
-            Some(c) => {
-                if let Some(pt_q_axis_fillet) = c.pt_q_axis_fillet {
-                    return Length::new::<meter>(dist_to_q_axis(pt_q_axis_fillet, c.pole_pairs));
-                } else {
-                    return self.distance_to_q_axis_at_yoke();
-                }
-            }
-            None => Length::new::<meter>(0.0),
-        }
-    }
-
+    /// Returns the distance between the barrier and the q-axis at the air gap
+    /// (where [`Cache::pt_relief_outer_corner_q`] is), if
+    /// [`V2rFluxBarrier::cache`] is populated. Otherwise, this
+    /// value is zero.
     pub fn distance_to_q_axis_at_air_gap(&self) -> Length {
         match self.cache.as_ref() {
             Some(c) => {
@@ -285,7 +373,11 @@ impl V2rFluxBarrier {
         }
     }
 
-    pub fn distance_to_q_axis_at_yoke(&self) -> Length {
+    /// Returns the distance between the barrier and the q-axis at the fillet
+    /// point (where [`Cache::pt_q_axis_fillet`] is), if
+    /// [`V2rFluxBarrier::cache`] is populated. Otherwise, this
+    /// value is zero.
+    pub fn distance_to_q_axis_at_fillet(&self) -> Length {
         match self.cache.as_ref() {
             Some(c) => {
                 if let Some(q_corner) = c.pt_q_axis_fillet {
