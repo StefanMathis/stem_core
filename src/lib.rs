@@ -12,7 +12,7 @@
 [`SlottedAirGap`]: crate::air_gap::SlottedAirGap
 [`StraightIndentsAirGap`]: crate::air_gap::StraightIndentsAirGap
 [`FluxBarrier`]: crate::flux_barrier::FluxBarrier
-[`Spoke1FluxBarrier`]: crate::flux_barrier::FluxBarrier
+[`Spoke1FluxBarrier`]: crate::flux_barrier::Spoke1FluxBarrier
 [`V1rFluxBarrier`]: crate::flux_barrier::V1rFluxBarrier
 [`V2rFluxBarrier`]: crate::flux_barrier::V2rFluxBarrier
 
@@ -22,8 +22,8 @@ Magnetic core definition definition for stem - a Simulation Toolbox for Electric
 #![cfg_attr(feature = "doc-images",
 cfg_attr(all(),
 doc = ::embed_doc_image::embed_image!("full_core_assembly.svg", "docs/img/full_core_assembly.svg"),
-doc = ::embed_doc_image::embed_image!("full_core_assembly.svg", "docs/img/lin_air_gap_comparison.svg"),
-doc = ::embed_doc_image::embed_image!("full_core_assembly.svg", "docs/img/rot_flux_barrier_comparison.svg"),
+doc = ::embed_doc_image::embed_image!("lin_air_gap_comparison.svg", "docs/img/lin_air_gap_comparison.svg"),
+doc = ::embed_doc_image::embed_image!("rot_flux_barrier_comparison.svg", "docs/img/rot_flux_barrier_comparison.svg"),
 ))]
 #![cfg_attr(
     not(feature = "doc-images"),

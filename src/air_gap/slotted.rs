@@ -16,6 +16,7 @@ doc = ::embed_doc_image::embed_image!("lin_and_rot_core_slotted.svg", "docs/img/
     doc = "**Doc images not enabled**. Compile docs with `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
 /*!
+
 This struct implements the [`AirGap`] trait and can therefore be used to build
 magnetic cores. See the struct docstring for more.
 

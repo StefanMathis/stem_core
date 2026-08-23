@@ -18,6 +18,7 @@ doc = ::embed_doc_image::embed_image!("rot_core_v2r.svg", "docs/img/rot_core_v2r
     doc = "**Doc images not enabled**. Compile docs with `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
 /*!
+
 This struct implements the [`FluxBarrier`] trait and can therefore be used to
 build magnetic cores. See the struct docstring for more.
 */
@@ -73,6 +74,7 @@ optional relief paths at the ends of the "V".
     `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
 /**
+
 _This image was produced with `examples/flux_barrier_plots.rs`._
 
 The cutouts of this flux barrier ressemble a "V" at each pole of the core. Each

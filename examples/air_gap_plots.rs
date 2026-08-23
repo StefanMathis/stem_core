@@ -198,7 +198,7 @@ fn plot_comparison_lin() -> Result<(), Box<dyn std::error::Error>> {
         -0.001,
         3.0 * width + 2.0 * distance + 0.001,
         -0.001,
-        plain_air_gap.height().get::<meter>(),
+        plain_air_gap.height().get::<meter>() + 0.001,
     );
 
     let view = Viewport::from_bounding_box(&bb, SideLength::Long(800));

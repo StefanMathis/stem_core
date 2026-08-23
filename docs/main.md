@@ -19,9 +19,9 @@ _This image was produced with `examples/readme_plots.rs`._
 
 The two fundamental core types [`LinCore`] and [`RotCore`] are modularized: Air
 gap shape and flux barriers can be customized independently via [`AirGap`] and
-[`FluxBarrier`] (cutouts in the core) trait objects. These traits allow the
-usage of user defined air gaps or flux barriers. Additionally, the crate also
-provides a couple of predefined [`AirGap`]s and [`FluxBarrier`]s:
+[`FluxBarrier`] trait objects. These traits allow the usage of user defined air
+gaps or flux barriers. Additionally, the crate also provides a couple of
+predefined [`AirGap`]s and [`FluxBarrier`]s:
 
 ![Predefined air gap types][lin_air_gap_comparison.svg]
 
@@ -152,7 +152,7 @@ for details.
 # Visualization
 
 If the `cairo` feature is enabled, the core shapes can be drawn onto a
-[cairo](cairographics.org) context using the drawing mechanics from the
+[cairo](https://cairographics.org) context using the drawing mechanics from the
 [planar_geo](https://crates.io/crates/planar_geo) crate. See its documentation
 for details.
 
