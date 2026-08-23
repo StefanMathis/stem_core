@@ -598,10 +598,9 @@ impl CoreExt for RotCore {
 
     fn pole_coverage(&self, surface_magnet_assembly: Option<&MagnetAssembly>) -> f64 {
         if let Some(assembly) = surface_magnet_assembly {
-            let single_magnet_coverage = crate::magnets::pole_coverage_angle(
+            let single_magnet_coverage = crate::magnets::covered_angle(
                 std::iter::once(&*assembly.magnet().shape()),
                 self.air_gap_radius.get::<meter>(),
-                Length::new::<meter>(0.0),
             );
             return 2.0
                 * self.pole_pairs() as f64

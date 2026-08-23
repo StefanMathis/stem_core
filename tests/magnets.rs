@@ -9,12 +9,13 @@ use planar_geo::{
     prelude::{BoundingBox, ToBoundingBox},
 };
 use stem_core::{
-    magnets::{MagnetsPeriodic, pole_coverage_angle},
+    magnets::{MagnetsPeriodic, covered_angle},
     prelude::{surface_magnet_assembly_shapes_lin, surface_magnet_assembly_shapes_rot},
 };
 use stem_magnet::{
     arc::{AngleOrWidth, ArcParallelMagnet, ArcSegmentMagnet, SideHeightOrThickness},
     assembly::MagnetAssembly,
+    block::BlockMagnet,
     bread_loaf::BreadLoafMagnet,
     magnet::Magnet,
 };
@@ -368,11 +369,7 @@ fn test_pole_coverage() {
         )
         .unwrap();
         let shapes = magnet.north_south_shapes().map(|s| s.into_owned());
-        let a = pole_coverage_angle(
-            shapes.iter(),
-            magnet.core_radius().get::<meter>(),
-            Length::new::<millimeter>(0.0),
-        );
+        let a = covered_angle(shapes.iter(), magnet.core_radius().get::<meter>());
         approxim::assert_abs_diff_eq!(a, magnet.angle(), epsilon = 1e-8);
     }
     {
@@ -385,11 +382,114 @@ fn test_pole_coverage() {
         )
         .unwrap();
         let shapes = magnet.north_south_shapes().map(|s| s.into_owned());
-        let a = pole_coverage_angle(
-            shapes.iter(),
-            magnet.core_radius().get::<meter>(),
-            Length::new::<millimeter>(0.0),
-        );
+        let a = covered_angle(shapes.iter(), magnet.core_radius().get::<meter>());
         approxim::assert_abs_diff_eq!(a, magnet.angle(), epsilon = 1e-8);
     }
+}
+
+#[test]
+fn test_surface_magnet_assembly_shapes_lin() {
+    let magnet = BlockMagnet::new(
+        Length::new::<millimeter>(165.0),
+        Length::new::<millimeter>(20.0),
+        Length::new::<millimeter>(10.0),
+        Length::new::<millimeter>(0.0),
+        Arc::new(Default::default()),
+    )
+    .unwrap();
+    let mag_assembly = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
+
+    // Without custom coverage (left image)
+    let positioned = surface_magnet_assembly_shapes_lin(&mag_assembly, false, None);
+
+    // Three tangential magnets and no splitting -> three resulting shapes which are
+    // all north magnets
+    assert_eq!(positioned.len(), 3);
+    assert!(positioned[0].is_north);
+    assert!(positioned[1].is_north);
+    assert!(positioned[2].is_north);
+
+    // Total width of the assembly is three times magnet width
+    let bb =
+        BoundingBox::from_bounded_entities(positioned.iter()).expect("has at least one element");
+    assert_eq!(bb.width(), 0.06);
+
+    // With custom coverage (right image)
+    let positioned_cov = surface_magnet_assembly_shapes_lin(
+        &mag_assembly,
+        true,
+        Some(Length::new::<millimeter>(22.0)),
+    );
+
+    // Three tangential magnets with splitting -> six resulting shapes (half north
+    // and half south)
+    assert_eq!(positioned_cov.len(), 6);
+    assert!(positioned_cov[0].is_north);
+    assert!(!positioned_cov[1].is_north);
+    assert!(positioned_cov[2].is_north);
+    assert!(!positioned_cov[3].is_north);
+    assert!(positioned_cov[4].is_north);
+    assert!(!positioned_cov[5].is_north);
+
+    // Total width of the assembly is three times magnet width plus the additional
+    // coverage between the magnets
+    let bb = BoundingBox::from_bounded_entities(positioned_cov.iter())
+        .expect("has at least one element");
+    assert_eq!(bb.width(), 0.064);
+}
+
+#[test]
+fn test_surface_magnet_assembly_shapes_rot() {
+    let magnet = BlockMagnet::new(
+        Length::new::<millimeter>(165.0),
+        Length::new::<millimeter>(20.0),
+        Length::new::<millimeter>(10.0),
+        Length::new::<millimeter>(0.0),
+        Arc::new(Default::default()),
+    )
+    .unwrap();
+    let mag_assembly = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
+
+    // Without custom coverage (left image)
+    let positioned = surface_magnet_assembly_shapes_rot(
+        &mag_assembly,
+        false,
+        Length::new::<millimeter>(50.0),
+        true,
+        None,
+    );
+
+    // Three tangential magnets and no splitting -> three resulting shapes which are
+    // all north magnets
+    assert_eq!(positioned.len(), 3);
+    assert!(positioned[0].is_north);
+    assert!(positioned[1].is_north);
+    assert!(positioned[2].is_north);
+
+    let bb =
+        BoundingBox::from_bounded_entities(positioned.iter()).expect("has at least one element");
+    approxim::assert_abs_diff_eq!(bb.width(), 0.064706, epsilon = 1e-6);
+
+    // With custom coverage (right image)
+    let positioned_cov = surface_magnet_assembly_shapes_rot(
+        &mag_assembly,
+        true,
+        Length::new::<millimeter>(50.0),
+        true,
+        Some(0.5),
+    );
+
+    // Three tangential magnets with splitting -> six resulting shapes (half north
+    // and half south)
+    assert_eq!(positioned_cov.len(), 6);
+    assert!(positioned_cov[0].is_north);
+    assert!(!positioned_cov[1].is_north);
+    assert!(positioned_cov[2].is_north);
+    assert!(!positioned_cov[3].is_north);
+    assert!(positioned_cov[4].is_north);
+    assert!(!positioned_cov[5].is_north);
+
+    let bb = BoundingBox::from_bounded_entities(positioned_cov.iter())
+        .expect("has at least one element");
+    approxim::assert_abs_diff_eq!(bb.width(), 0.065494, epsilon = 1e-6);
 }

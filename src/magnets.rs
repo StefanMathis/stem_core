@@ -159,6 +159,12 @@ impl Transformation for PositionedMagnetShape {
     }
 }
 
+impl ToBoundingBox for PositionedMagnetShape {
+    fn bounding_box(&self) -> planar_geo::prelude::BoundingBox {
+        self.shape.bounding_box()
+    }
+}
+
 /**
 An iterator which periodically repeats the surface or interior magnet assembly
 over all poles.
@@ -547,16 +553,28 @@ impl Iterator for Magnets {
     }
 }
 
+/**
+Creates the shapes of a surface magnet assembly for a linear core.
+
+This method can be used to create the `magnets` argument of
+[`MagnetsPeriodic::new`] from a surface [`MagnetAssembly`] for a linear core.
+
+The following image shows the principle of this function using the example of a
+[`MagnetAssembly`] where [`MagnetAssembly::num_tangential`] = 3,
+[`MagnetAssembly::magnet`] is a [`BlockMagnet`] and `split` is true.
+[`surface_magnet_assembly_shapes_rot`] is the equivalent function for a rotary
+core (shown on the right side).
+ */
 #[doc = ""]
 #[cfg_attr(
     feature = "doc-images",
-    doc = "![Creation of the shapes of a surface magnet assembly][cad_create_surface_mag_assembly]"
+    doc = "![Creation of the shapes of a surface magnet assembly][cad_surface_magnet_assembly_shapes]"
 )]
 #[cfg_attr(
     feature = "doc-images",
     embed_doc_image::embed_doc_image(
-        "cad_create_surface_mag_assembly",
-        "docs/img/cad_create_surface_mag_assembly.svg"
+        "cad_surface_magnet_assembly_shapes",
+        "docs/img/cad_surface_magnet_assembly_shapes.svg"
     )
 )]
 #[cfg_attr(
@@ -564,6 +582,82 @@ impl Iterator for Magnets {
     doc = "**Doc images not enabled**. Compile docs with
     `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
+/**
+
+The relative positioning of two magnets is normally determined by the maximum
+width of the [`MagnetAssembly::magnet`] [`Shape`]. However, this value can be
+overwritten by providing the optional `coverage_single_magnet` length:
+ */
+#[doc = ""]
+#[cfg_attr(
+    feature = "doc-images",
+    doc = "![Influence of the coverage_single_magnet parameter][cad_surface_magnet_assembly_shapes_lin]"
+)]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image(
+        "cad_surface_magnet_assembly_shapes_lin",
+        "docs/img/cad_surface_magnet_assembly_shapes_lin.svg"
+    )
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/**
+
+Setting `coverage_single_magnet` to a value smaller than the magnet width will
+result in overlapping shapes!
+
+# Examples
+
+```
+use std::sync::Arc;
+
+use stem_core::prelude::*;
+use planar_geo::prelude::BoundingBox;
+
+let magnet = BlockMagnet::new(
+    Length::new::<millimeter>(165.0),
+    Length::new::<millimeter>(20.0),
+    Length::new::<millimeter>(10.0),
+    Length::new::<millimeter>(0.0),
+    Arc::new(Default::default()),
+)
+.unwrap();
+let mag_assembly = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
+
+// Without custom coverage (left image)
+let positioned = surface_magnet_assembly_shapes_lin(&mag_assembly, false, None);
+
+// Three tangential magnets and no splitting -> three resulting shapes which are all north magnets
+assert_eq!(positioned.len(), 3);
+assert!(positioned[0].is_north);
+assert!(positioned[1].is_north);
+assert!(positioned[2].is_north);
+
+// Total width of the assembly is three times magnet width
+let bb = BoundingBox::from_bounded_entities(positioned.iter()).expect("has at least one element");
+assert_eq!(bb.width(), 0.06);
+
+// With custom coverage (right image)
+let positioned_cov = surface_magnet_assembly_shapes_lin(&mag_assembly, true, Some(Length::new::<millimeter>(22.0)));
+
+// Three tangential magnets with splitting -> six resulting shapes (half north and half south)
+assert_eq!(positioned_cov.len(), 6);
+assert!(positioned_cov[0].is_north);
+assert!(!positioned_cov[1].is_north);
+assert!(positioned_cov[2].is_north);
+assert!(!positioned_cov[3].is_north);
+assert!(positioned_cov[4].is_north);
+assert!(!positioned_cov[5].is_north);
+
+// Total width of the assembly is three times magnet width plus the additional coverage between the magnets
+let bb = BoundingBox::from_bounded_entities(positioned_cov.iter()).expect("has at least one element");
+assert_eq!(bb.width(), 0.064);
+```
+ */
 pub fn surface_magnet_assembly_shapes_lin(
     magnet_assembly: &MagnetAssembly,
     split: bool,
@@ -615,16 +709,28 @@ pub fn surface_magnet_assembly_shapes_lin(
     return shapes;
 }
 
+/**
+Creates the shapes of a surface magnet assembly for a rotary core.
+
+This method can be used to create the `magnets` argument of
+[`MagnetsPeriodic::new`] from a surface [`MagnetAssembly`] for a rotary core.
+
+The following image shows the principle of this function using the example of a
+[`MagnetAssembly`] where [`MagnetAssembly::num_tangential`] = 3,
+[`MagnetAssembly::magnet`] is a [`BlockMagnet`] and `split` is true.
+[`surface_magnet_assembly_shapes_lin`] is the equivalent function for a linear
+core (shown on the left side).
+ */
 #[doc = ""]
 #[cfg_attr(
     feature = "doc-images",
-    doc = "![Creation of the shapes of a surface magnet assembly][cad_create_surface_mag_assembly]"
+    doc = "![Creation of the shapes of a surface magnet assembly][cad_surface_magnet_assembly_shapes]"
 )]
 #[cfg_attr(
     feature = "doc-images",
     embed_doc_image::embed_doc_image(
-        "cad_create_surface_mag_assembly",
-        "docs/img/cad_create_surface_mag_assembly.svg"
+        "cad_surface_magnet_assembly_shapes",
+        "docs/img/cad_surface_magnet_assembly_shapes.svg"
     )
 )]
 #[cfg_attr(
@@ -632,7 +738,115 @@ pub fn surface_magnet_assembly_shapes_lin(
     doc = "**Doc images not enabled**. Compile docs with
     `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
-/// coverage_single_magnet: angle
+/**
+
+In contrast to [`surface_magnet_assembly_shapes_lin`], this function requires
+specifying a `radius` and if the rotary core is an outer core (`is_outer`).
+
+The `radius` is needed to properly rotate the magnet shapes and is not
+necessarily the air gap radius, but rather that of the assembly coordinate
+system. For the shown
+[`StraightIndentsAirGap`](crate::air_gap::StraightIndentsAirGap), this is the
+[`indent_center_radius`](crate::air_gap::StraightIndentsAirGap::indent_center_radius),
+whereas for a [`PlainAirGap`](crate::air_gap::PlainAirGap), it is actually the
+air gap radius.
+
+If `is_outer` is true, the magnet shapes are flipped so they are inside the air
+gap and don't protrude into the core.
+
+The relative positioning of two magnets is normally determined by the
+[`covered_angle`] of the [`MagnetAssembly::magnet`] [`Shape`]. However,
+this value can be overwritten by providing the optional `coverage_single_magnet`
+angle:
+ */
+#[doc = ""]
+#[cfg_attr(
+    feature = "doc-images",
+    doc = "![Influence of the coverage_single_magnet parameter][cad_surface_magnet_assembly_shapes_rot]"
+)]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image(
+        "cad_surface_magnet_assembly_shapes_rot",
+        "docs/img/cad_surface_magnet_assembly_shapes_rot.svg"
+    )
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/**
+
+Setting `coverage_single_magnet` to a value smaller than the angle covered by
+the magnet will result in overlapping shapes!
+
+# Examples
+
+```
+use std::sync::Arc;
+
+use approxim;
+use stem_core::prelude::*;
+use planar_geo::prelude::BoundingBox;
+
+let magnet = BlockMagnet::new(
+    Length::new::<millimeter>(165.0),
+    Length::new::<millimeter>(20.0),
+    Length::new::<millimeter>(10.0),
+    Length::new::<millimeter>(0.0),
+    Arc::new(Default::default()),
+)
+.unwrap();
+let mag_assembly = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
+
+// Without custom coverage (left image)
+let positioned = surface_magnet_assembly_shapes_rot(
+    &mag_assembly,
+    false,
+    Length::new::<millimeter>(50.0),
+    true,
+    None,
+);
+
+// Three tangential magnets and no splitting -> three resulting shapes which are
+// all north magnets
+assert_eq!(positioned.len(), 3);
+assert!(positioned[0].is_north);
+assert!(positioned[1].is_north);
+assert!(positioned[2].is_north);
+
+// Total width of the assembly is slightly larger than three times the magnet width
+let bb =
+    BoundingBox::from_bounded_entities(positioned.iter()).expect("has at least one element");
+approxim::assert_abs_diff_eq!(bb.width(), 0.064706, epsilon = 1e-6);
+
+// With custom coverage (right image)
+let positioned_cov = surface_magnet_assembly_shapes_rot(
+    &mag_assembly,
+    true,
+    Length::new::<millimeter>(50.0),
+    true,
+    Some(0.5),
+);
+
+// Three tangential magnets with splitting -> six resulting shapes (half north
+// and half south)
+assert_eq!(positioned_cov.len(), 6);
+assert!(positioned_cov[0].is_north);
+assert!(!positioned_cov[1].is_north);
+assert!(positioned_cov[2].is_north);
+assert!(!positioned_cov[3].is_north);
+assert!(positioned_cov[4].is_north);
+assert!(!positioned_cov[5].is_north);
+
+// Total width of the assembly is a bit larger since there is now space between
+// the magnets.
+let bb = BoundingBox::from_bounded_entities(positioned_cov.iter())
+    .expect("has at least one element");
+approxim::assert_abs_diff_eq!(bb.width(), 0.065494, epsilon = 1e-6);
+```
+ */
 pub fn surface_magnet_assembly_shapes_rot(
     magnet_assembly: &MagnetAssembly,
     split: bool,
@@ -668,11 +882,7 @@ pub fn surface_magnet_assembly_shapes_rot(
 
     let magnet_coverage = coverage_single_magnet.unwrap_or_else(|| {
         let radius = radius.get::<meter>();
-        pole_coverage_angle(
-            proto_shapes.iter().map(|p| &p.shape),
-            radius,
-            Length::new::<meter>(0.0),
-        )
+        covered_angle(proto_shapes.iter().map(|p| &p.shape), radius)
     });
 
     let mut shapes = Vec::with_capacity(magnet_assembly.num_tangential() * proto_shapes.len());
@@ -689,24 +899,63 @@ pub fn surface_magnet_assembly_shapes_rot(
     return shapes;
 }
 
-/// Assumptions: shapes are as required by Magnet trait
-/// TODO: Explain that this can deal with negative radii (as might be reported
-/// from some magnets such as ArcSegmentMagnet to signal convex / concave)
-pub fn pole_coverage_angle<'a, I: Iterator<Item = &'a Shape> + Clone>(
-    magnets: I,
-    radius: f64,
-    gap_between_partial_magnets: Length,
-) -> f64 {
+/**
+Calculates the angle covered by the `shapes` on a circle with the given `radius`.
+
+ */
+#[doc = ""]
+#[cfg_attr(
+    feature = "doc-images",
+    doc = "![Coverage of magnet shapes][cad_covered_angle]"
+)]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image("cad_covered_angle", "docs/img/cad_covered_angle.svg")
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+    `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/**
+
+This method returns the angle covered by all `shapes` for a circle with the
+specified `radius`, using the center of the circle as the origin for the
+`shapes`. This function can deal with negative radii to make it easier to work
+with the shapes of e.g. an [`ArcSegmentMagnet`] which might return negative
+radii to signal convexity.
+
+This function is used inside [`surface_magnet_assembly_shapes_rot`] to position
+magnets on the curved surface of a [`RotCore`](crate::core::RotCore).
+
+# Examples
+
+```
+use std::f64::consts::PI;
+use std::sync::Arc;
+
+use stem_core::prelude::*;
+
+let magnet = ArcParallelMagnet::with_const_thickness(
+    Length::new::<millimeter>(165.0),
+    Length::new::<millimeter>(85.0),
+    SideHeightOrThickness::Thickness(Length::new::<millimeter>(10.0)),
+    AngleOrWidth::Angle(10.0 / 180.0 * PI),
+    Arc::new(Default::default()),
+)
+.unwrap();
+let shapes = magnet.north_south_shapes().map(|s| s.into_owned());
+let a = covered_angle(shapes.iter(), magnet.core_radius().get::<meter>());
+approxim::assert_abs_diff_eq!(a, magnet.angle(), epsilon = 1e-8);
+```
+*/
+pub fn covered_angle<'a, I: Iterator<Item = &'a Shape> + Clone>(shapes: I, radius: f64) -> f64 {
     // Based on the shape points, calculate the preliminary coverage angle
-    let mut angle = magnets
+    let mut angle = shapes
         .clone()
         .map(|shape| shape.contour().points())
         .flatten()
-        .map(|p| {
-            let x = p[0];
-            let buf = x.signum() * 0.5 * gap_between_partial_magnets.get::<meter>();
-            (p[1] + radius).atan2(p[0] + buf)
-        })
+        .map(|p| (p[1] + radius).atan2(p[0]))
         .reduce(f64::max)
         .unwrap_or(FRAC_PI_2 * radius.signum());
 
@@ -717,7 +966,7 @@ pub fn pole_coverage_angle<'a, I: Iterator<Item = &'a Shape> + Clone>(
     segments can be ignored, since the construction of angle already ensures
     that the first case cannot happen for them.
      */
-    for s in magnets.map(|shape| shape.contour().segments()).flatten() {
+    for s in shapes.map(|shape| shape.contour().segments()).flatten() {
         'angle_increment: while angle < PI {
             let line = Line::from_point_angle([0.0, -radius], angle);
 
