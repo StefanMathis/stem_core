@@ -317,7 +317,7 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     /// of [`Spoke1FluxBarrier::interior_magnets`] for an example.
     fn interior_magnets(&self, _core: CoreRef<'_>, _split: bool) -> Magnets {
         // Dummy implementation, to be overwritten.
-        return crate::magnets::MagnetsEqSpaced::<true>::new(
+        return crate::magnets::MagnetsPeriodic::<true>::new(
             Length::new::<meter>(0.0),
             Vec::new(),
             0,

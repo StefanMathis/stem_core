@@ -31,7 +31,7 @@ use crate::{
     core::{CoreExt, CoreRef},
     error::Error,
     magnets::Magnets,
-    winding_zones::{WindingZones, WindingZonesEqSpaced},
+    winding_zones::{WindingZones, WindingZonesPeriodic},
 };
 
 pub mod plain;
@@ -393,7 +393,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
         _split: bool,
     ) -> Magnets {
         // Dummy implementation, to be overwritten.
-        return crate::magnets::MagnetsEqSpaced::<true>::new(
+        return crate::magnets::MagnetsPeriodic::<true>::new(
             Length::new::<millimeter>(0.0),
             Vec::new(),
             0,
@@ -431,7 +431,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// rules should be followed:
     /// - If the core is not windable, an empty iterator should be returned
     /// (which can for example be constructed from
-    /// [`WindingZonesEqSpaced::no_slots`](crate::magnets::WindingZonesEqSpaced)).
+    /// [`WindingZonesPeriodic::no_slots`](crate::magnets::WindingZonesPeriodic)).
     /// - The iterator should return `n`
     /// [`PositionedZoneContour`](core::winding_zones::PositionedZoneContour)
     /// elements, where `n = coil_layout.layers() * self.slots()`
@@ -451,7 +451,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// example.
     fn winding_zones(&self, _core: CoreRef<'_>, _coil_layout: &CoilLayout) -> WindingZones {
         // Dummy implementation, to be overwritten.
-        WindingZonesEqSpaced::<planar_geo::prelude::Contour, true>::no_slots().into()
+        WindingZonesPeriodic::<planar_geo::prelude::Contour, true>::no_slots().into()
     }
 
     /// Returns the tooth height of the core.

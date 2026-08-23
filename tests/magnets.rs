@@ -9,7 +9,7 @@ use planar_geo::{
     prelude::{BoundingBox, ToBoundingBox},
 };
 use stem_core::{
-    magnets::{MagnetsEqSpaced, pole_coverage_angle},
+    magnets::{MagnetsPeriodic, pole_coverage_angle},
     prelude::{surface_magnet_assembly_shapes_lin, surface_magnet_assembly_shapes_rot},
 };
 use stem_magnet::{
@@ -74,7 +74,7 @@ fn test_lin() {
         None,
     );
     compare_to_reference(
-        MagnetsEqSpaced::<true>::new(Length::new::<millimeter>(400.0), shapes, 4, FRAC_PI_2)
+        MagnetsPeriodic::<true>::new(Length::new::<millimeter>(400.0), shapes, 4, FRAC_PI_2)
             .map(From::from)
             .collect(),
         "tests/img/magnets/smooth_lin_1.png",
@@ -87,7 +87,7 @@ fn test_lin() {
         None,
     );
     compare_to_reference(
-        MagnetsEqSpaced::<true>::new(Length::new::<millimeter>(400.0), shapes, 6, FRAC_PI_2)
+        MagnetsPeriodic::<true>::new(Length::new::<millimeter>(400.0), shapes, 6, FRAC_PI_2)
             .map(From::from)
             .collect(),
         "tests/img/magnets/smooth_lin_2.png",
@@ -100,7 +100,7 @@ fn test_lin() {
         None,
     );
     compare_to_reference(
-        MagnetsEqSpaced::<true>::new(Length::new::<millimeter>(400.0), shapes, 6, FRAC_PI_2)
+        MagnetsPeriodic::<true>::new(Length::new::<millimeter>(400.0), shapes, 6, FRAC_PI_2)
             .map(From::from)
             .collect(),
         "tests/img/magnets/smooth_lin_3.png",
@@ -128,7 +128,7 @@ fn rot_inner() {
             None,
         );
         compare_to_reference(
-            MagnetsEqSpaced::<false>::new(
+            MagnetsPeriodic::<false>::new(
                 Length::new::<millimeter>(85.0) * TAU,
                 shapes.clone(),
                 4,
@@ -141,7 +141,7 @@ fn rot_inner() {
         );
 
         let bb = BoundingBox::from_bounded_entities(
-            MagnetsEqSpaced::<false>::new(
+            MagnetsPeriodic::<false>::new(
                 Length::new::<millimeter>(85.0) * TAU,
                 shapes,
                 4,
@@ -173,7 +173,7 @@ fn rot_inner() {
             None,
         );
         compare_to_reference(
-            MagnetsEqSpaced::<false>::new(
+            MagnetsPeriodic::<false>::new(
                 Length::new::<millimeter>(85.0) * TAU,
                 shapes.clone(),
                 4,
@@ -186,7 +186,7 @@ fn rot_inner() {
         );
 
         let bb = BoundingBox::from_bounded_entities(
-            MagnetsEqSpaced::<false>::new(
+            MagnetsPeriodic::<false>::new(
                 Length::new::<millimeter>(85.0) * TAU,
                 shapes,
                 4,
@@ -218,7 +218,7 @@ fn rot_inner() {
             None,
         );
         compare_to_reference(
-            MagnetsEqSpaced::<false>::new(
+            MagnetsPeriodic::<false>::new(
                 Length::new::<millimeter>(85.0) * TAU,
                 shapes.clone(),
                 4,
@@ -252,7 +252,7 @@ fn rot_outer() {
             None,
         );
         compare_to_reference(
-            MagnetsEqSpaced::<false>::new(
+            MagnetsPeriodic::<false>::new(
                 Length::new::<millimeter>(85.0) * TAU,
                 shapes.clone(),
                 4,
@@ -265,7 +265,7 @@ fn rot_outer() {
         );
 
         let bb = BoundingBox::from_bounded_entities(
-            MagnetsEqSpaced::<false>::new(
+            MagnetsPeriodic::<false>::new(
                 Length::new::<millimeter>(85.0) * TAU,
                 shapes.clone(),
                 4,
@@ -297,7 +297,7 @@ fn rot_outer() {
             None,
         );
         compare_to_reference(
-            MagnetsEqSpaced::<false>::new(
+            MagnetsPeriodic::<false>::new(
                 Length::new::<millimeter>(85.0) * TAU,
                 shapes.clone(),
                 4,
@@ -310,7 +310,7 @@ fn rot_outer() {
         );
 
         let bb = BoundingBox::from_bounded_entities(
-            MagnetsEqSpaced::<false>::new(
+            MagnetsPeriodic::<false>::new(
                 Length::new::<millimeter>(85.0) * TAU,
                 shapes.clone(),
                 4,
@@ -342,7 +342,7 @@ fn rot_outer() {
             None,
         );
         compare_to_reference(
-            MagnetsEqSpaced::<false>::new(
+            MagnetsPeriodic::<false>::new(
                 Length::new::<millimeter>(85.0) * TAU,
                 shapes.clone(),
                 4,

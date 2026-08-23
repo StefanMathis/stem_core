@@ -37,11 +37,10 @@ positioned contour as well as the [`Zone`] indices shown in the image above.
 winding: For example, it tells how much space is available for the lower layer
 in slot 23 of a double-layer winding.
 
-[`WindingZones`] itself is an enum wrapping a bunch of predefined iterators
-(such as [`WindingZonesEqSpaced`] which themselves implement
-`Iterator<Item=PositionedZoneContour`>). It is possible to wrap custom iterators
-via [`WindingZones::from_iter`], which allows using any iterator returning
-[`PositionedZoneContour`]s for implementing
+[`WindingZones`] itself is a wrapper around iterators such as
+[`WindingZonesPeriodic`] which implement `Iterator<Item=PositionedZoneContour`>.
+It is possible to wrap custom iterators via [`WindingZones::from_iter`], which
+allows using any iterator returning [`PositionedZoneContour`]s for implementing
 [`AirGap::winding_zones`](crate::air_gap::AirGap::winding_zones).
 
 `examples/winding_zone_plots.rs` demonstrates how to utilize the
@@ -300,21 +299,21 @@ impl ToBoundingBox for PositionedZoneContour {
 }
 
 /**
-An iterator over the [`PositionedZoneContour`]s of a magnetic core where the
-individual slots are distributed over the air gap surface.
+An iterator which periodically repeats the [`PositionedZoneContour`]s of a
+[`CoilLayout`] over all slots.
 
 This struct is essentially a builder for a [`WindingZones`] iterator which
 groups the zone contours of the same slot together and ensures an equidistant
 distribution of the slots over the air gap surface. It can be used for both
 linear (`LIN = true`) and rotary cores (`LIN = false`) and provides a bunch of
 constructors for either defining it from scratch or for particular
-[`AirGap`](crate::air_gap::AirGap) types.
+[`AirGap`](crate::air_gap::AirGap) types. It implements `Into<WindingZones>`.
 
 The following image demonstrates how the iterator works using the example of a
 linear and a rotary core with three slots with an
 [air gap winding](crate::air_gap::PlainAirGap) on the left side and a
 [slotted air gap](crate::air_gap::SlottedAirGap) on the right side. The
-[`WindingZonesEqSpaced::new`] constructor receives a "prototype" `zones`
+[`WindingZonesPeriodic::new`] constructor receives a "prototype" `zones`
 argument consisting of the zone contours (shown together with their coordinate
 system in red). These zones are then copied into new coordinate systems which
 are distributed evenly along the air gap surface, starting from the left. In
@@ -324,13 +323,13 @@ distributed accordingly as shown for the right-side core.
 #[doc = ""]
 #[cfg_attr(
     feature = "doc-images",
-    doc = "![How WindingZonesEqSpaced distributes the winding zones][cad_winding_zones_eq_spaced]"
+    doc = "![How WindingZonesPeriodic distributes the winding zones][cad_winding_zones_periodic]"
 )]
 #[cfg_attr(
     feature = "doc-images",
     embed_doc_image::embed_doc_image(
-        "cad_winding_zones_eq_spaced",
-        "docs/img/cad_winding_zones_eq_spaced.svg"
+        "cad_winding_zones_periodic",
+        "docs/img/cad_winding_zones_periodic.svg"
     )
 )]
 #[cfg_attr(
@@ -350,7 +349,7 @@ use planar_geo::prelude::*;
 let lower = Contour::new(Polysegment::new());
 let upper = Contour::new(Polysegment::new());
 
-let mut wz = WindingZonesEqSpaced::<Contour, true>::new(
+let mut wz = WindingZonesPeriodic::<Contour, true>::new(
     Length::new::<millimeter>(100.0),
     vec![lower, upper],
     12,
@@ -363,7 +362,7 @@ assert_eq!(wz.count(), 24);
 ```
  */
 #[derive(Debug, Clone)]
-pub struct WindingZonesEqSpaced<T: Transformation + Clone, const LIN: bool> {
+pub struct WindingZonesPeriodic<T: Transformation + Clone, const LIN: bool> {
     slots: u16,
     air_gap_length: Length,
     zones: Vec<T>,
@@ -371,16 +370,16 @@ pub struct WindingZonesEqSpaced<T: Transformation + Clone, const LIN: bool> {
     index: usize,
 }
 
-impl<T: Transformation + Clone, const LIN: bool> WindingZonesEqSpaced<T, LIN> {
-    /// Creates a new [`WindingZonesEqSpaced`].
+impl<T: Transformation + Clone, const LIN: bool> WindingZonesPeriodic<T, LIN> {
+    /// Creates a new [`WindingZonesPeriodic`].
     ///
-    /// This is the "raw" constructor for a [`WindingZonesEqSpaced`] which can
+    /// This is the "raw" constructor for a [`WindingZonesPeriodic`] which can
     /// be used if the constructors with an higher abstraction level such as
-    /// [`WindingZonesEqSpaced::from_slot`] and
-    /// [`WindingZonesEqSpaced::from_air_gap_winding`] are not applicable. These
+    /// [`WindingZonesPeriodic::from_slot`] and
+    /// [`WindingZonesPeriodic::from_air_gap_winding`] are not applicable. These
     /// constructors usually create `zones` and then call
-    /// [`WindingZonesEqSpaced::new`]. See the
-    /// [struct-level](WindingZonesEqSpaced) documentation for details.
+    /// [`WindingZonesPeriodic::new`]. See the
+    /// [struct-level](WindingZonesPeriodic) documentation for details.
     ///
     /// - `air_gap_length`: The cross-section length of the air gap surface
     ///   along which the zones will be distributed. See
@@ -404,13 +403,13 @@ impl<T: Transformation + Clone, const LIN: bool> WindingZonesEqSpaced<T, LIN> {
     #[doc = ""]
     #[cfg_attr(
         feature = "doc-images",
-        doc = "![How WindingZonesEqSpaced distributes the winding zones][cad_winding_zones_eq_spaced]"
+        doc = "![How WindingZonesPeriodic distributes the winding zones][cad_winding_zones_periodic]"
     )]
     #[cfg_attr(
         feature = "doc-images",
         embed_doc_image::embed_doc_image(
-            "cad_winding_zones_eq_spaced",
-            "docs/img/cad_winding_zones_eq_spaced.svg"
+            "cad_winding_zones_periodic",
+            "docs/img/cad_winding_zones_periodic.svg"
         )
     )]
     #[cfg_attr(
@@ -429,7 +428,7 @@ impl<T: Transformation + Clone, const LIN: bool> WindingZonesEqSpaced<T, LIN> {
     /// let upper = Contour::new(Polysegment::new());
     ///
     /// // Left side
-    /// let mut left = WindingZonesEqSpaced::<Contour, true>::new(
+    /// let mut left = WindingZonesPeriodic::<Contour, true>::new(
     ///     Length::new::<millimeter>(100.0),
     ///     vec![lower.clone(), upper.clone()],
     ///     3,
@@ -441,7 +440,7 @@ impl<T: Transformation + Clone, const LIN: bool> WindingZonesEqSpaced<T, LIN> {
     /// assert_eq!(left.count(), 6);
     ///
     /// // Right side
-    /// let mut right = WindingZonesEqSpaced::<Contour, true>::new(
+    /// let mut right = WindingZonesPeriodic::<Contour, true>::new(
     ///     Length::new::<millimeter>(100.0),
     ///     vec![lower, upper],
     ///     3,
@@ -472,7 +471,7 @@ impl<T: Transformation + Clone, const LIN: bool> WindingZonesEqSpaced<T, LIN> {
     /// This constructor is useful for creating an "empty" iterator (e.g. for
     /// implementing
     /// [`CoreExt::winding_zones`](crate::core::CoreExt::winding_zones) for a
-    /// non-windable air gap). It calls [`WindingZonesEqSpaced::new`] with
+    /// non-windable air gap). It calls [`WindingZonesPeriodic::new`] with
     /// `slots` being zero and `zones` being an empty vector.
     ///
     /// # Examples
@@ -481,7 +480,7 @@ impl<T: Transformation + Clone, const LIN: bool> WindingZonesEqSpaced<T, LIN> {
     /// use stem_core::prelude::*;
     /// use planar_geo::prelude::*;
     ///
-    /// let mut wz = WindingZonesEqSpaced::<Contour, true>::no_slots();
+    /// let mut wz = WindingZonesPeriodic::<Contour, true>::no_slots();
     /// assert!(wz.next().is_none());
     /// ```
     pub fn no_slots() -> Self {
@@ -525,7 +524,7 @@ impl<T: Transformation + Clone, const LIN: bool> WindingZonesEqSpaced<T, LIN> {
     /// let lower = Contour::new(Polysegment::new());
     /// let upper = Contour::new(Polysegment::new());
     ///
-    /// let mut wz = WindingZonesEqSpaced::<Contour, true>::new(
+    /// let mut wz = WindingZonesPeriodic::<Contour, true>::new(
     ///     Length::new::<millimeter>(100.0),
     ///     vec![lower, upper],
     ///     12,
@@ -547,7 +546,7 @@ impl<T: Transformation + Clone, const LIN: bool> WindingZonesEqSpaced<T, LIN> {
     }
 }
 
-impl<T: Transformation + Clone + ToBoundingBox, const LIN: bool> WindingZonesEqSpaced<T, LIN> {
+impl<T: Transformation + Clone + ToBoundingBox, const LIN: bool> WindingZonesPeriodic<T, LIN> {
     fn next_priv(&mut self) -> Option<(T, Zone)> {
         let layers = self.layers();
 
@@ -597,7 +596,7 @@ impl<T: Transformation + Clone + ToBoundingBox, const LIN: bool> WindingZonesEqS
     }
 }
 
-impl<const LIN: bool> WindingZonesEqSpaced<Polysegment, LIN> {
+impl<const LIN: bool> WindingZonesPeriodic<Polysegment, LIN> {
     /// Returns an iterator over the [`Slot::outline`]s distributed evenly along
     /// the `air_gap_length`.
     ///
@@ -605,8 +604,8 @@ impl<const LIN: bool> WindingZonesEqSpaced<Polysegment, LIN> {
     /// [`SlottedAirGap`](crate::air_gap::SlottedAirGap) shape. It uses the
     /// `slot` to get the [`Slot::outline`], flips it vertically for an inner
     /// rotary core and then forwards the resulting [`Polysegment`] into the
-    /// `zones` argument of [`WindingZonesEqSpaced::new`] along with the
-    /// other arguments. See [`WindingZonesEqSpaced::new`] for more details
+    /// `zones` argument of [`WindingZonesPeriodic::new`] along with the
+    /// other arguments. See [`WindingZonesPeriodic::new`] for more details
     /// and examples.
     pub fn from_slot<S: Slot + ?Sized>(
         air_gap_length: Length,
@@ -643,16 +642,16 @@ impl<const LIN: bool> WindingZonesEqSpaced<Polysegment, LIN> {
     }
 }
 
-impl<const LIN: bool> WindingZonesEqSpaced<Contour, LIN> {
+impl<const LIN: bool> WindingZonesPeriodic<Contour, LIN> {
     /// Returns an iterator over the [`Slot::layer_contours`]s distributed
     /// evenly along the `air_gap_length`.
     ///
     /// This constructor creates the `zones` argument of
-    /// [`WindingZonesEqSpaced::new`] with `slot.layer_contours(coil_layout)`,
+    /// [`WindingZonesPeriodic::new`] with `slot.layer_contours(coil_layout)`,
     /// flips it vertically for an inner rotary core and and then forwards the
     /// resulting [`Vec<Contour>`] into the `zones` argument of
-    /// [`WindingZonesEqSpaced::new`] along with the other arguments. See
-    /// [`WindingZonesEqSpaced::new`] for more details and examples.
+    /// [`WindingZonesPeriodic::new`] along with the other arguments. See
+    /// [`WindingZonesPeriodic::new`] for more details and examples.
     pub fn from_slot<S: Slot + ?Sized>(
         air_gap_length: Length,
         slots: u16,
@@ -743,8 +742,8 @@ impl<const LIN: bool> WindingZonesEqSpaced<Contour, LIN> {
     /// `outer_core` is true, they are flipped.
     ///
     /// The resulting [`Vec<Contour>`] is then provided as `zones` argument to
-    /// [`WindingZonesEqSpaced::new`] along with the other arguments. See
-    /// [`WindingZonesEqSpaced::new`] for more details and examples.
+    /// [`WindingZonesPeriodic::new`] along with the other arguments. See
+    /// [`WindingZonesPeriodic::new`] for more details and examples.
     ///
     /// # Examples
     ///
@@ -755,7 +754,7 @@ impl<const LIN: bool> WindingZonesEqSpaced<Contour, LIN> {
     /// let coil_layout = CoilLayout::DoubleVertical;
     /// let slots = 12;
     ///
-    /// let wz = WindingZonesEqSpaced::<Contour, true>::from_air_gap_winding(
+    /// let wz = WindingZonesPeriodic::<Contour, true>::from_air_gap_winding(
     ///     Length::new::<millimeter>(100.0),
     ///     slots,
     ///     Length::new::<millimeter>(6.0),
@@ -1073,7 +1072,7 @@ impl<const LIN: bool> WindingZonesEqSpaced<Contour, LIN> {
     }
 }
 
-impl<const LIN: bool> Iterator for WindingZonesEqSpaced<Polysegment, LIN> {
+impl<const LIN: bool> Iterator for WindingZonesPeriodic<Polysegment, LIN> {
     type Item = Polysegment;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -1081,7 +1080,7 @@ impl<const LIN: bool> Iterator for WindingZonesEqSpaced<Polysegment, LIN> {
     }
 }
 
-impl<const LIN: bool> Iterator for WindingZonesEqSpaced<Contour, LIN> {
+impl<const LIN: bool> Iterator for WindingZonesPeriodic<Contour, LIN> {
     type Item = PositionedZoneContour;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -1138,7 +1137,7 @@ assert_eq!(wz_double.next().unwrap().zone, Zone {slot: 2, layer: 1});
 assert!(wz_double.next().is_none());
 ```
 
-All predefined specialized iterators (such as [`WindingZonesEqSpaced`]) can be
+All predefined specialized iterators (such as [`WindingZonesPeriodic`]) can be
 converted into [`WindingZones`] via its [`From`] implementations.
 
 When implementing
@@ -1167,8 +1166,8 @@ impl WindingZones {
 }
 
 enum WindingZonesInner {
-    WindingZonesEqSpacedLin(WindingZonesEqSpaced<Contour, true>),
-    WindingZonesEqSpacedRot(WindingZonesEqSpaced<Contour, false>),
+    WindingZonesPeriodicLin(WindingZonesPeriodic<Contour, true>),
+    WindingZonesPeriodicRot(WindingZonesPeriodic<Contour, false>),
     Other(Box<dyn Iterator<Item = PositionedZoneContour>>),
 }
 
@@ -1183,22 +1182,22 @@ impl Iterator for WindingZones {
 
     fn next(&mut self) -> Option<Self::Item> {
         match &mut self.0 {
-            WindingZonesInner::WindingZonesEqSpacedLin(i) => i.next(),
-            WindingZonesInner::WindingZonesEqSpacedRot(i) => i.next(),
+            WindingZonesInner::WindingZonesPeriodicLin(i) => i.next(),
+            WindingZonesInner::WindingZonesPeriodicRot(i) => i.next(),
             WindingZonesInner::Other(i) => i.next(),
         }
     }
 }
 
-impl From<WindingZonesEqSpaced<Contour, true>> for WindingZones {
-    fn from(value: WindingZonesEqSpaced<Contour, true>) -> Self {
-        WindingZonesInner::WindingZonesEqSpacedLin(value).into()
+impl From<WindingZonesPeriodic<Contour, true>> for WindingZones {
+    fn from(value: WindingZonesPeriodic<Contour, true>) -> Self {
+        WindingZonesInner::WindingZonesPeriodicLin(value).into()
     }
 }
 
-impl From<WindingZonesEqSpaced<Contour, false>> for WindingZones {
-    fn from(value: WindingZonesEqSpaced<Contour, false>) -> Self {
-        WindingZonesInner::WindingZonesEqSpacedRot(value).into()
+impl From<WindingZonesPeriodic<Contour, false>> for WindingZones {
+    fn from(value: WindingZonesPeriodic<Contour, false>) -> Self {
+        WindingZonesInner::WindingZonesPeriodicRot(value).into()
     }
 }
 

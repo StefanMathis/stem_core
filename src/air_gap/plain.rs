@@ -39,8 +39,8 @@ use crate::{
     air_gap::AirGap,
     core::{CoreExt, CoreRef},
     error::Error,
-    magnets::{Magnets, MagnetsEqSpaced},
-    winding_zones::{WindingZones, WindingZonesEqSpaced},
+    magnets::{Magnets, MagnetsPeriodic},
+    winding_zones::{WindingZones, WindingZonesPeriodic},
 };
 
 fn deserialize_winding_coverage<'de, D>(deserializer: D) -> Result<f64, D::Error>
@@ -292,7 +292,7 @@ impl AirGap for PlainAirGap {
 
     fn winding_zones(&self, core: CoreRef<'_>, coil_layout: &CoilLayout) -> WindingZones {
         match core {
-            CoreRef::Lin(lin) => WindingZonesEqSpaced::<Contour, true>::from_air_gap_winding(
+            CoreRef::Lin(lin) => WindingZonesPeriodic::<Contour, true>::from_air_gap_winding(
                 lin.air_gap_length(),
                 lin.slots(),
                 self.air_gap_winding_height,
@@ -302,7 +302,7 @@ impl AirGap for PlainAirGap {
                 true,
             )
             .into(),
-            CoreRef::Rot(rot) => WindingZonesEqSpaced::<Contour, false>::from_air_gap_winding(
+            CoreRef::Rot(rot) => WindingZonesPeriodic::<Contour, false>::from_air_gap_winding(
                 rot.air_gap_length(),
                 rot.slots(),
                 self.air_gap_winding_height,
@@ -331,7 +331,7 @@ impl AirGap for PlainAirGap {
         match core {
             CoreRef::Lin(_) => {
                 let magnets = surface_magnet_assembly_shapes_lin(magnet_assembly, split, None);
-                MagnetsEqSpaced::<true>::new(
+                MagnetsPeriodic::<true>::new(
                     core.air_gap_length(),
                     magnets,
                     core.poles().into(),
@@ -347,7 +347,7 @@ impl AirGap for PlainAirGap {
                     core_rot.is_outer(),
                     None,
                 );
-                MagnetsEqSpaced::<false>::new(
+                MagnetsPeriodic::<false>::new(
                     core.air_gap_length(),
                     magnets,
                     core.poles().into(),

@@ -44,8 +44,8 @@ use crate::{
     air_gap::AirGap,
     core::{CoreExt, CoreRef, LinCore, RotCore},
     error::Error,
-    magnets::{Magnets, MagnetsEqSpaced},
-    winding_zones::{WindingZones, WindingZonesEqSpaced},
+    magnets::{Magnets, MagnetsPeriodic},
+    winding_zones::{WindingZones, WindingZonesPeriodic},
 };
 
 /// An enum providing different models for calculating the
@@ -307,7 +307,7 @@ impl SlottedAirGap {
 
         let is_open = self.slot.is_open();
 
-        let mut slot_iter = WindingZonesEqSpaced::<Polysegment, true>::from_slot(
+        let mut slot_iter = WindingZonesPeriodic::<Polysegment, true>::from_slot(
             core.air_gap_length(),
             self.slots,
             &*self.slot,
@@ -402,7 +402,7 @@ impl SlottedAirGap {
         let air_gap_radius = core.air_gap_radius().get::<meter>();
         let is_open = self.slot.is_open();
 
-        let slot_iter = WindingZonesEqSpaced::<Polysegment, false>::from_slot(
+        let slot_iter = WindingZonesPeriodic::<Polysegment, false>::from_slot(
             core.air_gap_length(),
             self.slots,
             &*self.slot,
@@ -482,7 +482,7 @@ impl AirGap for SlottedAirGap {
 
     fn winding_zones(&self, core: CoreRef<'_>, coil_layout: &CoilLayout) -> WindingZones {
         match core {
-            CoreRef::Lin(_) => WindingZonesEqSpaced::<Contour, true>::from_slot(
+            CoreRef::Lin(_) => WindingZonesPeriodic::<Contour, true>::from_slot(
                 core.air_gap_length(),
                 core.slots(),
                 &*self.slot,
@@ -491,7 +491,7 @@ impl AirGap for SlottedAirGap {
                 true,
             )
             .into(),
-            CoreRef::Rot(rot) => WindingZonesEqSpaced::<Contour, false>::from_slot(
+            CoreRef::Rot(rot) => WindingZonesPeriodic::<Contour, false>::from_slot(
                 core.air_gap_length(),
                 core.slots(),
                 &*self.slot,
@@ -520,7 +520,7 @@ impl AirGap for SlottedAirGap {
         match core {
             CoreRef::Lin(_) => {
                 let magnets = surface_magnet_assembly_shapes_lin(magnet_assembly, split, None);
-                MagnetsEqSpaced::<true>::new(
+                MagnetsPeriodic::<true>::new(
                     core.air_gap_length(),
                     magnets,
                     core.poles().into(),
@@ -536,7 +536,7 @@ impl AirGap for SlottedAirGap {
                     core_rot.is_outer(),
                     None,
                 );
-                MagnetsEqSpaced::<false>::new(
+                MagnetsPeriodic::<false>::new(
                     core.air_gap_length(),
                     magnets,
                     core.poles().into(),

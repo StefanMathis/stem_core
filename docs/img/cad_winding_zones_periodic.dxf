@@ -11237,7 +11237,7 @@ AcDbMText
  72
     1
   1
-"zones" argument to\PWindingEqSpaced::new
+"zones" argument to\PWindingPeriodic::new
   7
 STANDARD
 210
@@ -11283,7 +11283,7 @@ AcDbMText
  72
     1
   1
-"zones" argument to\PWindingEqSpaced::new
+"zones" argument to\PWindingPeriodic::new
   7
 STANDARD
 210

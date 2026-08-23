@@ -43,8 +43,8 @@ use crate::{
     air_gap::AirGap,
     core::{CoreExt, CoreRef, LinCore, RotCore},
     error::Error,
-    magnets::{Magnets, MagnetsEqSpaced},
-    winding_zones::{WindingZones, WindingZonesEqSpaced},
+    magnets::{Magnets, MagnetsPeriodic},
+    winding_zones::{WindingZones, WindingZonesPeriodic},
 };
 
 /**
@@ -593,7 +593,7 @@ impl AirGap for StraightIndentsAirGap {
                     m.translate([0.0, self.indent_depth.get::<meter>()]);
                 });
 
-                MagnetsEqSpaced::<true>::new(
+                MagnetsPeriodic::<true>::new(
                     core.air_gap_length(),
                     magnets,
                     core.poles().into(),
@@ -619,7 +619,7 @@ impl AirGap for StraightIndentsAirGap {
                     rot_core.is_outer(),
                     Some(magnet_coverage),
                 );
-                MagnetsEqSpaced::<false>::new(
+                MagnetsPeriodic::<false>::new(
                     indent_center_radius * TAU,
                     magnets,
                     core.poles().into(),
@@ -632,7 +632,7 @@ impl AirGap for StraightIndentsAirGap {
 
     fn winding_zones(&self, _core: CoreRef<'_>, _coil_layout: &CoilLayout) -> WindingZones {
         // Placeholder, since the StraightIndentsAirGap can't be wound
-        WindingZonesEqSpaced::<Contour, true>::no_slots().into()
+        WindingZonesPeriodic::<Contour, true>::no_slots().into()
     }
 
     fn slots(&self, _core: CoreRef<'_>) -> u16 {

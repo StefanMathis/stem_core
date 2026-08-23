@@ -2,7 +2,7 @@ use std::f64::consts::TAU;
 
 use cairo_viewport::{SideLength, Viewport, compare_or_create};
 use planar_geo::{contour::Contour, draw::Style};
-use stem_core::{prelude::PositionedZoneContour, winding_zones::WindingZonesEqSpaced};
+use stem_core::{prelude::PositionedZoneContour, winding_zones::WindingZonesPeriodic};
 use stem_slot::{
     planar_geo::{draw::*, prelude::Composite},
     prelude::*,
@@ -60,7 +60,7 @@ fn from_slot_rot_outer() {
     .unwrap();
 
     compare_to_reference(
-        WindingZonesEqSpaced::<Contour, false>::from_slot(
+        WindingZonesPeriodic::<Contour, false>::from_slot(
             radius * TAU,
             36,
             &slot,
@@ -74,7 +74,7 @@ fn from_slot_rot_outer() {
     );
 
     compare_to_reference(
-        WindingZonesEqSpaced::<Contour, false>::from_slot(
+        WindingZonesPeriodic::<Contour, false>::from_slot(
             radius * TAU,
             36,
             &slot,
@@ -88,7 +88,7 @@ fn from_slot_rot_outer() {
     );
 
     compare_to_reference(
-        WindingZonesEqSpaced::<Contour, false>::from_slot(
+        WindingZonesPeriodic::<Contour, false>::from_slot(
             radius * TAU,
             36,
             &slot,
@@ -102,7 +102,7 @@ fn from_slot_rot_outer() {
     );
 
     compare_to_reference(
-        WindingZonesEqSpaced::<Contour, false>::from_slot(
+        WindingZonesPeriodic::<Contour, false>::from_slot(
             radius * TAU,
             36,
             &slot,
@@ -116,7 +116,7 @@ fn from_slot_rot_outer() {
     );
 
     for starts_in_slot_middle in [false, true] {
-        let slot_contour = WindingZonesEqSpaced::<Contour, false>::from_slot(
+        let slot_contour = WindingZonesPeriodic::<Contour, false>::from_slot(
             radius * TAU,
             36,
             &slot,
@@ -147,7 +147,7 @@ fn from_slot_rot_inner() {
     .unwrap();
 
     for starts_in_slot_middle in [false, true] {
-        let slot_contour = WindingZonesEqSpaced::<Contour, false>::from_slot(
+        let slot_contour = WindingZonesPeriodic::<Contour, false>::from_slot(
             radius * TAU,
             36,
             &slot,
@@ -165,7 +165,7 @@ fn from_slot_rot_inner() {
     }
 
     compare_to_reference(
-        WindingZonesEqSpaced::<Contour, false>::from_slot(
+        WindingZonesPeriodic::<Contour, false>::from_slot(
             radius * TAU,
             36,
             &slot,
@@ -179,7 +179,7 @@ fn from_slot_rot_inner() {
     );
 
     compare_to_reference(
-        WindingZonesEqSpaced::<Contour, false>::from_slot(
+        WindingZonesPeriodic::<Contour, false>::from_slot(
             radius * TAU,
             36,
             &slot,
@@ -193,7 +193,7 @@ fn from_slot_rot_inner() {
     );
 
     compare_to_reference(
-        WindingZonesEqSpaced::<Contour, false>::from_slot(
+        WindingZonesPeriodic::<Contour, false>::from_slot(
             radius * TAU,
             36,
             &slot,
@@ -207,7 +207,7 @@ fn from_slot_rot_inner() {
     );
 
     compare_to_reference(
-        WindingZonesEqSpaced::<Contour, false>::from_slot(
+        WindingZonesPeriodic::<Contour, false>::from_slot(
             radius * TAU,
             36,
             &slot,
@@ -221,7 +221,7 @@ fn from_slot_rot_inner() {
     );
 
     compare_to_reference(
-        WindingZonesEqSpaced::<Contour, false>::from_slot(
+        WindingZonesPeriodic::<Contour, false>::from_slot(
             radius * TAU,
             36,
             &slot,
@@ -248,7 +248,7 @@ fn from_slot_lin_outer() {
     .unwrap();
 
     compare_to_reference(
-        WindingZonesEqSpaced::<Contour, true>::from_slot(
+        WindingZonesPeriodic::<Contour, true>::from_slot(
             width,
             12,
             &slot,
@@ -262,7 +262,7 @@ fn from_slot_lin_outer() {
     );
 
     compare_to_reference(
-        WindingZonesEqSpaced::<Contour, true>::from_slot(
+        WindingZonesPeriodic::<Contour, true>::from_slot(
             width,
             12,
             &slot,
@@ -276,7 +276,7 @@ fn from_slot_lin_outer() {
     );
 
     compare_to_reference(
-        WindingZonesEqSpaced::<Contour, true>::from_slot(
+        WindingZonesPeriodic::<Contour, true>::from_slot(
             width,
             12,
             &slot,
@@ -290,7 +290,7 @@ fn from_slot_lin_outer() {
     );
 
     compare_to_reference(
-        WindingZonesEqSpaced::<Contour, true>::from_slot(
+        WindingZonesPeriodic::<Contour, true>::from_slot(
             width,
             12,
             &slot,
@@ -311,7 +311,7 @@ fn from_air_gap_winding_lin_outer() {
     let winding_coverage = 0.8;
 
     compare_to_reference(
-        WindingZonesEqSpaced::<Contour, true>::from_air_gap_winding(
+        WindingZonesPeriodic::<Contour, true>::from_air_gap_winding(
             width,
             12,
             air_gap_winding_height,
@@ -326,7 +326,7 @@ fn from_air_gap_winding_lin_outer() {
     );
 
     compare_to_reference(
-        WindingZonesEqSpaced::<Contour, true>::from_air_gap_winding(
+        WindingZonesPeriodic::<Contour, true>::from_air_gap_winding(
             width,
             12,
             air_gap_winding_height,
@@ -341,7 +341,7 @@ fn from_air_gap_winding_lin_outer() {
     );
 
     compare_to_reference(
-        WindingZonesEqSpaced::<Contour, true>::from_air_gap_winding(
+        WindingZonesPeriodic::<Contour, true>::from_air_gap_winding(
             width,
             12,
             air_gap_winding_height,
@@ -356,7 +356,7 @@ fn from_air_gap_winding_lin_outer() {
     );
 
     let mut contours: Vec<PositionedZoneContour> =
-        WindingZonesEqSpaced::<Contour, true>::from_air_gap_winding(
+        WindingZonesPeriodic::<Contour, true>::from_air_gap_winding(
             width,
             12,
             air_gap_winding_height,
@@ -367,7 +367,7 @@ fn from_air_gap_winding_lin_outer() {
         )
         .collect();
     contours.append(
-        &mut WindingZonesEqSpaced::<Contour, true>::from_air_gap_winding(
+        &mut WindingZonesPeriodic::<Contour, true>::from_air_gap_winding(
             width,
             12,
             air_gap_winding_height,
@@ -393,7 +393,7 @@ fn from_air_gap_winding_rot_outer() {
     let winding_coverage = 0.8;
 
     compare_to_reference(
-        WindingZonesEqSpaced::<Contour, false>::from_air_gap_winding(
+        WindingZonesPeriodic::<Contour, false>::from_air_gap_winding(
             width,
             12,
             air_gap_winding_height,
@@ -408,7 +408,7 @@ fn from_air_gap_winding_rot_outer() {
     );
 
     compare_to_reference(
-        WindingZonesEqSpaced::<Contour, false>::from_air_gap_winding(
+        WindingZonesPeriodic::<Contour, false>::from_air_gap_winding(
             width,
             12,
             air_gap_winding_height,
@@ -423,7 +423,7 @@ fn from_air_gap_winding_rot_outer() {
     );
 
     compare_to_reference(
-        WindingZonesEqSpaced::<Contour, false>::from_air_gap_winding(
+        WindingZonesPeriodic::<Contour, false>::from_air_gap_winding(
             width,
             12,
             air_gap_winding_height,
@@ -438,7 +438,7 @@ fn from_air_gap_winding_rot_outer() {
     );
 
     let mut contours: Vec<PositionedZoneContour> =
-        WindingZonesEqSpaced::<Contour, false>::from_air_gap_winding(
+        WindingZonesPeriodic::<Contour, false>::from_air_gap_winding(
             width,
             12,
             air_gap_winding_height,
@@ -449,7 +449,7 @@ fn from_air_gap_winding_rot_outer() {
         )
         .collect();
     contours.append(
-        &mut WindingZonesEqSpaced::<Contour, false>::from_air_gap_winding(
+        &mut WindingZonesPeriodic::<Contour, false>::from_air_gap_winding(
             width,
             12,
             air_gap_winding_height,
@@ -468,7 +468,7 @@ fn from_air_gap_winding_rot_outer() {
     );
 
     let mut contours: Vec<PositionedZoneContour> =
-        WindingZonesEqSpaced::<Contour, false>::from_air_gap_winding(
+        WindingZonesPeriodic::<Contour, false>::from_air_gap_winding(
             width,
             12,
             air_gap_winding_height,
@@ -479,7 +479,7 @@ fn from_air_gap_winding_rot_outer() {
         )
         .collect();
     contours.append(
-        &mut WindingZonesEqSpaced::<Contour, false>::from_air_gap_winding(
+        &mut WindingZonesPeriodic::<Contour, false>::from_air_gap_winding(
             width,
             12,
             air_gap_winding_height,
@@ -498,7 +498,7 @@ fn from_air_gap_winding_rot_outer() {
     );
 
     let mut contours: Vec<PositionedZoneContour> =
-        WindingZonesEqSpaced::<Contour, false>::from_air_gap_winding(
+        WindingZonesPeriodic::<Contour, false>::from_air_gap_winding(
             width,
             12,
             air_gap_winding_height,
@@ -509,7 +509,7 @@ fn from_air_gap_winding_rot_outer() {
         )
         .collect();
     contours.append(
-        &mut WindingZonesEqSpaced::<Contour, false>::from_air_gap_winding(
+        &mut WindingZonesPeriodic::<Contour, false>::from_air_gap_winding(
             width,
             12,
             air_gap_winding_height,

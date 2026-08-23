@@ -47,7 +47,7 @@ use planar_geo::prelude::*;
 use crate::{
     core::{CoreExt, CoreRef},
     error::Error,
-    magnets::{Magnets, MagnetsEqSpaced},
+    magnets::{Magnets, MagnetsPeriodic},
 };
 
 #[cfg(feature = "serde")]
@@ -764,7 +764,7 @@ impl FluxBarrier for V2rFluxBarrier {
             shapes.push(shape);
         }
 
-        return MagnetsEqSpaced::<false>::new(
+        return MagnetsPeriodic::<false>::new(
             Length::new::<meter>(radius * TAU),
             shapes,
             core.poles().into(),

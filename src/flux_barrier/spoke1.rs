@@ -47,7 +47,7 @@ use planar_geo::prelude::*;
 use crate::{
     core::{CoreExt, CoreRef},
     error::Error,
-    magnets::{Magnets, MagnetsEqSpaced},
+    magnets::{Magnets, MagnetsPeriodic},
 };
 
 #[cfg(feature = "serde")]
@@ -757,7 +757,7 @@ impl FluxBarrier for Spoke1FluxBarrier {
 
                 // Since only every second pole has a flux barrier, use the
                 // number of pole pairs as number of poles
-                return MagnetsEqSpaced::<true>::new(
+                return MagnetsPeriodic::<true>::new(
                     lin_core.air_gap_length(),
                     shapes,
                     core.poles().into(),
@@ -784,7 +784,7 @@ impl FluxBarrier for Spoke1FluxBarrier {
                     s.rotate([0.0, -radius], angle);
                 });
 
-                return MagnetsEqSpaced::<false>::new(
+                return MagnetsPeriodic::<false>::new(
                     Length::new::<meter>(radius * TAU),
                     shapes,
                     core.poles().into(),

@@ -47,7 +47,7 @@ use planar_geo::prelude::*;
 use crate::{
     core::{CoreExt, CoreRef},
     error::Error,
-    magnets::{Magnets, MagnetsEqSpaced},
+    magnets::{Magnets, MagnetsPeriodic},
 };
 
 #[cfg(feature = "serde")]
@@ -742,6 +742,7 @@ impl FluxBarrier for V1rFluxBarrier {
         shapes.iter_mut().for_each(|s| {
             s.rotate([0.0, 0.0], angle + PI);
             s.translate([x, -h]);
+            s.line_reflection([0.0, 0.0], [0.0, 1.0]);
         });
 
         for i in 0..shapes.len() {
@@ -750,7 +751,7 @@ impl FluxBarrier for V1rFluxBarrier {
             shapes.push(shape);
         }
 
-        return MagnetsEqSpaced::<false>::new(
+        return MagnetsPeriodic::<false>::new(
             Length::new::<meter>(radius * TAU),
             shapes,
             core.poles().into(),

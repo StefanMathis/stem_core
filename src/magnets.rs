@@ -2,49 +2,55 @@
 A module providing iterators for positioning surface and interior magnets inside
 or on magnetic cores.
 
-Two types of magnets: Surface and interior magnets. Why know where they are positioned?
-- Simulations (FEM)
-- Visualization
-- Collision detection
+Permanent magnets can be integrated into a magnetic cores in two different
+fashions: They can be either mounted on the air gap surface ("surface magnets")
+or inside cutouts ([`FluxBarrier`](crate::flux_barrier::FluxBarrier)s) within
+the core. The following image shows both variants with the surface magnets using
+arabic and the interior magnets using roman numbers:
 
-Their shapes relative to the core which is holding them created by:
+ */
+#![cfg_attr(feature = "doc-images", doc = "")]
+#![cfg_attr(
+    feature = "doc-images",
+    doc = "![Surface and interior magnets][surface_and_interior_magnets.svg]"
+)]
+#![cfg_attr(feature = "doc-images",
+cfg_attr(all(),
+doc = ::embed_doc_image::embed_image!("surface_and_interior_magnets.svg", "docs/img/surface_and_interior_magnets.svg"),
+))]
+#![cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/*!
 
-[`CoreExt::surface_magnets`](crate::core::CoreExt::surface_magnets) or
-[`CoreExt::interior_magnets`](crate::core::CoreExt::interior_magnets)
+There are various use cases where the exact positioning of surface and interior
+magnets must be known, for example for FEM simulations (where the model is
+derived directly from the geometry), for collision detection (i.e. can surface
+magnets fit inside a given air gap) or for visualization as shown above.
 
-// IMG smooth lin 2 with core and with interior magnets (using alphabet for interior magnet enumeration)?
+The [`CoreExt`](crate::core::CoreExt) therefore provides the
+[`CoreExt::surface_magnets`](crate::core::CoreExt::surface_magnets) and
+[`CoreExt::interior_magnets`](crate::core::CoreExt::interior_magnets) methods
+which return a [`Magnets`] iterator. This iterator returns
+[`PositionedMagnetShape`]s which contain a magnet [`Shape`] positioned relative
+to the origin of the core as well as some metadata.
 
-[`Magnets`] itself is an enum wrapping a bunch of predefined iterators
-(such as [`MagnetsEqSpaced`] which themselves implement
-`Iterator<Item=PositionedMagnetShape`>). It is possible to wrap custom iterators
-via [`Magnets::from_iter`], which allows using any iterator returning
-[`PositionedMagnetShape`]s for implementing
+[`Magnets`] itself is a wrapper around iterators such as [`MagnetsPeriodic`]
+which implement `Iterator<Item=PositionedMagnetShape`>. It is possible to wrap
+custom iterators via [`Magnets::from_iter`], which allows using any iterator
+returning [`PositionedMagnetShape`]s for implementing
 [`CoreExt::surface_magnets`](crate::core::CoreExt::surface_magnets) or
 [`CoreExt::interior_magnets`](crate::core::CoreExt::interior_magnets).
 
 `examples/magnet_plots.rs` demonstrates how to utilize the
 [`Magnets`] iterator for creating the above image. The following snippet in
-particular shows how to to draw the [`PositionedMagnetShape`]s:
+particular shows how to to draw the interior [`PositionedMagnetShape`]s:
 
 ```ignore
 // "cr" is a cairo::Context
 for (idx, m) in core.interior_magnets(true).enumerate() {
     m.as_drawable().draw(cr)?;
-    let text = Text {
-        text: format!("Magnet: {}", idx),
-        anchor: Anchor::Center,
-        fixed_anchor_offset: [0.0, -7.0],
-        scaled_anchor_offset: w.contour.centroid(),
-        color: Color {
-            r: 0.0,
-            g: 0.0,
-            b: 0.0,
-            a: 1.0,
-        },
-        font_size: 12.0,
-        angle: 0.0,
-    };
-    text.draw(cr)?;
 }
 ```
 */
@@ -153,45 +159,146 @@ impl Transformation for PositionedMagnetShape {
     }
 }
 
-// =============================================================================
-// Core with a smooth surface
+/**
+An iterator which periodically repeats the surface or interior magnet assembly
+over all poles.
 
+This struct is essentially a builder for [`Magnets`] which repeats all
+[`PositionedMagnetShape`]s of a surface or interior magnet assembly over the
+poles of a core. It can be used for both linear (`LIN = true`) and rotary cores
+(`LIN = false`). It implements `Into<Magnets>`.
+
+The following image shows the principle for both a linear and a rotary core:
+A magnet assembly (in this example a V-shape consisting of two split magnets,
+so 4 [`PositionedMagnetShape`]s in total) is given to [`MagnetsPeriodic::new`].
+It is then offset from the core reference point by `d_axis_offset` and repeated
+equidistantly over all poles of the core (in this case, two times). This is done
+by shifting and rotating the coordinate system and then simply placing the
+assembly into the new coordinate system.
+ */
 #[doc = ""]
 #[cfg_attr(
     feature = "doc-images",
-    doc = "![How MagnetsEqSpaced distributes the winding zones][cad_magnets_eq_spaced]"
+    doc = "![How MagnetsPeriodic distributes the winding zones][cad_magnets_periodic]"
 )]
 #[cfg_attr(
     feature = "doc-images",
-    embed_doc_image::embed_doc_image(
-        "cad_magnets_eq_spaced",
-        "docs/img/cad_magnets_eq_spaced.svg"
-    )
+    embed_doc_image::embed_doc_image("cad_magnets_periodic", "docs/img/cad_magnets_periodic.svg")
 )]
 #[cfg_attr(
     not(feature = "doc-images"),
     doc = "**Doc images not enabled**. Compile docs with
     `cargo doc --features 'doc-images'` and Rust version >= 1.54."
 )]
+/**
+
+This iterator can be used for both surface and interior magnet assemblies. It is
+not strictly necessary to use the `air_gap_length` as the reference for
+distributing the coordinate system. For example, for a
+[`StraightIndentsAirGap`](crate::air_gap::StraightIndentsAirGap), it might be
+easier to use the
+[`indent_center_radius`](crate::air_gap::StraightIndentsAirGap::indent_center_radius)
+instead and align the coordinate system of the `magnets` with it rather than
+with the `air_gap_length`.
+ */
 #[derive(Debug, Clone)]
-pub struct MagnetsEqSpaced<const LIN: bool> {
-    poles: usize,
-    dist_width_or_circumference: Length,
+pub struct MagnetsPeriodic<const LIN: bool> {
+    air_gap_length: Length,
     magnets: Vec<PositionedMagnetShape>,
-    index: usize,
+    poles: usize,
     d_axis_offset: f64,
+    index: usize,
 }
 
-impl<const LIN: bool> MagnetsEqSpaced<LIN> {
+impl<const LIN: bool> MagnetsPeriodic<LIN> {
+    /// Creates a new [`MagnetsPeriodic`] for a linear or rotary core.
+    ///
+    /// - `air_gap_length`: The cross-section length along which the `magnets`
+    ///   will be distributed. Especially for surface magnet assemblies, it is
+    ///   often convenient to use
+    ///   [`CoreExt::air_gap_length`](crate::core::CoreExt::air_gap_length) for
+    ///   this (hence the name). But other values can be used as well, provided
+    ///   that the `magnets` coordinate system is properly aligned to
+    ///   `air_gap_length`.
+    /// - `magnets`: The individual shapes of a surface or interior magnet
+    ///   assembly belonging to a single pole. [`PositionedMagnetShape::shape`]
+    ///   will be transformed when distributing those shapes over the `poles`.
+    ///   If a pole is odd, [`PositionedMagnetShape::is_north`] will be inverted
+    ///   (see example below). If an interior magnet assembly has multiple
+    ///   different types of magnets, [`PositionedMagnetShape::magnet_type`]
+    ///   needs to be set accordingly (it won't be changed by the iterator). See
+    ///   [`FluxBarrier::magnet_assemblies`](crate::flux_barrier::FluxBarrier::magnet_assemblies)
+    ///   for more information on this.
+    /// - `poles`: Number of magnetic poles. The total number of
+    ///   [`PositionedMagnetShape`] produced by this iterator is `poles *
+    ///   magnets.len()`.
+    /// - `d_axis_offset`: Offset of the d-axis to the core reference axis in
+    ///   electrical radians. The core reference axis is the left side of the
+    ///   cross section for a linear core and the negative x-axis for a rotary
+    ///   core, see image below.
+    ///
+    /// In the following example, `magnets` consists of four individual
+    /// [`PositionedMagnetShape`]s, `poles` is 2 and `d_axis_offset` is pi/2. In
+    /// this particular case, the mechanical offset angle is therefore also pi/2
+    /// (in the general case, it would be `pi/poles`).
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![How MagnetsPeriodic distributes the winding zones][cad_magnets_periodic]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image(
+            "cad_magnets_periodic",
+            "docs/img/cad_magnets_periodic.svg"
+        )
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use stem_core::prelude::*;
+    /// use planar_geo::prelude::*;
+    ///
+    /// // Dummy shapes
+    /// let north_shape = Shape::from_outer(Contour::rectangle([0.0, 0.0], [1.0, 0.5])).expect("valid shape");
+    /// let north = PositionedMagnetShape {shape: north_shape, is_north: true, magnet_type: 0};
+    ///
+    /// let south_shape = Shape::from_outer(Contour::rectangle([0.0, 0.5], [1.0, 1.0])).expect("valid shape");
+    /// let south = PositionedMagnetShape {shape: south_shape, is_north: false, magnet_type: 0};
+    ///
+    /// let mut mags = MagnetsPeriodic::<true>::new(
+    ///     Length::new::<millimeter>(100.0),
+    ///     vec![north, south],
+    ///     2,
+    ///     0.0,
+    /// );
+    ///
+    /// // First pole (positive pole)
+    /// assert_eq!(mags.next().unwrap().is_north, true);
+    /// assert_eq!(mags.next().unwrap().is_north, false);
+    ///
+    /// // Second pole (negative pole)
+    /// assert_eq!(mags.next().unwrap().is_north, false);
+    /// assert_eq!(mags.next().unwrap().is_north, true);
+    ///
+    /// // All poles are covered
+    /// assert!(mags.next().is_none());
+    /// ```
     pub fn new(
-        dist_width_or_circumference: Length,
+        air_gap_length: Length,
         magnets: Vec<PositionedMagnetShape>,
         poles: usize,
         d_axis_offset: f64,
     ) -> Self {
         Self {
             poles,
-            dist_width_or_circumference,
+            air_gap_length,
             magnets,
             index: 0,
             d_axis_offset,
@@ -209,14 +316,14 @@ impl<const LIN: bool> MagnetsEqSpaced<LIN> {
     /// use stem_core::prelude::*;
     /// use planar_geo::prelude::*;
     ///
-    /// // Dummy contours defining the lower and the upper layer of a winding.
+    /// // Dummy shapes
     /// let north_shape = Shape::from_outer(Contour::rectangle([0.0, 0.0], [1.0, 0.5])).expect("valid shape");
     /// let north = PositionedMagnetShape {shape: north_shape, is_north: true, magnet_type: 0};
     ///
     /// let south_shape = Shape::from_outer(Contour::rectangle([0.0, 0.5], [1.0, 1.0])).expect("valid shape");
     /// let south = PositionedMagnetShape {shape: south_shape, is_north: false, magnet_type: 0};
     ///
-    /// let mut mags = MagnetsEqSpaced::<true>::new(
+    /// let mut mags = MagnetsPeriodic::<true>::new(
     ///     Length::new::<millimeter>(100.0),
     ///     vec![north, south],
     ///     2,
@@ -243,7 +350,7 @@ impl<const LIN: bool> MagnetsEqSpaced<LIN> {
     }
 }
 
-impl<const LIN: bool> Iterator for MagnetsEqSpaced<LIN> {
+impl<const LIN: bool> Iterator for MagnetsPeriodic<LIN> {
     type Item = PositionedMagnetShape;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -262,12 +369,11 @@ impl<const LIN: bool> Iterator for MagnetsEqSpaced<LIN> {
         let mut shape = self.magnets[shape_idx].clone();
 
         if LIN {
-            let width_per_pole =
-                self.dist_width_or_circumference.get::<meter>() / self.poles as f64;
+            let width_per_pole = self.air_gap_length.get::<meter>() / self.poles as f64;
             let offset = (self.d_axis_offset / PI + current_pole as f64) * width_per_pole;
             shape.translate([offset, 0.0]);
         } else {
-            shape.translate([0.0, self.dist_width_or_circumference.get::<meter>() / TAU]);
+            shape.translate([0.0, self.air_gap_length.get::<meter>() / TAU]);
             let angle_per_pole = TAU / self.poles as f64;
             let angle = angle_per_pole * (0.5 + current_pole as f64);
             shape.rotate([0.0, 0.0], -angle + self.d_axis_offset);
@@ -375,7 +481,7 @@ assert!(!interior_magnets.next().unwrap().is_north); // Fourth pole (south pole)
 assert!(interior_magnets.next().is_none());
 ```
 
-All predefined specialized iterators (such as [`MagnetsEqSpaced`]) can be
+All predefined specialized iterators (such as [`MagnetsPeriodic`]) can be
 converted into [`Magnets`] via its [`From`] implementations.
 
 When implementing
@@ -400,8 +506,8 @@ impl Magnets {
 }
 
 enum MagnetsInner {
-    MagnetsEqSpacedLin(MagnetsEqSpaced<true>),
-    MagnetsEqSpacedRot(MagnetsEqSpaced<false>),
+    MagnetsPeriodicLin(MagnetsPeriodic<true>),
+    MagnetsPeriodicRot(MagnetsPeriodic<false>),
     Other(Box<dyn Iterator<Item = PositionedMagnetShape>>),
 }
 
@@ -411,15 +517,15 @@ impl From<MagnetsInner> for Magnets {
     }
 }
 
-impl From<MagnetsEqSpaced<true>> for Magnets {
-    fn from(value: MagnetsEqSpaced<true>) -> Self {
-        MagnetsInner::MagnetsEqSpacedLin(value).into()
+impl From<MagnetsPeriodic<true>> for Magnets {
+    fn from(value: MagnetsPeriodic<true>) -> Self {
+        MagnetsInner::MagnetsPeriodicLin(value).into()
     }
 }
 
-impl From<MagnetsEqSpaced<false>> for Magnets {
-    fn from(value: MagnetsEqSpaced<false>) -> Self {
-        MagnetsInner::MagnetsEqSpacedRot(value).into()
+impl From<MagnetsPeriodic<false>> for Magnets {
+    fn from(value: MagnetsPeriodic<false>) -> Self {
+        MagnetsInner::MagnetsPeriodicRot(value).into()
     }
 }
 
@@ -434,8 +540,8 @@ impl Iterator for Magnets {
 
     fn next(&mut self) -> Option<Self::Item> {
         match &mut self.0 {
-            MagnetsInner::MagnetsEqSpacedLin(i) => i.next(),
-            MagnetsInner::MagnetsEqSpacedRot(i) => i.next(),
+            MagnetsInner::MagnetsPeriodicLin(i) => i.next(),
+            MagnetsInner::MagnetsPeriodicRot(i) => i.next(),
             MagnetsInner::Other(i) => i.next(),
         }
     }
