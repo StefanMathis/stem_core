@@ -186,7 +186,7 @@ for details.
 # Visualization
 
 If the `cairo` feature is enabled, the core shapes can be drawn onto a
-[cairo](cairographics.org) context using the drawing mechanics from the
+[cairo](https://cairographics.org) context using the drawing mechanics from the
 [planar_geo](https://crates.io/crates/planar_geo) crate. See its documentation
 for details.
 

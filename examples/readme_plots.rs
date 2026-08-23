@@ -73,7 +73,7 @@ fn full_core_assembly_plot() -> Result<(), Box<dyn std::error::Error>> {
 
     let bb = BoundingBox::new(-60.0e-3, 60.0e-3, -60.0e-3, 60.0e-3);
 
-    let view = Viewport::from_bounding_box(&bb, SideLength::Long(800));
+    let view = Viewport::from_bounding_box(&bb, SideLength::Long(600));
     view.write_to_file(&fp, |cr| {
         cr.set_source_rgb(1.0, 1.0, 1.0);
         cr.paint()?;
