@@ -7,11 +7,11 @@ this flux barrier might hold interior magnets.
 #![cfg_attr(feature = "doc-images", doc = "")]
 #![cfg_attr(
     feature = "doc-images",
-    doc = "![Linear and rotary core with a V1rFluxBarrier][lin_and_rot_core_v1r.svg]"
+    doc = "![Rotary core with a V1rFluxBarrier][rot_core_v1r.svg]"
 )]
 #![cfg_attr(feature = "doc-images",
 cfg_attr(all(),
-doc = ::embed_doc_image::embed_image!("lin_and_rot_core_v1r.svg", "docs/img/lin_and_rot_core_v1r.svg"),
+doc = ::embed_doc_image::embed_image!("rot_core_v1r.svg", "docs/img/rot_core_v1r.svg"),
 ))]
 #![cfg_attr(
     not(feature = "doc-images"),

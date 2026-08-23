@@ -72,7 +72,7 @@ use stem_magnet::prelude::*;
 /// magnet and the type index.
 ///
 /// This struct implements the [`Transformation`] trait. The trait methods are
-/// applied to [`PositionedZoneContour::contour`] using the implementation
+/// applied to [`PositionedMagnetShape::shape`] using the implementation
 /// of that trait for [`Contour`].
 ///
 /// See the [module documentation](crate::magnets) for examples.
