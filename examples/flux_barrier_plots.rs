@@ -6,10 +6,46 @@ use stem_core::prelude::*;
 use stem_slot::semi_trapezoid::SemiTrapezoidWidthsAndHeightsBuilder;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    plot_flux_barrier_comparison()?;
     plot_spoke1_flux_barrier()?;
     plot_slotted_with_and_without_flux_barrier()?;
     plot_v1r_flux_barrier()?;
     plot_v2r_flux_barrier()?;
+    return Ok(());
+}
+
+fn plot_flux_barrier_comparison() -> Result<(), Box<dyn std::error::Error>> {
+    let distance = 0.01;
+
+    let spoke1_core = create_spoke1_flux_barrier()?;
+    let v1r_core = create_v1r_flux_barrier()?;
+    let v2r_core = create_v2r_flux_barrier()?;
+
+    let fp = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join(&format!("docs/img/rot_flux_barrier_comparison.svg"));
+
+    let ag_radius = spoke1_core.air_gap_radius().get::<meter>();
+    let bb = BoundingBox::new(
+        -(ag_radius + 0.001),
+        5.0 * ag_radius + 2.0 * distance + 0.001,
+        -(ag_radius + 0.001),
+        ag_radius + 0.001,
+    );
+    let view = Viewport::from_bounding_box(&bb, SideLength::Long(800));
+    view.write_to_file(&fp, |cr| {
+        cr.set_source_rgb(1.0, 1.0, 1.0);
+        cr.paint()?;
+
+        spoke1_core.drawable().draw(cr)?;
+
+        cr.translate(distance + 2.0 * ag_radius, 0.0);
+        v1r_core.drawable().draw(cr)?;
+
+        cr.translate(distance + 2.0 * ag_radius, 0.0);
+        v2r_core.drawable().draw(cr)?;
+
+        return Ok(());
+    })?;
     return Ok(());
 }
 
@@ -92,33 +128,7 @@ fn plot_spoke1_flux_barrier() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn plot_v1r_flux_barrier() -> Result<(), Box<dyn std::error::Error>> {
-    let fb = V1rFluxBarrier {
-        yoke_distance: Length::new::<millimeter>(3.0),
-        relief_path_air_gap_width: Length::new::<millimeter>(2.0),
-        relief_path_length: Length::new::<millimeter>(4.0),
-        relief_path_width: Length::new::<millimeter>(2.0),
-        opening_angle: FRAC_PI_2,
-        magnet_space_width: Length::new::<millimeter>(6.0),
-        magnet_space_height: Length::new::<millimeter>(13.0),
-        glue_gap: Length::new::<millimeter>(0.2),
-        leakage_path_width: Length::new::<millimeter>(1.0),
-        magnet_material: Some(Arc::new(Material::default())),
-        cache: None,
-    };
-
-    let rot_core: RotCore = RotCoreBuilder {
-        air_gap_radius: Length::new::<millimeter>(40.0),
-        yoke_radius: Length::new::<millimeter>(19.0),
-        axial_length: Length::new::<millimeter>(165.0),
-        axial_coil_overhang: Length::new::<millimeter>(0.0),
-        iron_fill_factor: 1.0,
-        material: Arc::new(Material::default()),
-        pole_pairs: 3,
-        skew_angle: 0.0,
-        air_gap: Box::new(PlainAirGap::default()),
-        flux_barrier: Some(Box::new(fb)),
-    }
-    .try_into()?;
+    let rot_core = create_v1r_flux_barrier()?;
 
     let fp = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(&format!("docs/img/rot_core_v1r.svg"));
 
@@ -144,34 +154,7 @@ fn plot_v1r_flux_barrier() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn plot_v2r_flux_barrier() -> Result<(), Box<dyn std::error::Error>> {
-    let fb = V2rFluxBarrier {
-        yoke_distance: Length::new::<millimeter>(3.0),
-        relief_path_air_gap_width: Length::new::<millimeter>(2.0),
-        relief_path_length: Length::new::<millimeter>(4.0),
-        relief_path_width: Length::new::<millimeter>(2.0),
-        opening_angle: FRAC_PI_2,
-        magnet_space_width: Length::new::<millimeter>(6.0),
-        magnet_space_height: Length::new::<millimeter>(13.0),
-        glue_gap: Length::new::<millimeter>(0.2),
-        leakage_path_width: Length::new::<millimeter>(1.0),
-        magnet_material: Some(Arc::new(Material::default())),
-        q_axis_fillet: None,
-        cache: None,
-    };
-
-    let rot_core: RotCore = RotCoreBuilder {
-        air_gap_radius: Length::new::<millimeter>(40.0),
-        yoke_radius: Length::new::<millimeter>(19.0),
-        axial_length: Length::new::<millimeter>(165.0),
-        axial_coil_overhang: Length::new::<millimeter>(0.0),
-        iron_fill_factor: 1.0,
-        material: Arc::new(Material::default()),
-        pole_pairs: 3,
-        skew_angle: 0.0,
-        air_gap: Box::new(PlainAirGap::default()),
-        flux_barrier: Some(Box::new(fb)),
-    }
-    .try_into()?;
+    let rot_core = create_v2r_flux_barrier()?;
 
     let fp = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(&format!("docs/img/rot_core_v2r.svg"));
 
@@ -268,4 +251,95 @@ fn plot_slotted_with_and_without_flux_barrier() -> Result<(), Box<dyn std::error
     })?;
 
     return Ok(());
+}
+
+fn create_spoke1_flux_barrier() -> Result<RotCore, Box<dyn std::error::Error>> {
+    let fb = Spoke1FluxBarrier {
+        air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
+        yoke_leakage_path_width: Length::new::<millimeter>(1.0),
+        relief_path_air_gap_width: Length::new::<millimeter>(3.0),
+        magnet_space_width: Length::new::<millimeter>(10.0),
+        height_split: Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(1.0)),
+        glue_gap: Length::new::<millimeter>(0.2),
+        magnet_material: Some(Default::default()),
+        cache: None,
+    };
+
+    RotCoreBuilder {
+        air_gap_radius: Length::new::<millimeter>(40.0),
+        yoke_radius: Length::new::<millimeter>(19.0),
+        axial_length: Length::new::<millimeter>(165.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 3,
+        skew_angle: 0.0,
+        air_gap: Box::new(PlainAirGap::default()),
+        flux_barrier: Some(Box::new(fb)),
+    }
+    .try_into()
+    .map_err(From::from)
+}
+
+fn create_v1r_flux_barrier() -> Result<RotCore, Box<dyn std::error::Error>> {
+    let fb = V1rFluxBarrier {
+        yoke_distance: Length::new::<millimeter>(3.0),
+        relief_path_air_gap_width: Length::new::<millimeter>(2.0),
+        relief_path_length: Length::new::<millimeter>(4.0),
+        relief_path_width: Length::new::<millimeter>(2.0),
+        opening_angle: FRAC_PI_2,
+        magnet_space_width: Length::new::<millimeter>(6.0),
+        magnet_space_height: Length::new::<millimeter>(13.0),
+        glue_gap: Length::new::<millimeter>(0.2),
+        leakage_path_width: Length::new::<millimeter>(1.0),
+        magnet_material: Some(Arc::new(Material::default())),
+        cache: None,
+    };
+
+    RotCoreBuilder {
+        air_gap_radius: Length::new::<millimeter>(40.0),
+        yoke_radius: Length::new::<millimeter>(19.0),
+        axial_length: Length::new::<millimeter>(165.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 3,
+        skew_angle: 0.0,
+        air_gap: Box::new(PlainAirGap::default()),
+        flux_barrier: Some(Box::new(fb)),
+    }
+    .try_into()
+    .map_err(From::from)
+}
+
+fn create_v2r_flux_barrier() -> Result<RotCore, Box<dyn std::error::Error>> {
+    let fb = V2rFluxBarrier {
+        yoke_distance: Length::new::<millimeter>(3.0),
+        relief_path_air_gap_width: Length::new::<millimeter>(2.0),
+        relief_path_length: Length::new::<millimeter>(4.0),
+        relief_path_width: Length::new::<millimeter>(2.0),
+        opening_angle: FRAC_PI_2,
+        magnet_space_width: Length::new::<millimeter>(6.0),
+        magnet_space_height: Length::new::<millimeter>(13.0),
+        glue_gap: Length::new::<millimeter>(0.2),
+        leakage_path_width: Length::new::<millimeter>(1.0),
+        magnet_material: Some(Arc::new(Material::default())),
+        q_axis_fillet: None,
+        cache: None,
+    };
+
+    RotCoreBuilder {
+        air_gap_radius: Length::new::<millimeter>(40.0),
+        yoke_radius: Length::new::<millimeter>(19.0),
+        axial_length: Length::new::<millimeter>(165.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 3,
+        skew_angle: 0.0,
+        air_gap: Box::new(PlainAirGap::default()),
+        flux_barrier: Some(Box::new(fb)),
+    }
+    .try_into()
+    .map_err(From::from)
 }

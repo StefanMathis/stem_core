@@ -43,6 +43,7 @@ use crate::{
     winding_zones::{WindingZones, WindingZonesPeriodic},
 };
 
+#[cfg(feature = "serde")]
 fn deserialize_winding_coverage<'de, D>(deserializer: D) -> Result<f64, D::Error>
 where
     D: serde::Deserializer<'de>,

@@ -135,6 +135,7 @@ impl PositionedMagnetShape {
     }
 }
 
+#[cfg(feature = "cairo")]
 impl From<PositionedMagnetShape> for Drawable {
     fn from(value: PositionedMagnetShape) -> Self {
         value.into_drawable()

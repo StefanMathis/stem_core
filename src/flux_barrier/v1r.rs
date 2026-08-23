@@ -716,7 +716,7 @@ impl FluxBarrier for V1rFluxBarrier {
                 .enumerate()
                 .map(|(i, m)| PositionedMagnetShape {
                     shape: m.into_owned(),
-                    is_north: i.is_even(),
+                    is_north: i.is_odd(),
                     magnet_type: 0,
                 })
                 .collect()

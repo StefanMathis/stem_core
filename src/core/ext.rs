@@ -830,12 +830,12 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
 
     The exact implementation of the Carter factor calculation depends on the
     [`AirGap`] itself, hence this method forwards to [`AirGap::carter_factor`],
-    using `self` as the second argument and `air_gap_length` as the third. See
+    using `self` as the second argument and `air_gap_width` as the third. See
     the docstring of [`AirGap::carter_factor`] for details and examples.
      */
-    fn carter_factor(&self, air_gap_length: Length) -> f64 {
+    fn carter_factor(&self, air_gap_width: Length) -> f64 {
         self.air_gap()
-            .carter_factor(self.as_core_ref(), air_gap_length)
+            .carter_factor(self.as_core_ref(), air_gap_width)
     }
 
     /// Returns the discretization / number of segments of the core.

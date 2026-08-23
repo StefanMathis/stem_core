@@ -670,6 +670,7 @@ fn zero_length() -> Length {
     Length::new::<meter>(0.0)
 }
 
+#[cfg(feature = "serde")]
 fn deserialize_nonnegative_length<'de, D>(deserializer: D) -> Result<Length, D::Error>
 where
     D: serde::Deserializer<'de>,

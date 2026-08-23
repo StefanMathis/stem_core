@@ -744,7 +744,7 @@ pub struct PolygonAirGapBuilder {
     /// resulting core to create the regular polygon air gap contour. It must
     /// be positive, otherwise the conversion into a [`StraightIndentsAirGap`]
     /// will fail.
-    #[serde(deserialize_with = "deserialize_quantity")]
+    #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub air_gap_radius: Length,
 }
 

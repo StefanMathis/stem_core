@@ -7,14 +7,15 @@ use stem_core::prelude::*;
 use stem_slot::semi_trapezoid::SemiTrapezoidWidthsAndHeightsBuilder;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    plot_comparison()?;
+    plot_comparison_lin()?;
+    plot_comparison_rot()?;
     plot_plain()?;
     plot_slotted()?;
     plot_straight_indents()?;
     return Ok(());
 }
 
-fn plot_comparison() -> Result<(), Box<dyn std::error::Error>> {
+fn plot_comparison_rot() -> Result<(), Box<dyn std::error::Error>> {
     let distance = 0.01;
 
     let plain_air_gap: RotCore = RotCoreBuilder {
@@ -109,6 +110,108 @@ fn plot_comparison() -> Result<(), Box<dyn std::error::Error>> {
         slotted_air_pap.drawable().draw(cr)?;
 
         cr.translate(distance + 2.0 * ag_radius, 0.0);
+        straight_indents_air_pap.drawable().draw(cr)?;
+
+        return Ok(());
+    })?;
+    return Ok(());
+}
+
+fn plot_comparison_lin() -> Result<(), Box<dyn std::error::Error>> {
+    let distance = 0.01;
+
+    let plain_air_gap: LinCore = LinCoreBuilder {
+        width: Length::new::<millimeter>(100.0),
+        height: Length::new::<millimeter>(15.0),
+        axial_length: Length::new::<millimeter>(165.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 2,
+        skew_angle: 0.0,
+        air_gap: Box::new(PlainAirGap::default()),
+        flux_barrier: None,
+    }
+    .try_into()?;
+
+    let slot: SemiTrapezoidSlot = SemiTrapezoidWidthsAndHeightsBuilder {
+        bottom_width: Length::new::<millimeter>(6.76),
+        bottom_side_width: Length::new::<millimeter>(6.76),
+        top_side_width: Length::new::<millimeter>(6.76),
+        top_width: Length::new::<millimeter>(1.5),
+        opening_width: Length::new::<millimeter>(1.5),
+        bottom_height: Length::new::<millimeter>(0.0),
+        side_height: Length::new::<millimeter>(6.79 - 0.75 - 0.5),
+        top_height: Length::new::<millimeter>(0.5),
+        opening_height: Length::new::<millimeter>(0.75),
+        bottom_radius: Length::new::<millimeter>(0.0),
+        bottom_side_radius: Length::new::<millimeter>(0.0),
+        top_radius: Length::new::<millimeter>(0.0),
+        top_side_radius: Length::new::<millimeter>(0.0),
+        opening_radius: Length::new::<millimeter>(0.0),
+        consider_tooth_tip_leakage: true,
+    }
+    .try_into()
+    .expect("valid slot");
+
+    let air_gap = SlottedAirGap::new(9, false, CarterFactorModel::Bin12, Box::new(slot));
+    let slotted_air_pap: LinCore = LinCoreBuilder {
+        width: Length::new::<millimeter>(100.0),
+        height: Length::new::<millimeter>(15.0),
+        axial_length: Length::new::<millimeter>(165.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 2,
+        skew_angle: 0.0,
+        air_gap: Box::new(air_gap),
+        flux_barrier: None,
+    }
+    .try_into()?;
+
+    let air_gap = StraightIndentsAirGap {
+        num_segments: 1.try_into()?,
+        indent_width: Length::new::<millimeter>(15.0),
+        indent_depth: Length::new::<millimeter>(2.0),
+        indents_per_pole: 1,
+    };
+
+    let straight_indents_air_pap: LinCore = LinCoreBuilder {
+        width: Length::new::<millimeter>(100.0),
+        height: Length::new::<millimeter>(15.0),
+        axial_length: Length::new::<millimeter>(165.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 2,
+        skew_angle: 0.0,
+        air_gap: Box::new(air_gap),
+        flux_barrier: None,
+    }
+    .try_into()?;
+
+    let fp = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join(&format!("docs/img/lin_air_gap_comparison.svg"));
+
+    let width = plain_air_gap.width().get::<meter>();
+    let bb = BoundingBox::new(
+        -0.001,
+        3.0 * width + 2.0 * distance + 0.001,
+        -0.001,
+        plain_air_gap.height().get::<meter>(),
+    );
+
+    let view = Viewport::from_bounding_box(&bb, SideLength::Long(800));
+    view.write_to_file(&fp, |cr| {
+        cr.set_source_rgb(1.0, 1.0, 1.0);
+        cr.paint()?;
+
+        plain_air_gap.drawable().draw(cr)?;
+
+        cr.translate(distance + width, 0.0);
+        slotted_air_pap.drawable().draw(cr)?;
+
+        cr.translate(distance + width, 0.0);
         straight_indents_air_pap.drawable().draw(cr)?;
 
         return Ok(());

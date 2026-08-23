@@ -1,22 +1,29 @@
 /*!
-TO BE REPLACED
+[serialize_with_units]: https://docs.rs/dyn_quantity/latest/dyn_quantity/quantity/serde_impl/fn.serialize_with_units.html
+[dyn_quantity]: https://crates.io/crates/dyn_quantity
+[serialization and deserialization]: https://stefanmathis.github.io/stem_book/serialization_and_deserialization.html
+[stem book]: https://stefanmathis.github.io/stem_book/
+[stem_magnet]: https://crates.io/crates/stem_magnet
+[stem_slot]: https://crates.io/crates/stem_slot
+[`LinCore`]: crate::core::LinCore
+[`RotCore`]: crate::core::RotCore
+[`AirGap`]: crate::air_gap::AirGap
+[`PlainAirGap`]: crate::air_gap::PlainAirGap
+[`SlottedAirGap`]: crate::air_gap::SlottedAirGap
+[`StraightIndentsAirGap`]: crate::air_gap::StraightIndentsAirGap
+[`FluxBarrier`]: crate::flux_barrier::FluxBarrier
+[`Spoke1FluxBarrier`]: crate::flux_barrier::FluxBarrier
+[`V1rFluxBarrier`]: crate::flux_barrier::V1rFluxBarrier
+[`V2rFluxBarrier`]: crate::flux_barrier::V2rFluxBarrier
 
-[`Slot`]: crate::slot::Slot
-[`Slot::leakage_coefficient_opening`]: crate::slot::Slot::leakage_coefficient_opening
-[`Slot::current_displacement_coefficients`]: crate::slot::Slot::current_displacement_coefficients
-[`RectangularSlot`]: crate::rectangular::RectangularSlot
-[`OpenTrapezoidSlot`]: crate::open_trapezoid::OpenTrapezoidSlot
-[`SemiTrapezoidSlot`]: crate::semi_trapezoid::SemiTrapezoidSlot
-
-Slot definition for stem - a Simulation Toolbox for Electric Motors.
+Magnetic core definition definition for stem - a Simulation Toolbox for Electric Motors.
 
  */
 #![cfg_attr(feature = "doc-images",
 cfg_attr(all(),
-doc = ::embed_doc_image::embed_image!("current_displacement_coeffs_comp.svg", "docs/img/current_displacement_coeffs_comp.svg"),
-doc = ::embed_doc_image::embed_image!("double_layer_coil_layout.svg", "docs/img/double_layer_coil_layout.svg"),
-doc = ::embed_doc_image::embed_image!("slot_types_showcase.svg", "docs/img/slot_types_showcase.svg"),
-doc = ::embed_doc_image::embed_image!("magnetic_core.png", "docs/img/magnetic_core.png"),
+doc = ::embed_doc_image::embed_image!("full_core_assembly.svg", "docs/img/full_core_assembly.svg"),
+doc = ::embed_doc_image::embed_image!("full_core_assembly.svg", "docs/img/lin_air_gap_comparison.svg"),
+doc = ::embed_doc_image::embed_image!("full_core_assembly.svg", "docs/img/rot_flux_barrier_comparison.svg"),
 ))]
 #![cfg_attr(
     not(feature = "doc-images"),
