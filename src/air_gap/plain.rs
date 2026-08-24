@@ -134,8 +134,8 @@ impl Default for PlainAirGap {
 
 The image below shows the definition of the three winding-related fields
 [`PlainAirGap::air_gap_winding_height`], [`PlainAirGap::winding_coverage`] and
-[`PlainAirGap::starts_in_slot_middle`] and how they influence the space
-available space for air-gap mounted coils. See the field documentation for more.
+[`PlainAirGap::starts_in_slot_middle`] and how they influence the available
+space for air-gap mounted coils. See the field documentation for more.
 
  */
 #[doc = ""]
@@ -160,7 +160,7 @@ available space for air-gap mounted coils. See the field documentation for more.
 # Serialization and deserialization
 
 When deserializing, the invariants stated on the struct field documentation
-applies: [`PlainAirGap::air_gap_winding_height`] must not be smaller than zero
+apply: [`PlainAirGap::air_gap_winding_height`] must not be smaller than zero
 and [`PlainAirGap::winding_coverage`] will be clamped to be between 0 and 1.
 
 ```
@@ -235,20 +235,20 @@ pub struct PlainAirGap {
         )
     )]
     pub winding_coverage: f64,
-    /// Whether the air gap surface starts in the middle of a slot or inbetween
+    /// Whether the air gap surface starts in the middle of a slot or in between
     /// two slots.
     ///
-    /// If the "slot" cannot be separated horizontally (e.g. in case of a
-    /// ([`CoilLayout::Single`])), the layers will protrude outside the air gap
-    /// for a linear core. This is obviously not desirable, which is why
-    /// this parameter should generally only be `true` for coil layouts
+    /// If the "slot" cannot be separated horizontally (for example, in the case
+    /// of a ([`CoilLayout::Single`])), the layers will protrude outside the
+    /// air gap for a linear core. This is obviously not desirable, which is
+    /// why this parameter should generally only be `true` for coil layouts
     /// which can be separated horizontally
     /// ([`CoilLayout::DoubleHorizontal`], [`CoilLayout::Quadruple`]).
     /// For a rotary core, this is not the case, as there the parameter only
     /// influences whether the first slot is positioned on the x-axis or not.
     #[cfg_attr(feature = "serde", serde(default = "bool::default"))]
     pub starts_in_slot_middle: bool,
-    /// Number of "slots" of the air gap, i.e. how many times a [`CoilLayout`]
+    /// Number of "slots" of the air gap, i.e., how many times a [`CoilLayout`]
     /// is placed along the [`CoreExt::air_gap_length`].
     #[cfg_attr(feature = "serde", serde(default = "u16::default"))]
     pub slots: u16,

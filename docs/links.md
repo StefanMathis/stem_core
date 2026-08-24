@@ -28,7 +28,7 @@ modify the components. -->
 
 [![Documentation](https://docs.rs/stem_core/badge.svg)](https://docs.rs/stem_core)
 
-Magnetic core definition definition for stem - a Simulation Toolbox for Electric Motors.
+Magnetic core definition for stem - a Simulation Toolbox for Electric Motors.
 
 The full API documentation is available at <https://docs.rs/stem_core/{{VERSION}}/stem_core>.
 

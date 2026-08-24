@@ -52,7 +52,7 @@ use crate::{
 /// An enum providing different models for calculating the
 /// [`carter_factor`](CoreExt::carter_factor) of a [`SlottedAirGap`].
 ///
-/// The _Carter factor_ `kc` describes the effect of non-smooth (e.g. slotted)
+/// The _Carter factor_ `kc` describes the effect of non-smooth (e.g., slotted)
 /// air gaps contours on the magnetic resistance / reluctance of the air gap.
 /// The magnetically effective air gap width can be calculated as
 /// kc_stator_core * kc_rotor_core * geometric_air_gap_width` with both factors
@@ -190,7 +190,7 @@ for space inside the air gap.
 - The slot functions as a container for the winding coils, it is not necessary
 to introduce further fixation.
 
-One disadvantage - especially for open slots - is the introduction of additional
+One disadvantage, especially for open slots, is the introduction of additional
 magnetic harmonics (see [`SlottingOrdinals`](crate::core::SlottingOrdinals)) due
 to the non-smoothness of the air gap. Even for closed slots, this is still an
 issue, because the small bridge between slot and air gap tends to saturate,
@@ -233,24 +233,24 @@ parameter changes the core geometry, using the example of a linear core.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SlottedAirGap {
-    /// Number of slots of the air gap, i.e. how many times the
+    /// Number of slots of the air gap, i.e., how many times the
     /// [`Slot::outline`] of the
     /// [`SlottedAirGap::slot`](struct.SlottedAirGap.html#structfield.slot)
     /// field is placed along the [`CoreExt::air_gap_length`].
     pub slots: u16,
-    /// Whether the air gap surface starts in the middle of a slot or inbetween
+    /// Whether the air gap surface starts in the middle of a slot or in between
     /// two slots.
     ///
-    /// If a [`CoilLayout`] cannot be separated horizontally (e.g. in case of a
-    /// ([`CoilLayout::Single`])), the layers will protrude outside the air gap
-    /// for a linear core. This is obviously not desirable, which is why
-    /// this parameter should generally only be `true` for coil layouts
-    /// which can be separated horizontally
+    /// If a [`CoilLayout`] cannot be separated horizontally (for example, in
+    /// the case of a ([`CoilLayout::Single`])), the layers will protrude
+    /// outside the air gap for a linear core. This is obviously not
+    /// desirable, which is why this parameter should generally only be
+    /// `true` for coil layouts which can be separated horizontally
     /// ([`CoilLayout::DoubleHorizontal`], [`CoilLayout::Quadruple`]).
     /// For a rotary core, this is not the case, as there the parameter only
     /// influences whether the first slot is positioned on the x-axis or not.
     ///
-    /// See the image in the [`SlottedAirGap`] docstring for a visualizatiom
+    /// See the image in the [`SlottedAirGap`] docstring for a visualization
     /// (due to a limitation of the embed_doc_image crate, the image cannot be
     /// included in this docstring directly).
     pub starts_in_slot_middle: bool,

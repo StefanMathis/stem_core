@@ -113,7 +113,7 @@ A sealed trait providing shared functionality for all core types:
 [`LinCore`](crate::core::LinCore), [`RotCore`](crate::core::RotCore), and the
 [`Core`](crate::core::Core) and [`CoreRef`] enums.
 
-The main purpose of this enum is to provide a common interface for all core
+The main purpose of this trait is to provide a common interface for all core
 types, allowing for polymorphic behavior and code reuse. It is sealed to prevent
 external implementations, ensuring that only the intended core types can
 implement it.
@@ -122,9 +122,8 @@ Some of the trait methods require different implementations depending on the
 [`AirGap`] or [`FluxBarrier`] of the core. These methods are wrappers around
 the methods of [`AirGap`] / [`FluxBarrier`]; an example would be
 [`CoreExt::winding_zones`] which wraps [`AirGap::winding_zones`]. The wrappers
-always have the signature `wrapper(core, ...)`, while the wrappers look like
-this: `wrapped(air_gap / flux_barrier, core, ...)`. Using the example of the
-`winding_zones` method, the wrapper implementation looks like this:
+always have the signature `wrapper(core, ...)`, while the wrapped methods look
+like this: `wrapped(air_gap / flux_barrier, core, ...)`:
 
 ```ignore
 fn winding_zones(&self, coil_layout: &CoilLayout) -> WindingZones {
@@ -138,9 +137,9 @@ The docstrings of the [`CoreExt`] trait will generally focus on the _use_ of the
 methods, whereas the [`AirGap`] / [`FluxBarrier`] docstrings will give details
 on how to _implement_ them.
 
-The wrapped methods are used as way to implement polymorphism and are not
-intended to be used standalone. In particular, calling them with a `core` which
-wasn't build using the specified [`AirGap`] / [`FluxBarrier`] trait object may
+The wrapped methods exist to implement polymorphism and are not intended to be
+used standalone. In particular, calling them with a `core` which wasn't build
+using the specified [`AirGap`] / [`FluxBarrier`] trait object may
 result in incorrect or unexpected results (although it must never result in
 undefined behaviour)! The implementation of the [`AirGap`] / [`FluxBarrier`]
 traits is not required to guard against this misuse of the interface.
@@ -164,7 +163,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// returns `None`.
     fn flux_barrier(&self) -> Option<&dyn FluxBarrier>;
 
-    /// Returns the axial length of the core, i.e. the length into the image
+    /// Returns the axial length of the core, i.e., the length into the image
     /// plane when looking at the cross section of the core.
     ///
     /// See the docstrings of [`LinCore`](crate::core::LinCore) and
@@ -252,14 +251,14 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// when a core is slotted, the resulting field will have "slot harmonics"
     /// whose order is a multiple of [`CoreExt::slots`]. With the exception of
     /// the pole pair (main) harmonic, which provides the continuous force
-    /// driving the motor, these harmonics should be usually minimized because
-    /// they result in force fluctations and noise.
+    /// driving the motor, These harmonics should usually be minimized because
+    /// they result in force fluctuations and noise.
     ///
     /// One way to suppress the harmonics is to "skew" the motor by the
     /// so-called skew angle. In the case of a linear motor, this means shifting
     /// one end by `skew_angle / (2*pi) * core.width()` against the other. A
     /// rotary motor is twisted along its rotational axis by the skew angle.
-    /// Depending on the angle, this leads to destructive interference of
+    /// Depending on the skew angle, this leads to destructive interference of
     /// undesired harmonics. For example, to suppress the aforementioned slot
     /// harmonics, the core needs to be skewed by `2 * pi / core.slots()`. See
     /// [\[1\]](#core_ext_skew_angle_1), section 6.5 for more. Be aware that
@@ -288,7 +287,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     Returns the air gap "length" of the core.
 
     For a linear core, this is [`LinCore::width`](crate::core::LinCore::width).
-    For a rotary core, this is the air gap outline
+    For a rotary core, this is the circumference of the air gap
     ([`RotCore::air_gap_radius`](crate::core::RotCore::air_gap_radius) times 2
     pi).
 
@@ -339,10 +338,10 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     If the core holds a winding, its coils can generally be separated into two
     different parts: A straight one where the coil goes along the axial length
     of the core and the end winding, where the coil closes. Sometimes, the
-    straight part extends a bit from the core ends due to e.g. the slot
+    straight part extends a bit from the core ends due to e.g., the slot
     insulation extending outside the core. This "extended" coil length is called
     the axial coil overhang. The ASCII art below visualizes it with equal signs
-    (=). If = equals one mm, the return value of `axial_coil_overhang` would be
+    `=`. If `=` equals one mm, the return value of `axial_coil_overhang` would be
     3 mm.
     ```text
          ┌──────┐
@@ -375,9 +374,9 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// magnet assembly is provided as the second argument, the area covered by
     /// magnets is divided by the entire air gap area to get the pole
     /// coverage. If no surface magnet assembly is given, but the core holds a
-    /// flux barrier, this methods forwards to [`FluxBarrier::pole_coverage`].
+    /// flux barrier, this method forwards to [`FluxBarrier::pole_coverage`].
     ///
-    /// The image below all three of these cases, using a
+    /// The image below shows all three of these cases, using a
     /// [`V1rFluxBarrier`](crate::flux_barrier::V1rFluxBarrier) for the
     /// rightmost core, where the
     /// d-axis covers 4 of 7 teeth per pole and hence the resulting pole
@@ -573,8 +572,8 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     If any two of these bodies overlap (checked with
     [`Composite::contains_any`] using the provided `epsilon` and
     `max_relative` tolerances, an [`AssemblyFailure`] is returned, containing
-    both the two overlapping bodes as well as the exact [`Overlap`] provided by
-    [`Composite::contains_any`]. Furthermore, all interior magnets of
+    both the two overlapping bodies as well as the exact [`Overlap`] provided by
+    [`Composite::contains_any`]. Furthermore, all interior magnets
     should be contained within the [`Shape::contour`] of the core shape, which
     is tested with [`Composite::contains`]. If this is not the case,
     the core shape and the magnet shape are returned together with a
@@ -822,7 +821,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /**
     Returns the Carter factor of `self`.
 
-    The _Carter factor_ `kc` describes the effect of non-smooth (e.g. slotted)
+    The _Carter factor_ `kc` describes the effect of non-smooth (e.g., slotted)
     air gaps contours on the magnetic resistance / reluctance of the air gap.
     The magnetically effective air gap width can be calculated as
     `kc_stator_core * kc_rotor_core * geometric_air_gap_width` with both factors
@@ -1331,7 +1330,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///
     /// A "slot" in this context is a space for winding coils which contains one
     /// or more layers (see [`CoilLayout`]). This space can be an actual
-    /// [`Slot`] (e.g. for a [`SlottedAirGap`](crate::air_gap::SlottedAirGap)),
+    /// [`Slot`] (e.g., for a [`SlottedAirGap`](crate::air_gap::SlottedAirGap)),
     /// but doesn't necessarily need to be. For example, the "slots" for a
     /// [`PlainAirGap`](crate::air_gap::PlainAirGap) are the coil mounting
     /// points on the air gap surface. In this example image, both cores have
@@ -1370,7 +1369,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     is distributed along the slot openings whereas a wound
     [`PlainAirGap`](crate::air_gap::PlainAirGap) distributes the load along the
     entire air gap surface covered by coils. For further information, see
-    standard electric machines literature like e.g.
+    standard electric machines literature like e.g.,
     [\[1\]](#air_gap_slot_opening_factor_1), section 1.2.3.3.
 
     The effect of this distribution on a particular harmonic can be calculated
@@ -1610,9 +1609,9 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         return self.slots() != 0;
     }
 
-    /// Returns whether the core has [`Slot`]s.
+    /// Returns whether the core has slots.
     ///
-    /// This method is implemented as `self.slot().is_some()`, i.e. the core is
+    /// This method is implemented as `self.slot().is_some()`, i.e., the core is
     /// slotted if [`CoreExt::slot`] doesn't return `None`.
     fn slotted(&self) -> bool {
         return self.slot().is_some();
@@ -1621,8 +1620,8 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// Returns the air gap surface area of the core.
     ///
     /// The air gap surface area is
-    /// `self.axial_length() * self.air_gap_length()`, i.e. the area of the core
-    /// body face which faces the air gap.
+    /// `self.axial_length() * self.air_gap_length()`, i.e., the area of the
+    /// core body face which faces the air gap.
     ///
     /// # Examples
     ///
@@ -1928,7 +1927,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///
     /// `mech_ordinal = el_ordinal * pole_pairs`
     ///
-    /// This methods forwards to the free function [`skew_factor`] with
+    /// This method forwards to the free function [`skew_factor`] with
     /// [`CoreExt::skew_angle`] and [`CoreExt::num_segments`] as the third and
     /// fourth argument. See the docstring of [`skew_factor`] for details and
     /// examples.
@@ -2050,7 +2049,7 @@ to the electrical ordinal via:
 mech_ordinal = el_ordinal * pole_pairs
 ```
 
-i.e. the electrical ordinal gives the number of maxima of the sinusoidal curve
+i.e., the electrical ordinal gives the number of maxima of the sinusoidal curve
 over one pole pair and the mechanical ordinal the number of maxima over the
 entire air gap.
 
@@ -2224,7 +2223,7 @@ influence of the tooth head / slot opening geometry on phenomena such as cogging
 torque. To do that, the graph is disassembled into its harmonics via Fourier
 transformation.
 
-This iterator returns the "electrical" ordinals of those harmonics, i.e. the
+This iterator returns the "electrical" ordinals of those harmonics, i.e., the
 ordinal is normalized to a pole pair. To obtain the "mechanical" ordinals,
 simply multiply the electrical ordinals by the number of pole pairs.
 

@@ -19,7 +19,7 @@ _This image was produced with `examples/readme_plots.rs`._
 
 The two fundamental core types [`LinCore`] and [`RotCore`] are modular: Air
 gap shape and flux barriers can be customized independently via [`AirGap`] and
-[`FluxBarrier`] trait objects, allowing the usage of user defined air
+[`FluxBarrier`] trait objects, allowing the usage of user-defined air
 gaps or flux barriers. Additionally, the crate also provides a couple of
 predefined [`AirGap`]s and [`FluxBarrier`]s:
 
@@ -34,7 +34,7 @@ _From left to right: [`Spoke1FluxBarrier`], [`V1rFluxBarrier`] and [`V2rFluxBarr
 # Example
 
 The following code snippet shows how to create the [`RotCore`] showcased in the
-first image and how to calculate various properties (e.g. for use in
+first image and how to calculate various properties (e.g., for use in
 simulations). Note the tight integration of [stem_magnet] and [stem_slot] into
 stem_core:
 
@@ -143,7 +143,7 @@ assert_abs_diff_eq!(core.mass_surface_magnets(&surface_magnets).get::<kilogram>(
 
 If the `serde` feature is enabled, all types from this crate can be
 serialized and deserialized. During deserialization, the invariants are
-validated (to e.g. prevent a negative axial core length).
+validated (to e.g., prevent a negative axial core length).
 
 Units and quantities can be deserialized from strings representing SI units via
 the [dyn_quantity] crate. Similarly, it is possible to serialize quantities

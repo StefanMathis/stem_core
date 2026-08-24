@@ -22,8 +22,8 @@ use crate::{LinOrRot, air_gap::AirGap, error::IncompatibleFluxBarrier, flux_barr
 A magnetic core for a rotary electric motor / machine.
 
 Seen from its cross section, a radial flux rotary electric motor consists of two
-coaxial hollow cylinders / tubes, where one of them (the rotor) rotates around
-the other (the stator). Therefore, the cross section of the stator / rotor core
+coaxial hollow cylinders (or tubes), where one of them (the rotor) rotates around
+the other (the stator). Therefore, the cross section of the stator or rotor core
 is effectively also a hollow cylinder described by the inner radius, outer
 radius and axial length (which in the cross section view goes into the image
 plane).
@@ -69,7 +69,7 @@ winding (not depicted).
 # Building a `RotCore`
 
 A [`RotCore`] is built from a [`RotCoreBuilder`]. If the field values of the
-[`RotCoreBuilder`] do not result in a valid core (e.g. if negative dimensions
+[`RotCoreBuilder`] do not result in a valid core (e.g., if negative dimensions
 are given), the conversion fails, as shown in the example below. The field
 docstrings of [`RotCoreBuilder`] state the allowed value range for each
 parameter. Besides the [`RotCore::new`] constructor, [`TryFrom`] / [`TryInto`]
@@ -177,7 +177,7 @@ impl RotCore {
     /**
     Builds a new [`RotCore`] from a [`RotCoreBuilder`].
 
-    Building a [`RotCore`] can fail if the provided data is invalid (e.g.
+    Building a [`RotCore`] can fail if the provided data is invalid (e.g.,
     negative dimensions). See the field documentation of [`RotCoreBuilder`] for
     details. In such a case, the resulting error is returned instead.
 
@@ -690,7 +690,7 @@ pub struct RotCoreBuilder {
     pub material: Arc<Material>,
     /// Number of pole pairs of the core.
     pub pole_pairs: u16,
-    /// Definition of the air gap shape. See the docstring of [`AirGap`] for
+    /// Definition of the air gap contour. See the docstring of [`AirGap`] for
     /// details.
     pub air_gap: Box<dyn AirGap>,
     /// Definition of the flux barrier geometry, if the core has any. See the

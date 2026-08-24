@@ -1,11 +1,11 @@
 /*!
-A module providing iterators for positioning winding zones inside or on magnetic
+This module provides iterators for positioning winding zones inside or on magnetic
 cores.
 
 A winding [`Zone`] is the space where one coil of a winding is located. A "slot"
 is a group of zones layered next to each other as defined by a [`CoilLayout`].
 If a core is [slotted](crate::air_gap::SlottedAirGap), this group is located
-inside an actual [`Slot`], whereas e.g. for an
+inside an actual [`Slot`], whereas e.g., for an
 [air gap winding](crate::air_gap::PlainAirGap), the coils are located on top of
 the air gap surface of the core:
 
@@ -26,8 +26,8 @@ doc = ::embed_doc_image::embed_image!("winding_zones_with_zone_pos.svg", "docs/i
 /*!
 _This image was produced with `examples/winding_zone_plots.rs`._
 
-The [`Contour`]s of the winding zones are positioned relative to the core via
-the [`WindingZones`] iterator, which in turn is created by
+The winding-zone contours are positioned relative to the core via the
+[`WindingZones`] iterator, which in turn is created by
 [`CoreExt::winding_zones`](crate::core::CoreExt::winding_zones). The positioning
 depends on the [`AirGap`](crate::air_gap::AirGap) of the core, see
 [`AirGap::winding_zones`](crate::air_gap::AirGap::winding_zones).
@@ -38,14 +38,13 @@ winding: For example, it tells how much space is available for the lower layer
 in slot 23 of a double-layer winding.
 
 [`WindingZones`] itself is a wrapper around iterators such as
-[`WindingZonesPeriodic`] which implement `Iterator<Item=PositionedZoneContour`>.
+[`WindingZonesPeriodic`] which implement `Iterator<Item = PositionedZoneContour>`.
 It is possible to wrap custom iterators via [`WindingZones::from_iter`], which
 allows using any iterator returning [`PositionedZoneContour`]s for implementing
 [`AirGap::winding_zones`](crate::air_gap::AirGap::winding_zones).
 
 `examples/winding_zone_plots.rs` demonstrates how to utilize the
-[`WindingZones`] iterator for creating the above image. The following snippet in
-particular shows how to to draw the [`PositionedZoneContour`]s:
+[`WindingZones`] iterator for creating the above image:
 
 ```ignore
 // "cr" is a cairo::Context
@@ -382,7 +381,7 @@ impl<T: Transformation + Clone, const LIN: bool> WindingZonesPeriodic<T, LIN> {
     ///   along which the zones will be distributed. See
     ///   [`CoreExt::air_gap_length`](crate::core::CoreExt::air_gap_length).
     /// - `zones`: The geometric entities to be distributed. Each element is
-    ///   interpreted as a layer, i.e. `zones.len() == self.layers()`.
+    ///   interpreted as a layer, i.e., `zones.len() == self.layers()`.
     /// - `slots`: Number of slots along the air gap. The `zones` will be
     ///   distributed `slots` times along the `air_gap_length`.
     /// - `starts_in_slot_middle`: If true, the first slot starts at the
@@ -465,7 +464,7 @@ impl<T: Transformation + Clone, const LIN: bool> WindingZonesPeriodic<T, LIN> {
 
     /// Returns a "dummy" iterator which will only yield `None`.
     ///
-    /// This constructor is useful for creating an "empty" iterator (e.g. for
+    /// This constructor is useful for creating an "empty" iterator (e.g., for
     /// implementing
     /// [`CoreExt::winding_zones`](crate::core::CoreExt::winding_zones) for a
     /// non-windable air gap). It calls [`WindingZonesPeriodic::new`] with
@@ -1090,7 +1089,7 @@ An iterator over the [`PositionedZoneContour`]s of a magnetic core.
 
 If a magnetic core provides space for the coils of a winding ("zones"), this
 iterator returns the [`Contour`]s describing that space for each [`Zone`] of the
-winding. The [`Zone`]s are strictly monotonic increasing:
+winding. The [`Zone`]s are strictly increasing:
 
 ```
 use std::sync::Arc;
@@ -1142,9 +1141,9 @@ When implementing
 [`CoreExt::winding_zones`](crate::core::CoreExt::winding_zones)), the
 [`WindingZones::from_iter`] method can be used for wrapping a custom
 iterator. The custom iterator should provide the zones in the same ascending
-order as shown in the example (i.e. the nth + 1 [`PositionedZoneContour::zone`]
-should be greater than the nth [`PositionedZoneContour::zone`] according to the
-[`Ord`] implementation for [`Zone`]). See [`Zone`] for details.
+order as shown in the example (i.e., the zone of the `(n+1)`th item
+should be greater than the `n`th [`PositionedZoneContour::zone`] according to
+the [`Ord`] implementation for [`Zone`]). See [`Zone`] for details.
  */
 pub struct WindingZones(WindingZonesInner);
 

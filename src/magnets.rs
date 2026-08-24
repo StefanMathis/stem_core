@@ -1,8 +1,8 @@
 /*!
-A module providing iterators for positioning surface and interior magnets inside
+This module provides iterators for positioning surface and interior magnets inside
 or on magnetic cores.
 
-Permanent magnets can be integrated into a magnetic cores in two different
+Permanent magnets can be integrated into a magnetic core in two different
 fashions: They can be either mounted on the air gap surface ("surface magnets")
 or inside cutouts ([`FluxBarrier`](crate::flux_barrier::FluxBarrier)s) within
 the core. The following image shows both variants with the surface magnets using
@@ -26,8 +26,9 @@ doc = ::embed_doc_image::embed_image!("surface_and_interior_magnets.svg", "docs/
 
 There are various use cases where the exact positioning of surface and interior
 magnets must be known, for example for FEM simulations (where the model is
-derived directly from the geometry), for collision detection (i.e. can surface
-magnets fit inside a given air gap) or for visualization as shown above.
+derived directly from the geometry), for collision detection (i.e.,, to determine
+whether surface magnets fit inside a given air gap) or for visualization as
+shown above.
 
 The [`CoreExt`](crate::core::CoreExt) therefore provides the
 [`CoreExt::surface_magnets`](crate::core::CoreExt::surface_magnets) and
@@ -37,15 +38,14 @@ which return a [`Magnets`] iterator. This iterator returns
 to the origin of the core as well as some metadata.
 
 [`Magnets`] itself is a wrapper around iterators such as [`MagnetsPeriodic`]
-which implement `Iterator<Item=PositionedMagnetShape`>. It is possible to wrap
+which implement `Iterator<Item = PositionedMagnetShape>`. It is possible to wrap
 custom iterators via [`Magnets::from_iter`], which allows using any iterator
 returning [`PositionedMagnetShape`]s for implementing
 [`CoreExt::surface_magnets`](crate::core::CoreExt::surface_magnets) or
 [`CoreExt::interior_magnets`](crate::core::CoreExt::interior_magnets).
 
 `examples/magnet_plots.rs` demonstrates how to utilize the
-[`Magnets`] iterator for creating the above image. The following snippet in
-particular shows how to to draw the interior [`PositionedMagnetShape`]s:
+[`Magnets`] iterator for creating the above image:
 
 ```ignore
 // "cr" is a cairo::Context
@@ -64,8 +64,8 @@ use stem_magnet::prelude::*;
 /// A positioned magnet [`Shape`] with some metadata.
 ///
 /// This struct is returned by the [`Magnets`] iterator and contains the
-/// [`Shape`] of the zone positioned relative to the magnetic core which created
-/// [`Magnets`] via the
+/// [`Shape`] of the magnet positioned relative to the magnetic core which
+/// created [`Magnets`] via the
 /// [`CoreExt::surface_magnets`](crate::core::CoreExt::surface_magnets) or
 /// [`CoreExt::interior_magnets`](crate::core::CoreExt::interior_magnets)
 /// method. Additionally, it provides some metadata such as the polarity of the
@@ -923,7 +923,7 @@ Calculates the angle covered by the `shapes` on a circle with the given `radius`
 This method returns the angle covered by all `shapes` for a circle with the
 specified `radius`, using the center of the circle as the origin for the
 `shapes`. This function can deal with negative radii to make it easier to work
-with the shapes of e.g. an [`ArcSegmentMagnet`] which might return negative
+with the shapes of e.g., an [`ArcSegmentMagnet`] which might return negative
 radii to signal convexity.
 
 This function is used inside [`surface_magnet_assembly_shapes_rot`] to position

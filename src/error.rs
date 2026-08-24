@@ -1,9 +1,9 @@
 /*!
 This module contains the [`Error`] enum, which represents the different ways
 building a magnetic core can fail due to invalid input data. The
-[`Error::Other`] variants supports arbitrary errors resulting from user-created
-core types. The [`IncompatibleFluxBarrier`] covers failure when trying to
-insert a flux barrier in an existing core.
+[`Error::Other`] variant supports arbitrary errors resulting from user-created
+core types. The [`IncompatibleFluxBarrier`] variant represents a failure when
+trying to insert a flux barrier into an existing core.
 */
 
 use std::num::TryFromIntError;
@@ -34,13 +34,13 @@ pub enum Error {
     GeometryError(planar_geo::error::Error),
     /// A [`AirGap`](crate::air_gap::AirGap) or
     /// [`FluxBarrier`] is not compatible to a linear core. The string holds the
-    /// type name (e.g. "PlainAirGap").
+    /// type name (e.g., "PlainAirGap").
     IncompatibleToLinCore(&'static str),
     /// A [`AirGap`](crate::air_gap::AirGap) or
     /// [`FluxBarrier`] is not compatible to a rotary core. The string holds the
-    /// type name (e.g. "PlainAirGap").
+    /// type name (e.g., "PlainAirGap").
     IncompatibleToRotCore(&'static str),
-    /// Fallback variant for arbitrary other errors (e.g. from custom
+    /// Fallback variant for arbitrary other errors (e.g., from custom
     /// [`AirGap`](crate::air_gap::AirGap) or [`FluxBarrier`] implementations).
     Other(Box<dyn std::error::Error>),
 }

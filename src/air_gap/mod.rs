@@ -1,5 +1,5 @@
 /*!
-This module defines the [`AirGap`] trait which defines the air gap contour
+This module provides the [`AirGap`] trait which defines the air gap contour
 of magnetic cores such as [`LinCore`](crate::core::LinCore) and
 [`RotCore`](crate::core::RotCore).
 
@@ -103,7 +103,7 @@ method documentation for examples.
 
 This design pattern replaces an earlier one where types like `RotCorePlain`
 and `LinCoreSlotted` existed, which was clearly OOP-inspired. This older pattern
-had the general issue that each new air gap shape required defining two new
+had the general issue that each new air gap contour required defining two new
 types (one for a linear and one for a rotary core) and that it was difficult to
 share code between those. The new pattern follows the "composition over
 inheritance" philosophy of Rust, by treating the air gap as a property of the
@@ -121,7 +121,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// when combining an [`SlottedAirGap`] with a
     /// [`LinCore`](crate::core::LinCore), the latter must be high enough to
     /// accommodate the slot. But even if the shape creation succeeds, an
-    /// [`AirGap`] might still be incompatible to a core: If e.g. the
+    /// [`AirGap`] might still be incompatible to a core: If e.g., the
     /// [`air_gap_winding_height`](PlainAirGap::air_gap_winding_height) of a
     /// [`PlainAirGap`] is larger than the inner air gap radius of a
     /// [`RotCore`](crate::core::RotCore), the winding does not fit inside
@@ -136,7 +136,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// name.
     ///
     /// It might be useful to cache data created during the combination within
-    /// `self` (e.g. geometric data which is expensive to calculate but useful
+    /// `self` (e.g., geometric data which is expensive to calculate but useful
     /// for other [`AirGap`] methods). Therefore, this method takes a
     /// `&mut self` reference so that data can be stored within `self`.
     ///
@@ -242,7 +242,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     [`SlottedAirGap`], the electric loading is distributed along the slot,
     opening whereas a wound [`PlainAirGap`] distributes the load along the
     entire air gap surface covered by coils. For further information, see
-    standard electric machines literature like e.g.
+    standard electric machines literature like e.g.,
     [\[1\]](#air_gap_slot_opening_factor_1), section 1.2.3.3.
 
     The effect of this distribution on a particular harmonic can be calculated
@@ -385,7 +385,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// (see [`PositionedMagnetShape::is_north`](crate::magnets::PositionedMagnetShape::is_north)).
     ///
     /// The [`crate::magnets`] module contains some predefined iterators
-    /// to simplify the implementation of this method, see e.g. the source code
+    /// to simplify the implementation of this method, see e.g., the source code
     /// of [`PlainAirGap::surface_magnets`] for an example.
     fn surface_magnets(
         &self,
@@ -448,7 +448,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// attached to it.
     ///
     /// The [`winding_zones`](crate::winding_zones) module provides the
-    /// [`WindingZones`] iterator and has further information. See e.g. the
+    /// [`WindingZones`] iterator and has further information. See e.g., the
     /// source code of [`PlainAirGap::winding_zones`] for an implementation
     /// example.
     fn winding_zones(&self, _core: CoreRef<'_>, _coil_layout: &CoilLayout) -> WindingZones {
@@ -480,7 +480,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// the default implementation returns a length of zero meter. If a slot
     /// does in fact exist, its width at the given `height` is calculated
     /// using [`Slot::width_at`] and the resulting value is then used to
-    /// determine the tooth width, i.e. the width of the space between two
+    /// determine the tooth width, i.e., the width of the space between two
     /// slots at that particular `height`. If a particular [`AirGap`]
     /// implementor defines the tooth width differently, this method can be
     /// overwritten.
@@ -527,7 +527,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// This method implements
     /// [`CoreExt::current_displacement_coefficients`].
     /// If an air gap supports windings created from massive conductors
-    /// (e.g. squirrel cage windings), the latter may be subject to
+    /// (e.g., squirrel cage windings), the latter may be subject to
     /// non-negligible current displacement affecting both the effective
     /// electrical resistance and inductance. See
     /// [`CurrentDisplacementCalculator`] for a detailed explanation of the
@@ -537,7 +537,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// (partially) surrounded by the core (currently only the case for a
     /// [`SlottedAirGap`]). Hence, its default implementation creates a
     /// calculator which simply returns [`CurrentDisplacementCoefficients`]
-    /// which are 1 for any input (i.e., no current displacement effects take
+    /// which are 1 for any input (i.e.,, no current displacement effects take
     /// place). This method should only be overwritten if the [`AirGap`] contour
     /// is expected to cause notable current displacement and [`SlottedAirGap`]
     /// is insufficient for that particular use case.
@@ -562,7 +562,7 @@ geometries, this is obviously not the case. The the electric loading of a
  [`SlottedAirGap`] is distributed along the slot opening whereas a wound
  [`PlainAirGap`] distributes the load along the entire air gap surface covered
  by coils. For further information, see standard electric machines literature
- like e.g. [\[1\]](#air_gap_slot_opening_factor_1), section 1.2.3.3.
+ like e.g., [\[1\]](#air_gap_slot_opening_factor_1), section 1.2.3.3.
 
 The effect of this distribution on a particular harmonic can be calculated
 with the "slot opening factor" ξ which is defined as:

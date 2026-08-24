@@ -3,11 +3,11 @@ This module defines the [`FluxBarrier`] trait used to define cutouts inside the
 core yoke for influencing the magnetic flux paths and for mounting interior
 magnets.
 
-Besides the aforementioned trait, this module also reexports some implementors
-of the [`FluxBarrier`] trait as well as auxiliary types and functions:
-- [`Spoke1FluxBarrier`] (reexported from the [`spoke1`] module) defines a spoke
-design flux barrier for a single block magnet (hence the "1") with an optional
-flux relief path next to the flux leakage path at the air gap.
+In addition to this trait, this module also reexports some implementors as well
+as auxiliary types and functions:
+- [`Spoke1FluxBarrier`] (reexported from the [`spoke1`] module) defines a
+spoke-type flux barrier for a single block magnet (hence the "1") with an
+optional flux relief path next to the flux leakage path at the air gap.
 - [`V1rFluxBarrier`] (reexported from the [`v1r`] module) defines a V-shaped
 flux barrier with an (optional) flux relief path in the middle of the V.
 - [`V2rFluxBarrier`] (reexported from the [`v2r`] module) defines a V-shaped
@@ -122,7 +122,7 @@ supposed to work, not how to use them in user code.
 
 The [`FluxBarrier::combine`] method is used in
 [`LinCore::new`](crate::core::LinCore::new) and
-[`RotCore::new`](crate::core::RotCore::new) to create the flux barrier cutouts
+[`RotCore::new`](crate::core::RotCore::new) to create the flux barriers
 in the core shape. See the trait method documentation for examples.
  */
 #[cfg_attr(feature = "serde", typetag::serde)]
@@ -149,7 +149,7 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     /// the type name.
     ///
     /// It might be useful to cache data created during the combination within
-    /// `self` (e.g. geometric data which is expensive to calculate but useful
+    /// `self` (e.g., geometric data which is expensive to calculate but useful
     /// for other [`FluxBarrier`] methods). Therefore, this method takes a
     /// `&mut self` reference so that data can be stored within `self`.
     ///
@@ -304,7 +304,7 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     /// `magnet_type` of a returned shape is 1, that shape belongs to the second
     /// magnet assembly in the slice. Returning a `magnet_type` which is out of
     /// bounds of the slice will result in a panic when calling some methods
-    /// like e.g. [`CoreExt::mass_interior_magnets`].
+    /// like e.g., [`CoreExt::mass_interior_magnets`].
     /// - If `split` is true, each magnet should be separated in its north and
     /// south shape using
     /// [`Magnet::north_south_shapes`](stem_magnet::magnet::Magnet::north_south_shapes).
@@ -313,7 +313,7 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     /// (see [`PositionedMagnetShape::is_north`](crate::magnets::PositionedMagnetShape::is_north)).
     ///
     /// The [`crate::magnets`] module contains some predefined iterators
-    /// to simplify the implementation of this method, see e.g. the source code
+    /// to simplify the implementation of this method, see e.g., the source code
     /// of [`Spoke1FluxBarrier::interior_magnets`] for an example.
     fn interior_magnets(&self, _core: CoreRef<'_>, _split: bool) -> Magnets {
         // Dummy implementation, to be overwritten.
@@ -347,7 +347,7 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     the magnet assembly to which a particular shape belongs can be determined.
     For example, if `self.magnet_assemblies().len() == 2` and the
     `PositionedMagnetShape::magnet_type` of a returned shape is 1, that shape
-    belongs to the second magnet assembly in the slice. This can e.g. be used to
+    belongs to the second magnet assembly in the slice. This can e.g., be used to
     calculate the total mass of all interior magnets (see source code of
     [`CoreExt::mass_interior_magnets`]. When implementing [`FluxBarrier`] for
     an external type, this relation needs to be uphold, because otherwise these

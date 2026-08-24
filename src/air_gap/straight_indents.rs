@@ -49,7 +49,7 @@ use crate::{
 
 /**
 An air gap with straight indents for mounting magnets with planar backs like
-e.g. [`BlockMagnet`]s.
+e.g., [`BlockMagnet`]s.
 
 This air gap features one or more indents per pole which can be used for
 mounting magnets with planar surfaces. This is especially interesting for
@@ -79,7 +79,7 @@ indent width, two indents per pole).
 
 _This image was produced with `examples/air_gap_plots.rs`._
 
-A [`StraightIndentsAirGap`] cannot be wound, hence [`AirGap::slots`] always
+A [`StraightIndentsAirGap`] cannot be wound, so [`AirGap::slots`] always
 returns zero.
 
 When used in a linear motor, [`CoreExt::d_axis_offset`] must be `pi/2`, which it
@@ -127,14 +127,14 @@ much simpler and only the first two values are needed.
 
 Besides using the struct constructor directly, a [`PolygonAirGapBuilder`] can be
 used to build a [`StraightIndentsAirGap`] for a [`RotCore`] where the entire air
-gap surface is covered by indents (i.e. the indents of one pole directly touch
+gap surface is covered by indents (i.e., the indents of one pole directly touch
 that of the next one, resulting in a symmetric polygon). A
 [`PolygonAirGapBuilder`] can be fallibly converted into a
 [`StraightIndentsAirGap`] via [`TryFrom`].
 
 # Serialization and deserialization
 
-A [`StraightIndentsAirGap`] can be deserialized directly its fields or
+A [`StraightIndentsAirGap`] can be deserialized directly from its fields or
 alternatively from a [`PolygonAirGapBuilder`].
 
 ```
@@ -664,13 +664,13 @@ impl AirGap for StraightIndentsAirGap {
 /**
 A builder struct for a [`StraightIndentsAirGap`].
 
-This builder struct is meant to be used for creating [`StraightIndentsAirGap`]s
-used to create [`RotCore`]s where the air gap contour is a regular polygon. The
-number of sides is defined as 2 times [`PolygonAirGapBuilder::pole_pairs`] times
+The purpose of this builder is the creation of[`StraightIndentsAirGap`]s for
+[`RotCore`]s whose air-gap contour is a regular polygon. The number of sides is
+defined as 2 times [`PolygonAirGapBuilder::pole_pairs`] times
 [`PolygonAirGapBuilder::indents_per_pole`], and the
 [`PolygonAirGapBuilder::air_gap_radius`] is the circumradius of the polygon:
 
-`indent_width = 2 * air_gap_radius * sin(PI / (2 * pole_pairs * indents_per_pole * ))`
+`indent_width = 2 * air_gap_radius * sin(PI / (2 * pole_pairs * indents_per_pole))`
 
 The [`indent_depth`](StraightIndentsAirGap::indent_depth) is always zero,
 meaning that [`StraightIndentsAirGap::indent_corner_radius`] equals the
@@ -713,7 +713,7 @@ let builder = PolygonAirGapBuilder {
 let ag = StraightIndentsAirGap::try_from(builder).expect("valid data");
 assert_abs_diff_eq!(ag.indent_width.get::<millimeter>(), 31.058, epsilon = 1e-3);
 ```
-The conversion fails if the calculated `indent_width` is negative (i.e.
+The conversion fails if the calculated `indent_width` is negative (i.e.,
 [`PolygonAirGapBuilder::air_gap_radius`] is negative).
 
 As shown in the docstring of [`StraightIndentsAirGap`], it is also possible to

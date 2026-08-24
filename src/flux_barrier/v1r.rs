@@ -89,8 +89,8 @@ only compatible with [`RotCore`]s.
 A relief path is a leakage path which partially consists of air and therefore
 doesn't exist due to mechanical reasons, but instead protects the magnet against
 large magnetic fields originating from the stator by providing a "relief valve"
-for the magnetic flux while offering a high enough magnetic resistance so th
- magnet flux doesn't get short-circuited. For a throughout explanation of the
+for the magnetic flux while offering a high enough magnetic resistance so the
+ magnet flux doesn't get short-circuited. For a thorough explanation of the
  concept, see [\[1\]](#v1r_fb_1).
 
 Constructing a [`V1rFluxBarrier`] requires specifying some geometric
@@ -349,7 +349,7 @@ impl V1rFluxBarrier {
 
     /// Returns the interior [`BlockMagnet`], if the flux barrier holds one.
     ///    
-    /// If the cache has been created (i.e. if [`FluxBarrier::combine`] has been
+    /// If the cache has been created (i.e., if [`FluxBarrier::combine`] has been
     /// called) and if [`V1rFluxBarrier::magnet_material`] isn't `None`, a
     /// [`BlockMagnet`] is stored in the cache and can be accessed either
     /// indirectly with [`FluxBarrier::magnet_assemblies`] or directly with

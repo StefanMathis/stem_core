@@ -1,27 +1,27 @@
 /*!
-A module providing the the [`LinCore`] and [`RotCore`] structs, the owning and
+This module provides the [`LinCore`] and [`RotCore`] structs, the owning and
 borrowing enum wrappers [`Core`] and [`CoreRef`] and the sealed trait
 [`CoreExt`] which provides a common interface for both core types.
 
 # Overview
 
-Both the stator and the rotor of a radial flux machine are typically built
-around a magnetic core, which serves as a scaffolding for mounting magnets and
-windings and guides the magnetic flux produced by them. Radial flux machines can
-be either _linear_ (meaning that the rotor performs a linear movement relative
+Both stator and rotor of a radial flux machine are typically built around a
+magnetic core, which serves as a scaffolding for mounting magnets and windings
+and guides the magnetic flux produced by them. Radial flux machines can be
+either _linear_ (meaning that the rotor performs a linear movement relative
 to the stator) or _rotary_ (meaning that the rotor rotates around its center).
-For a linear machine, both stator and rotor are usually cuboids, whereas in the
-latter case, they are annular (hollow) cylinders which share a common rotation
-axis. In stem_core, a linear core is modeled by the [`LinCore`] type, a
+For a linear machine, both the stator and rotor are usually cuboids, whereas for
+a rotary machine, they are annular (hollow) cylinders that share a common
+rotation axis. In stem_core, a linear core is modeled by the [`LinCore`] type, a
 rotary core by the [`RotCore`] type.
 
-The magnetic force moving a motor / powering a generator is created by magnetic
-flux passing through the air gap between stator and rotor. The local
+The magnetic force that drives a motor or powers a generator is created by
+magnetic flux passing through the air gap between stator and rotor. The local
 distribution of that flux is heavily influenced by the shape of the stator /
 rotor contour at the air gap. That contour is defined by an
 [`AirGap`](crate::air_gap::AirGap) trait object used to create the [`LinCore`] /
 [`RotCore`] instance. The following image shows an example for both core types
-where the air gap shape is defined by [`Slot`](stem_slot::slot::Slot)s:
+where the air gap contour is defined by [`Slot`](stem_slot::slot::Slot)s:
 */
 #![cfg_attr(feature = "doc-images", doc = "")]
 #![cfg_attr(
@@ -78,11 +78,11 @@ _Image created with `/examples/lin_and_rot_core_plots.rs`._
 
 It is evident that the space available for the individual winding zones is
 determined by the specific [`AirGap`](crate::air_gap::AirGap) trait object.
-The [`CoreExt::winding_zones`] returns an iterator over the winding zone
-contours together with the respective [`Zone`](crate::winding_zones::Zone)
-index. This iterator can be used for e.g. creating a visualization of the
-winding itself (as shown in the previous image) or to determine the available
-area for the winding and hence its resistance and current carrying capacity.
+[`CoreExt::winding_zones`] returns an iterator over the winding zone contours
+together with the respective [`Zone`](crate::winding_zones::Zone) index. This
+iterator can be used, for example, to create a visualization of the winding
+itself (as shown in the previous image) or to determine the available area for
+the winding and hence its resistance and current carrying capacity.
 
 # Surface magnets
 
@@ -163,10 +163,10 @@ use crate::error::IncompatibleFluxBarrier;
 use crate::flux_barrier::FluxBarrier;
 
 /**
-An owning enum  for a [`LinCore`] or [`RotCore`].
+An owning enum wrapping a [`LinCore`] or [`RotCore`].
 
 This enum is meant for use cases where a magnetic core is needed but the type
-(linear or rotary) is unknown until runtime. This enum provides an type-erased
+(linear or rotary) is unknown until runtime. This enum provides a type-erased
 wrapper which "behaves like" a magnetic core by implementing [`CoreExt`]. Every
 method implementation looks like this:
 
@@ -383,7 +383,7 @@ impl TryFrom<Core> for RotCore {
 // =============================================================================
 
 /**
-A borrowing enum for a [`LinCore`] or [`RotCore`].
+A borrowing enum wrapping a [`LinCore`] or [`RotCore`] reference.
 
 This enum is meant for use cases where a reference to a magnetic core is needed
 but the type (linear or rotary) is unknown until runtime. This enum provides an

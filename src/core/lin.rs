@@ -28,8 +28,8 @@ A magnetic core for a linear electric motor / machine.
 
 Seen from its cross section, a radial flux linear electric motor consists of
 effectively two rectangles (stator and rotor) where the rotor slides against the
-stator. Therefore, the cross section of the stator / rotor core is effectively
-also a rectangle and the extents of it are described by its width, height and
+stator. Therefore, the cross section of the stator or rotor core is effectively
+also a rectangle and its dimensions are described by its width, height, and
 axial length (which in the cross section view goes into the image plane).
 */
 #[doc = ""]
@@ -66,7 +66,7 @@ winding, the flux barriers may contain magnets (not depicted).
 # Building a `LinCore`
 
 A [`LinCore`] is built from a [`LinCoreBuilder`]. If the field values of the
-[`LinCoreBuilder`] do not result in a valid core (e.g. if negative dimensions
+[`LinCoreBuilder`] do not result in a valid core (e.g., if negative dimensions
 are given), the conversion fails, as shown in the example below. The field
 docstrings of [`LinCoreBuilder`] state the allowed value range for each
 parameter. Besides the [`LinCore::new`] constructor, [`TryFrom`] / [`TryInto`]
@@ -175,7 +175,7 @@ impl LinCore {
     /**
     Builds a new [`LinCore`] from a [`LinCoreBuilder`].
 
-    Building a [`LinCore`] can fail if the provided data is invalid (e.g.
+    Building a [`LinCore`] can fail if the provided data is invalid (e.g.,
     negative dimensions). See the field documentation of [`LinCoreBuilder`] for
     details. In such a case, the resulting error is returned instead.
 
@@ -397,7 +397,9 @@ impl CoreExt for LinCore {
                 / self.width().get::<meter>();
         } else {
             if let Some(flux_barrier) = &self.flux_barrier {
-                return flux_barrier.pole_coverage(self.as_core_ref()).clamp(0.0, 1.0);
+                return flux_barrier
+                    .pole_coverage(self.as_core_ref())
+                    .clamp(0.0, 1.0);
             } else {
                 return 0.5;
             }
@@ -468,7 +470,7 @@ pub struct LinCoreBuilder {
     pub material: Arc<Material>,
     /// Number of pole pairs of the core.
     pub pole_pairs: u16,
-    /// Definition of the air gap shape. See the docstring of [`AirGap`] for
+    /// Definition of the air gap contour. See the docstring of [`AirGap`] for
     /// details.
     pub air_gap: Box<dyn AirGap>,
     /// Definition of the flux barrier geometry, if the core has any. See the

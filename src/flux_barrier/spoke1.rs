@@ -171,7 +171,7 @@ when combined with a [`RotCore`].
 
 _This image was produced with `examples/flux_barrier_plots.rs`._
 
-This is a pretty basic flux barrier type which - as shown in the image above -
+This is a pretty basic flux barrier type which, as shown in the image above,
 is compatible with both [`LinCore`] and [`RotCore`]. It consists of a
 rectangular magnet space which is perpendicular to the air gap surface. Inside
 the magnet space, it can hold a single [`BlockMagnet`], hence the "1" in the
@@ -183,7 +183,7 @@ air and therefore doesn't exist due to mechanical reasons, but instead protects
 the magnet against large magnetic fields originating from the stator by
 providing a "relief valve" for the magnetic flux while offering a high enough
 magnetic resistance so the magnet flux doesn't get short-circuited. For a
-throughout explanation of the concept, see [\[1\]](#spoke1_fb_1).
+thorough explanation of the concept, see [\[1\]](#spoke1_fb_1).
 
 Constructing a [`Spoke1FluxBarrier`] requires specifying some geometric
 dimensions, while other dimensions are calculated later when
@@ -402,7 +402,7 @@ impl Spoke1FluxBarrier {
 
     /// Returns the total magnet space height.
     ///
-    /// If the cache has been created (i.e. if [`FluxBarrier::combine`] has been
+    /// If the cache has been created (i.e., if [`FluxBarrier::combine`] has been
     /// called), this is [`Cache::magnet_space_height`] plus twice the
     /// [`Spoke1FluxBarrier::glue_gap`]. Otherwise, zero is returned as a
     /// default / placeholder value.
@@ -416,7 +416,7 @@ impl Spoke1FluxBarrier {
 
     /// Returns the interior [`BlockMagnet`], if the flux barrier holds one.
     ///    
-    /// If the cache has been created (i.e. if [`FluxBarrier::combine`] has been
+    /// If the cache has been created (i.e., if [`FluxBarrier::combine`] has been
     /// called) and if [`Spoke1FluxBarrier::magnet_material`] isn't `None`, a
     /// [`BlockMagnet`] is stored in the cache and can be accessed either
     /// indirectly with [`FluxBarrier::magnet_assemblies`] or directly with

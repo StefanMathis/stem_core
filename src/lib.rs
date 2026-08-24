@@ -16,7 +16,7 @@
 [`V1rFluxBarrier`]: crate::flux_barrier::V1rFluxBarrier
 [`V2rFluxBarrier`]: crate::flux_barrier::V2rFluxBarrier
 
-Magnetic core definition definition for stem - a Simulation Toolbox for Electric Motors.
+Magnetic core definition for stem - a Simulation Toolbox for Electric Motors.
 
  */
 #![cfg_attr(feature = "doc-images",
@@ -45,7 +45,7 @@ pub use stem_magnet::stem_material;
 pub use stem_slot;
 pub use stem_slot::planar_geo;
 
-/// A discriminator for a linear or rotary entity (magnetic core, motor, ...).
+/// An indicator of whether an entity is linear or rotary.
 ///
 /// This enum is created from functions such as
 /// [`CoreExt::lin_or_rot`](crate::core::CoreExt::lin_or_rot) and states if the
@@ -64,7 +64,7 @@ This color is used as the
 [`Style::background_color`](planar_geo::draw::Style::background_color)s of the
 [`DrawableRef`](planar_geo::draw::DrawableRef)s returned by
 [`CoreExt::drawable`](crate::core::CoreExt::drawable). All the core images
-throughout this create use this color.
+thorough this create use this color.
  */
 #[cfg(feature = "cairo")]
 pub const GRAY: planar_geo::draw::Color = planar_geo::draw::Color {
