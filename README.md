@@ -11,16 +11,16 @@ modify the components. -->
 [stem book]: https://stefanmathis.github.io/stem_book/
 [stem_magnet]: https://crates.io/crates/stem_magnet
 [stem_slot]: https://crates.io/crates/stem_slot
-[`LinCore`]: https://docs.rs/stem_core/0.1.0/stem_core/core/struct.LinCore.html
-[`RotCore`]: https://docs.rs/stem_core/0.1.0/stem_core/core/struct.RotCore.html
-[`AirGap`]: https://docs.rs/stem_core/0.1.0/stem_core/air_gap/trait.AirGap.html
-[`PlainAirGap`]: https://docs.rs/stem_core/0.1.0/stem_core/air_gap/plain/struct.PlainAirGap.html
-[`SlottedAirGap`]: https://docs.rs/stem_core/0.1.0/stem_core/air_gap/slotted/struct.SlottedAirGap.html
-[`StraightIndentsAirGap`]: https://docs.rs/stem_core/0.1.0/stem_core/air_gap/straight_indents/struct.StraightIndentsAirGap.html
-[`FluxBarrier`]: https://docs.rs/stem_core/0.1.0/stem_core/flux_barrier/trait.FluxBarrier.html
-[`Spoke1FluxBarrier`]: https://docs.rs/stem_core/0.1.0/stem_core/flux_barrier/spoke1/struct.Spoke1FluxBarrier.html
-[`V1rFluxBarrier`]: https://docs.rs/stem_core/0.1.0/stem_core/flux_barrier/v1r/struct.V1rFluxBarrier.html
-[`V2rFluxBarrier`]: https://docs.rs/stem_core/0.1.0/stem_core/flux_barrier/v2r/struct.V2rFluxBarrier.html
+[`LinCore`]: https://docs.rs/stem_core/0.0.1/stem_core/core/struct.LinCore.html
+[`RotCore`]: https://docs.rs/stem_core/0.0.1/stem_core/core/struct.RotCore.html
+[`AirGap`]: https://docs.rs/stem_core/0.0.1/stem_core/air_gap/trait.AirGap.html
+[`PlainAirGap`]: https://docs.rs/stem_core/0.0.1/stem_core/air_gap/plain/struct.PlainAirGap.html
+[`SlottedAirGap`]: https://docs.rs/stem_core/0.0.1/stem_core/air_gap/slotted/struct.SlottedAirGap.html
+[`StraightIndentsAirGap`]: https://docs.rs/stem_core/0.0.1/stem_core/air_gap/straight_indents/struct.StraightIndentsAirGap.html
+[`FluxBarrier`]: https://docs.rs/stem_core/0.0.1/stem_core/flux_barrier/trait.FluxBarrier.html
+[`Spoke1FluxBarrier`]: https://docs.rs/stem_core/0.0.1/stem_core/flux_barrier/spoke1/struct.Spoke1FluxBarrier.html
+[`V1rFluxBarrier`]: https://docs.rs/stem_core/0.0.1/stem_core/flux_barrier/v1r/struct.V1rFluxBarrier.html
+[`V2rFluxBarrier`]: https://docs.rs/stem_core/0.0.1/stem_core/flux_barrier/v2r/struct.V2rFluxBarrier.html
 
 [full_core_assembly.svg]: https://raw.githubusercontent.com/StefanMathis/stem_core/refs/heads/main/docs/img/full_core_assembly.svg
 [lin_air_gap_comparison.svg]: https://raw.githubusercontent.com/StefanMathis/stem_core/refs/heads/main/docs/img/lin_air_gap_comparison.svg
@@ -30,7 +30,7 @@ modify the components. -->
 
 Magnetic core definition definition for stem - a Simulation Toolbox for Electric Motors.
 
-The full API documentation is available at <https://docs.rs/stem_core/0.1.0/stem_core>.
+The full API documentation is available at <https://docs.rs/stem_core/0.0.1/stem_core>.
 
 > **Feedback welcome!**  
 > Found a bug, missing docs, or have a feature request?  
@@ -42,18 +42,18 @@ framework. See the [stem book] for an introduction.
 stem_core builds upon the [stem_magnet] and [stem_slot] crates and provides the
 [`LinCore`] and [`RotCore`] types for defining linear and rotary magnetic cores
 of radial flux machines. The magnetic core is the centerpiece of the stator or
-rotor of an electrical machine which guides the magnetic flux and holds all
+rotor of an electrical machine. It guides the magnetic flux and holds all
 other active parts of the motor such as magnets or winding coils. The following
 image shows a [`RotCore`] with surface magnets, a double-layered winding and
-a [`FluxBarrier`] with interior magnets which has been created with stem_core:
+a [`FluxBarrier`] with interior magnets:
 
 ![Showcase of a core with winding zones, interior and surface magnets][full_core_assembly.svg]
 
 _This image was produced with `examples/readme_plots.rs`._
 
-The two fundamental core types [`LinCore`] and [`RotCore`] are modularized: Air
+The two fundamental core types [`LinCore`] and [`RotCore`] are modular: Air
 gap shape and flux barriers can be customized independently via [`AirGap`] and
-[`FluxBarrier`] trait objects. These traits allow the usage of user defined air
+[`FluxBarrier`] trait objects, allowing the usage of user defined air
 gaps or flux barriers. Additionally, the crate also provides a couple of
 predefined [`AirGap`]s and [`FluxBarrier`]s:
 
@@ -68,9 +68,9 @@ _From left to right: [`Spoke1FluxBarrier`], [`V1rFluxBarrier`] and [`V2rFluxBarr
 # Example
 
 The following code snippet shows how to create the [`RotCore`] showcased in the
-first image and how to retrieve various properties from it, which can e.g. be
-used for simulations. Note the tight integration of [stem_magnet] and
-[stem_slot] into stem_core:
+first image and how to calculate various properties (e.g. for use in
+simulations). Note the tight integration of [stem_magnet] and [stem_slot] into
+stem_core:
 
 ```rust
 use std::f64::consts::FRAC_PI_2;
@@ -139,6 +139,9 @@ assert_abs_diff_eq!(core.teeth_mass().get::<kilogram>(), 0.158, epsilon=1e-3);
 // Carter factor for a given air gap
 assert_abs_diff_eq!(core.carter_factor(Length::new::<millimeter>(0.5)), 1.0478, epsilon=1e-3);
 
+// The core has a slot -> Retrieve the "Slot" trait object
+assert!(core.slot().is_some());
+
 // Evaluate the slotting ordinals (infinite iterator)
 use num::rational::Ratio;
 let mut ordinals = core.slotting_ordinals();
@@ -174,10 +177,10 @@ assert_abs_diff_eq!(core.mass_surface_magnets(&surface_magnets).get::<kilogram>(
 
 If the `serde` feature is enabled, all types from this crate can be
 serialized and deserialized. During deserialization, the invariants are
-validated (to e.g. prevent a negative axial core length.).
+validated (to e.g. prevent a negative axial core length).
 
 Units and quantities can be deserialized from strings representing SI units via
-the [dyn_quantity] crate. Similarily, it is possible to serialize quantities
+the [dyn_quantity] crate. Similarly, it is possible to serialize quantities
 as value-unit strings using the [serialize_with_units] function.
 
 See the chapter [serialization and deserialization] of the [stem book]

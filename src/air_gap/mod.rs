@@ -1,15 +1,15 @@
 /*!
-This module defines the [`AirGap`] trait used to customize the air gap contour
+This module defines the [`AirGap`] trait which defines the air gap contour
 of magnetic cores such as [`LinCore`](crate::core::LinCore) and
 [`RotCore`](crate::core::RotCore).
 
-Besides the aforementioned trait, this module also reexports some implementors
-of the [`AirGap`] trait as well as auxiliary types and functions:
+Additionally, this module also reexports some implementors of the [`AirGap`]
+trait as well as auxiliary types and functions:
 - [`PlainAirGap`] (reexported from the [`plain`] module) defines a smooth air
 gap contour.
 - [`SlottedAirGap`] (reexported from the [`slotted`] module) uses [`Slot`] trait
 objects to define a grooved ("slotted") air gap. The module also provides the
-[`CarterFactorModel`] enum which is used when creating a [`SlottedAirGap`].
+[`CarterFactorModel`] enum which is part of a [`SlottedAirGap`].
 - [`StraightIndentsAirGap`] "flattens" the core at its poles to provide mounting
 points for magnets with a straight surface such as
 [`BlockMagnet`](stem_magnet::block::BlockMagnet)s. These mounting points can be
@@ -89,11 +89,11 @@ fn slots(&self) -> u16 {
 }
 ```
 
-Generally speaking, the documentation of the [`CoreExt`] method therefors
+Generally speaking, the documentation of the [`CoreExt`] method therefore
 focuses on the _usage_ of that specific method, whereas the [`AirGap`] method
-docstring explains how to _implement_ it for custom air gap types. If the latter
-have examples, they are just there to show how the method is supposed to work,
-not how to use them in user code.
+docstring explains how to _implement_ it for custom air gap types. If the
+[`AirGap`] method docstrings have examples, they are just there to show how the
+method is supposed to work, not how to use them in user code.
 
 The [`AirGap::combine`] method is used in
 [`LinCore::new`](crate::core::LinCore::new) and
@@ -120,10 +120,10 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// check the compatibility of the [`AirGap`] with the core. For example,
     /// when combining an [`SlottedAirGap`] with a
     /// [`LinCore`](crate::core::LinCore), the latter must be high enough to
-    /// accomodate the slot. But even if the shape creation succeeds, an
-    /// [`AirGap`] might still be incompatible to a core: If for example the
+    /// accommodate the slot. But even if the shape creation succeeds, an
+    /// [`AirGap`] might still be incompatible to a core: If e.g. the
     /// [`air_gap_winding_height`](PlainAirGap::air_gap_winding_height) of a
-    /// [`PlainAirGap`] is larger than inner air gap radius of a
+    /// [`PlainAirGap`] is larger than the inner air gap radius of a
     /// [`RotCore`](crate::core::RotCore), the winding does not fit inside
     /// the core. Invariants like these can also be checked within this
     /// method.
@@ -132,8 +132,8 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// either a [`LinCore`](crate::core::LinCore) or a
     /// [`RotCore`](crate::core::RotCore). In this case, this method should
     /// return [`Error::IncompatibleToLinCore`] or
-    /// [`Error::IncompatibleToRotCore`], where the `&'static str` represents
-    /// the type name.
+    /// [`Error::IncompatibleToRotCore`], where the `&'static str` is the type
+    /// name.
     ///
     /// It might be useful to cache data created during the combination within
     /// `self` (e.g. geometric data which is expensive to calculate but useful
@@ -151,9 +151,9 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     ///
     /// use stem_core::prelude::*;
     ///
-    /// fn fake_new(mut air_gap: Box<dyn AirGap>) -> Result<LinCore, stem_core::error::Error> {
+    /// fn new_core(mut air_gap: Box<dyn AirGap>) -> Result<LinCore, stem_core::error::Error> {
     ///     // Create the core with a placeholder air gap (will be replaced
-    ///     // after a successfull combine call). In the actual implementation,
+    ///     // after a successful combine call). In the actual implementation,
     ///     // the LinCore struct is assembled directly from the LinCoreBuilder
     ///     // fields instead of using try_into.
     ///     let core: LinCore = LinCoreBuilder {
@@ -186,7 +186,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     ///     indents_per_pole: 1,
     /// };
     ///
-    /// assert!(fake_new(Box::new(ag_comp)).is_ok());
+    /// assert!(new_core(Box::new(ag_comp)).is_ok());
     ///
     /// // Air gap is not compatible because it has two indents per pole, but
     /// // the indent length is still 20 mm -> All indents cover 160 mm in total,
@@ -197,30 +197,29 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     ///     indent_depth: Length::new::<millimeter>(2.0),
     ///     indents_per_pole: 2,
     /// };
-    /// assert!(fake_new(Box::new(ag_incomp)).is_err());
+    /// assert!(new_core(Box::new(ag_incomp)).is_err());
     /// ```
     fn combine(&mut self, core: CoreRef<'_>) -> Result<Shape, Error>;
 
-    /// Returns the discretization / number of segments of the core.
+    /// Returns the number of segments of the core.
     ///
     /// This method implements
     /// [`CoreExt::num_segments`]. Depending on `self`, a core may be composed
     /// of multiple individual segments against each other as defined by the
     /// [`CoreExt::skew_angle`](crate::core::CoreExt::skew_angle). This affects
     /// the [`skew_factor`](crate::core::skew_factor) of the core, which can be
-    /// used to suppress/ unwanted magnetic harmonics.  See the
-    /// docstrings of [`CoreExt::skew_angle`](crate::core::CoreExt::skew_angle)
-    /// and [`skew_factor`](crate::core::skew_factor) for details.
-    /// If this value is zero, the core is continuously skewed. If it is one,
-    /// the component is not skewed at all, as it consists of a single straight
-    /// (non-twisted) segment.
+    /// used to suppress unwanted magnetic harmonics. See the docstrings of
+    /// [`CoreExt::skew_angle`](crate::core::CoreExt::skew_angle) and
+    /// [`skew_factor`](crate::core::skew_factor) for details. If this value
+    /// is 0, the core is continuously skewed. If it is 1, the component is not
+    /// skewed at all, as it consists of a single straight (non-twisted)
+    /// segment.
     ///
-    /// Some [`AirGap`]s might not be discretizable; an example would be the
+    /// Some [`AirGap`]s might not be segmentable; an example would be the
     /// [`SlottedAirGap`] type. If the air gap can however be skewed, this
     /// method should return 0. If skewing is also not possible, it should
     /// return 1. In return, some air gaps like [`StraightIndentsAirGap`] might
-    /// be discretizable, but not continuously skewable. In the case of
-    /// [`StraightIndentsAirGap`], this is ensured by the constructor.
+    /// be segmentable, but not continuously skewable.
     fn num_segments(&self, core: CoreRef<'_>) -> usize;
 
     /// Returns the number of slots.
@@ -252,15 +251,16 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     `ξ = sin(k) / k`
 
     with `k = mech_ordinal * slot_opening_width / slot_pitch * PI / slots`
-    [\[1\]](#air_gap_slot_opening_factor_1), eq. (1.2.62). The mechanical
-    ordinal is related to the electrical ordinal via:
+    [\[1\]](#air_gap_slot_opening_factor_1), eq. (1.2.62).
+
+    The mechanical ordinal is related to the electrical ordinal via:
 
     `mech_ordinal = el_ordinal * pole_pairs`
 
     Multiplying the absolute of this factor with the corresponding harmonic
     amplitude for the idealized case returns the actual harmonic amplitude.
 
-    [\[1\]](#air_gap_slot_opening_factor_1), eq. (1.2.62) is implemented in
+    Eq. (1.2.62) from [\[1\]](#air_gap_slot_opening_factor_1) is implemented in
     the free [`slot_opening_factor`] function. It is recommended to use this
     function when implementing an [`AirGap`] unless there is a good reason to
     use a custom formula. See the implementations of [`PlainAirGap`] and
@@ -355,6 +355,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
         doc = "**Doc images not enabled**. Compile docs with
         `cargo doc --features 'doc-images'` and Rust version >= 1.54."
     )]
+    ///
     /// _This image was produced with `examples/surface_magnets.rs`._
     ///
     /// When implementing this method for custom [`AirGap`]s, the following
@@ -425,6 +426,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
         doc = "**Doc images not enabled**. Compile docs with
         `cargo doc --features 'doc-images'` and Rust version >= 1.54."
     )]
+    ///
     /// _This image was produced with `examples/winding_zones.rs`._
     ///
     /// When implementing this method for custom [`AirGap`]s, the following
@@ -555,13 +557,12 @@ Returns the slot opening factor for the harmonic with the specified
 
 When determining the electric loading / induction distribution along the air
 gap, analytical methods assume that the whole electric loading produced by
-a particular slot is concentrated in its center at the air gap. For real
-core and winding geometries, this is obviously not the case. For the example
-of a [`SlottedAirGap`], the electric loading is distributed along the slot,
-opening whereas a wound [`PlainAirGap`] distributes the load along the
-entire air gap surface covered by coils. For further information, see
-standard electric machines literature like e.g.
-[\[1\]](#air_gap_slot_opening_factor_1), section 1.2.3.3.
+a particular slot is concentrated in its center. For real core and slot
+geometries, this is obviously not the case. The the electric loading of a
+ [`SlottedAirGap`] is distributed along the slot opening whereas a wound
+ [`PlainAirGap`] distributes the load along the entire air gap surface covered
+ by coils. For further information, see standard electric machines literature
+ like e.g. [\[1\]](#air_gap_slot_opening_factor_1), section 1.2.3.3.
 
 The effect of this distribution on a particular harmonic can be calculated
 with the "slot opening factor" ξ which is defined as:
@@ -569,8 +570,9 @@ with the "slot opening factor" ξ which is defined as:
 `ξ = sin(k) / k`
 
 with `k = mech_ordinal * slot_opening_width / slot_pitch * PI / slots`
-[\[1\]](#air_gap_slot_opening_factor_1), eq. (1.2.62). The mechanical
-ordinal is related to the electrical ordinal via:
+[\[1\]](#air_gap_slot_opening_factor_1), eq. (1.2.62).
+
+The mechanical ordinal is related to the electrical ordinal via:
 
 `mech_ordinal = el_ordinal * pole_pairs`
 
@@ -578,8 +580,7 @@ Multiplying the absolute of this factor with the corresponding harmonic
 amplitude for the idealized case returns the actual harmonic amplitude.
 
 The mechanical ordinal can be specified as an integer (as one would expect), but
-also as a float. This enables calculating the continuous graph of ξ over the
-ordinals.
+also as a float. This enables plotting ξ as a continuous curve over the ordinals.
 
 # Literature
 <a id="air_gap_slot_opening_factor_1">\[1\]</a>
@@ -596,8 +597,7 @@ use stem_core::prelude::*;
 
 let slot_pitch = Length::new::<millimeter>(10.0);
 
-// Special (theoretical) case of the current load being concentrated in the slot
-// middle
+// Special (theoretical) case of the current load being concentrated in the slot middle
 assert_abs_diff_eq!(
     slot_opening_factor(slot_pitch, Length::new::<millimeter>(0.0), 36, 1),
     1.0,

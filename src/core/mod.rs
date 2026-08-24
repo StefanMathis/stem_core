@@ -121,7 +121,7 @@ interior magnets. Similar to [`CoreExt::surface_magnets`], the
 [`PositionedMagnetShape`](crate::magnets::PositionedMagnetShape)s of the
 interior magnets. The type of those magnets is determined by the
 [`FluxBarrier`](crate::flux_barrier::FluxBarrier), hence it is not necessary to
-specifiy the [`MagnetAssembly`] for the interior magnets. In the image below,
+specify the [`MagnetAssembly`] for the interior magnets. In the image below,
 a linear and a rotary core with the
 [`Spoke1FluxBarrier`](crate::flux_barrier::Spoke1FluxBarrier) are shown.
 */
@@ -399,7 +399,7 @@ fn pole_pairs(&self) -> u16 {
 }
 ```
 
-This wrapper is particularily useful for the [`AirGap`](crate::air_gap::AirGap)
+This wrapper is particularly useful for the [`AirGap`](crate::air_gap::AirGap)
 and [`FluxBarrier`] traits, since these are meant to be used for creating trait
 objects and therefore don't have generic methods. Therefore, the trait methods
 require passing a [`CoreRef`] object, which can be created via the

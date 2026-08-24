@@ -43,7 +43,7 @@ fn test_skew_factor_single_segment() {
 #[test]
 fn test_skew_factor_multiple_segments() {
     {
-        // Cogging torque supression of a 12/10 winding with staggered rotor magnets
+        // Cogging torque suppression of a 12/10 winding with staggered rotor magnets
         approxim::assert_abs_diff_eq!(skew_factor(60, 6.0 / 180.0 * PI, 3), 0.0, epsilon = 0.0001);
         approxim::assert_abs_diff_eq!(
             skew_factor(30, 6.0 / 180.0 * PI, 3),

@@ -2,7 +2,7 @@
 This module contains the [`Error`] enum, which represents the different ways
 building a magnetic core can fail due to invalid input data. The
 [`Error::Other`] variants supports arbitrary errors resulting from user-created
-magnet types. The [`IncompatibleFluxBarrier`] covers failure when trying to
+core types. The [`IncompatibleFluxBarrier`] covers failure when trying to
 insert a flux barrier in an existing core.
 */
 
@@ -109,7 +109,7 @@ impl From<TryFromIntError> for Error {
 }
 
 /**
-An error representing an incompatibilty between a [`FluxBarrier`] and a core.
+An error representing an incompatibility between a [`FluxBarrier`] and a core.
 
 The [`Core`](crate::core::Core), [`RotCore`](crate::core::RotCore) and
 [`LinCore`](crate::core::LinCore) types offer a method `set_flux_barrier` to

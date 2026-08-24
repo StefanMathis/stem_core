@@ -77,7 +77,7 @@ optional relief paths at the ends of the "V".
 
 _This image was produced with `examples/flux_barrier_plots.rs`._
 
-The cutouts of this flux barrier ressemble a "V" at each pole of the core. Each
+The cutouts of this flux barrier resemble a "V" at each pole of the core. Each
 pole cutout can hold two [`BlockMagnet`]s as shown in the image (see
 [`V2rFluxBarrier::magnet_material`]). At the ends of the "V", two reliefs paths
 can optionally be added between the cutouts and the leakage paths (hence the
@@ -662,7 +662,7 @@ impl V2rFluxBarrier {
         ps.push_back(segment.into());
 
         // Mirror the segment_chain along the y-axis, then reverse the mirrored
-        // segment_chain, then connect it with the orginal. This forms the
+        // segment_chain, then connect it with the original. This forms the
         // contour of the flux barrier.
         let mut ps_mirror = ps.clone();
 

@@ -58,7 +58,7 @@ use crate::{
 /// kc_stator_core * kc_rotor_core * geometric_air_gap_width` with both factors
 /// being equal to or larger than 1.
 ///
-/// This enum provides multiple different models to calculate `k_c` which are
+/// This enum provides multiple different models to calculate `kc` which are
 /// described in the variant docstrings. These models are implemented in the
 /// [`CarterFactorModel::eval`] method, which in turn is used inside
 /// [`SlottedAirGap::carter_factor`]. The "best" model depends heavily on the
@@ -76,7 +76,7 @@ pub enum CarterFactorModel {
     /// Carter factor model from Binder, Andreas: Elektrische Maschinen und
     /// Antriebe (2012), Springer-Verlag, Berlin Heidelberg, section 3.6:
     ///
-    /// `k_c = slot_pitch / (slot_pitch - air_gap_width * zeta)` (3.6-1)
+    /// `kc = slot_pitch / (slot_pitch - air_gap_width * zeta)` (3.6-1)
     ///
     /// with `zeta = 2 / pi * (h * arctan(h/2) - ln(1+(h/2)²))` (3.6-2)
     /// and `h = slot_opening_width / air_gap_width`.
@@ -84,7 +84,7 @@ pub enum CarterFactorModel {
     /// Carter factor model from Müller, G., Vogt, K. and Ponick, B.: Berechnung
     /// elektrischer Maschinen, 6th edition, Wiley-VCH, 2008, section 2.3.2.2:
     ///
-    /// `k_c = slot_pitch / (slot_pitch - slot_opening_width * gamma)` (2.3.19)
+    /// `kc = slot_pitch / (slot_pitch - slot_opening_width * gamma)` (2.3.19)
     ///
     /// with `gamma = 1 / (1 + 5 * air_gap_width / slot_opening_width)`
     /// (2.3.20).

@@ -6,7 +6,7 @@ magnets.
 Besides the aforementioned trait, this module also reexports some implementors
 of the [`FluxBarrier`] trait as well as auxiliary types and functions:
 - [`Spoke1FluxBarrier`] (reexported from the [`spoke1`] module) defines a spoke
-desgin flux barrier for a single block magnet (hence the "1") with an optional
+design flux barrier for a single block magnet (hence the "1") with an optional
 flux relief path next to the flux leakage path at the air gap.
 - [`V1rFluxBarrier`] (reexported from the [`v1r`] module) defines a V-shaped
 flux barrier with an (optional) flux relief path in the middle of the V.
@@ -74,7 +74,7 @@ A flux barrier consists of one or more cutouts in the core yoke which are
 usually repeated along the individual poles. Since cores are usually made from
 ferromagnetic material, the magnetic flux avoids the cutouts. This can be used
 to purposefully introduce a difference in the d- and q-axes inductances,
-creating a reluctance force / torque. Additonally, the cutouts can also be used
+creating a reluctance force / torque. Additionally, the cutouts can also be used
 to mount permanent magnets:
  */
 #[doc = ""]
@@ -181,7 +181,7 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     /// use stem_core::prelude::*;
     /// use planar_geo::shape::Shape;
     ///
-    /// fn fake_new(mut flux_barrier: Box<dyn FluxBarrier>) -> Result<RotCore, stem_core::error::Error> {
+    /// fn new_core(mut flux_barrier: Box<dyn FluxBarrier>) -> Result<RotCore, stem_core::error::Error> {
     ///     let core: RotCore = RotCoreBuilder {
     ///         air_gap_radius: Length::new::<millimeter>(40.0),
     ///         yoke_radius: Length::new::<millimeter>(15.0),
@@ -218,7 +218,7 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     ///     magnet_material: None,
     ///     cache: None,
     /// };
-    /// assert!(fake_new(Box::new(fb_comp)).is_ok());
+    /// assert!(new_core(Box::new(fb_comp)).is_ok());
     ///
     /// // Incompatible flux barrier
     /// let mut fb_incomp = Spoke1FluxBarrier {
@@ -233,7 +233,7 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     ///     magnet_material: None,
     ///     cache: None,
     /// };
-    /// assert!(fake_new(Box::new(fb_incomp)).is_err());
+    /// assert!(new_core(Box::new(fb_incomp)).is_err());
     /// ```
     fn combine(&mut self, core: CoreRef<'_>) -> Result<Vec<Contour>, Error> {
         // Dummy implementation, to be overwritten.
@@ -336,7 +336,7 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     magnets per pole is therefore
     `self.magnet_assemblies(core).iter().map(|m|m.num_magnets()).sum()`. If a
     magnet of an assembly is used multiple times within the cross section,
-    [`MagnetAssembly::num_tangential`] should be set to the times of occurences.
+    [`MagnetAssembly::num_tangential`] should be set to the times of occurrences.
     For example, [`MagnetAssembly::num_tangential`] is 2 for a
     [`V1rFluxBarrier`], but 1 for a [`Spoke1FluxBarrier`]. The number of axial
     subdivisions depends entirely on the flux barrier implementation.

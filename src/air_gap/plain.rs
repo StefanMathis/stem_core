@@ -135,7 +135,7 @@ impl Default for PlainAirGap {
 The image below shows the definition of the three winding-related fields
 [`PlainAirGap::air_gap_winding_height`], [`PlainAirGap::winding_coverage`] and
 [`PlainAirGap::starts_in_slot_middle`] and how they influence the space
-available space for air-gap mounted coils. See the field docuemtnation for more.
+available space for air-gap mounted coils. See the field documentation for more.
 
  */
 #[doc = ""]

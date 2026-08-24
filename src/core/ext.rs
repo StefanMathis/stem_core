@@ -251,7 +251,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// and the core geometry, particularly the air gap contour. For example,
     /// when a core is slotted, the resulting field will have "slot harmonics"
     /// whose order is a multiple of [`CoreExt::slots`]. With the exception of
-    /// the pole pair (main) harmonic, which provides the continouos force
+    /// the pole pair (main) harmonic, which provides the continuous force
     /// driving the motor, these harmonics should be usually minimized because
     /// they result in force fluctations and noise.
     ///
@@ -334,7 +334,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     fn lin_or_rot(&self) -> LinOrRot;
 
     /**
-    Returns the total axial coil overhang on boths sides of the magnetic core.
+    Returns the total axial coil overhang on both sides of the magnetic core.
 
     If the core holds a winding, its coils can generally be separated into two
     different parts: A straight one where the coil goes along the axial length
@@ -366,7 +366,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     fn shape(&self) -> &Shape;
 
     /// Returns the d-axis pole coverage of `self` as a relative fraction of the
-    /// entire air gap surface (value betwen 0 and 1). 0 means that the entire
+    /// entire air gap surface (value between 0 and 1). 0 means that the entire
     /// air gap surface is covered by the q-axis, 1 means that it is completely
     /// covered by the d-axis.
     ///
@@ -586,7 +586,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
 
     # Examples
 
-    The following example shows a successfull and a failing assembly check for
+    The following example shows a successful and a failing assembly check for
     two different surface magnet assemblies. In the failing case, the magnet
     covers a full quarter circle, which leads to an overlap due to the core
     having 6 magnets.

@@ -444,7 +444,7 @@ let core: LinCore = LinCoreBuilder {
 .try_into().expect("valid dimensions");
 
 // To illustrate the inversion of PositionedMagnetShape::is_north, the magnets
-// are not splitted in a north and south part.
+// are not split in a north and south part.
 
 // Surface magnets: Two magnets per pole -> 8 positioned shapes in total
 let magnet = BreadLoafMagnet::new(
