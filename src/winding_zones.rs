@@ -108,18 +108,15 @@ use stem_slot::planar_geo::draw::{Drawable, DrawableRef};
 /// different "layers" within that slot. This struct is an index to a particular
 /// winding zone defined by [`slot`](Zone::slot) and [`layer`](Zone::layer)
 /// index which can contain a coil. The following image shows the winding zones
-/// for an air gap winding and a winding mounted on a slotted core:
+/// for an air gap and a slotted winding:
 #[doc = ""]
 #[cfg_attr(
     feature = "doc-images",
-    doc = "![Linear and rotary core with a Spoke1FluxBarrier][lin_and_rot_core_spoke1]"
+    doc = "![Air gap and slotted winding][winding_zones]"
 )]
 #[cfg_attr(
     feature = "doc-images",
-    embed_doc_image::embed_doc_image(
-        "lin_and_rot_core_spoke1",
-        "docs/img/lin_and_rot_core_spoke1.svg"
-    )
+    embed_doc_image::embed_doc_image("winding_zones", "docs/img/winding_zones.svg")
 )]
 #[cfg_attr(
     not(feature = "doc-images"),
