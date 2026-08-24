@@ -65,7 +65,7 @@ fn surface_and_interior_magnets_plot() -> Result<(), Box<dyn std::error::Error>>
 
     let roman_letters = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
 
-    let view = Viewport::from_bounding_box(&bb, SideLength::Long(800));
+    let view = Viewport::from_bounding_box(&bb, SideLength::Long(600));
     view.write_to_file(&fp, |cr| {
         cr.set_source_rgb(1.0, 1.0, 1.0);
         cr.paint()?;
