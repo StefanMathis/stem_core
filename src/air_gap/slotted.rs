@@ -55,7 +55,7 @@ use crate::{
 /// The _Carter factor_ `kc` describes the effect of non-smooth (e.g., slotted)
 /// air gaps contours on the magnetic resistance / reluctance of the air gap.
 /// The magnetically effective air gap width can be calculated as
-/// kc_stator_core * kc_rotor_core * geometric_air_gap_width` with both factors
+/// `kc_stator_core * kc_rotor_core * geometric_air_gap_width` with both factors
 /// being equal to or larger than 1.
 ///
 /// This enum provides multiple different models to calculate `kc` which are
