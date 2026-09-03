@@ -79,8 +79,8 @@ _Image created with `/examples/lin_and_rot_core_plots.rs`._
 It is evident that the space available for the individual winding zones is
 determined by the specific [`AirGap`](crate::air_gap::AirGap) trait object.
 [`CoreExt::winding_zones`] returns an iterator over the winding zone contours
-together with the respective [`Zone`](stem_slot::stem_coil_layout::Zone) index. This
-iterator can be used, for example, to create a visualization of the winding
+together with the respective [`Zone`](stem_slot::stem_coil_layout::Zone) index.
+This iterator can be used, for example, to create a visualization of the winding
 itself (as shown in the previous image) or to determine the available area for
 the winding and hence its resistance and current carrying capacity.
 
