@@ -11,7 +11,7 @@ use planar_geo::prelude::*;
 use rayon::prelude::*;
 use stem_magnet::prelude::*;
 use stem_slot::{
-    coil_layout::CoilLayout, current_displacement::CurrentDisplacementCalculator, slot::Slot,
+    current_displacement::CurrentDisplacementCalculator, slot::Slot, stem_coil_layout::CoilLayout,
 };
 
 use super::CoreRef;
@@ -43,7 +43,7 @@ pub enum Component {
         /// [`CoreExt::winding_zones`], which collided with another component.
         idx: usize,
         /// The winding zone contour and the
-        /// [`Zone`](crate::winding_zones::Zone) index.
+        /// [`Zone`](stem_slot::stem_coil_layout::Zone) index.
         contour: PositionedZoneContour,
     },
     /// Shape of a surface magnet which collided with another component.

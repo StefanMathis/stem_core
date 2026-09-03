@@ -29,7 +29,7 @@ use crate::{
 };
 use compare_variables::compare_variables;
 use stem_magnet::assembly::MagnetAssembly;
-use stem_slot::{coil_layout::CoilLayout, prelude::stem_material::prelude::*};
+use stem_slot::{prelude::stem_material::prelude::*, stem_coil_layout::CoilLayout};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};

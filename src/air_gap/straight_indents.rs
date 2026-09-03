@@ -34,7 +34,7 @@ use crate::{
 use compare_variables::compare_variables;
 use planar_geo::prelude::*;
 use stem_magnet::prelude::*;
-use stem_slot::coil_layout::CoilLayout;
+use stem_slot::stem_coil_layout::CoilLayout;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};

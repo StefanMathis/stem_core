@@ -34,8 +34,8 @@ use crate::{
 use planar_geo::prelude::*;
 use stem_magnet::assembly::MagnetAssembly;
 use stem_slot::{
-    coil_layout::CoilLayout, current_displacement::CurrentDisplacementCalculator,
-    prelude::stem_material::prelude::*, slot::Slot,
+    current_displacement::CurrentDisplacementCalculator, prelude::stem_material::prelude::*,
+    slot::Slot, stem_coil_layout::CoilLayout,
 };
 
 #[cfg(feature = "serde")]

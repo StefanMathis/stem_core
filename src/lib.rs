@@ -44,6 +44,7 @@ pub use stem_magnet;
 pub use stem_magnet::stem_material;
 pub use stem_slot;
 pub use stem_slot::planar_geo;
+pub use stem_slot::stem_coil_layout;
 
 /// An indicator of whether an entity is linear or rotary.
 ///
