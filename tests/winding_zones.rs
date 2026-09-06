@@ -372,7 +372,7 @@ fn from_air_gap_winding_lin_outer() {
             12,
             air_gap_winding_height,
             1.0,
-            &CoilLayout::MultiVertical(3),
+            &CoilLayout::MultiVertical(3.try_into().unwrap()),
             true,
             false,
         )
@@ -503,7 +503,7 @@ fn from_air_gap_winding_rot_outer() {
             12,
             air_gap_winding_height,
             winding_coverage,
-            &CoilLayout::MultiVertical(3),
+            &CoilLayout::MultiVertical(3.try_into().unwrap()),
             true,
             false,
         )
@@ -514,7 +514,7 @@ fn from_air_gap_winding_rot_outer() {
             12,
             air_gap_winding_height,
             winding_coverage,
-            &CoilLayout::MultiVertical(5),
+            &CoilLayout::MultiVertical(5.try_into().unwrap()),
             false,
             true,
         )

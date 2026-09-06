@@ -662,7 +662,7 @@ impl<const LIN: bool> WindingZonesPeriodic<Contour, LIN> {
     ///
     /// // Two layers and three slots -> Total number of elements should be 24.
     /// let num_contours = wz.count();
-    /// assert_eq!(num_contours, usize::from(slots * coil_layout.layers()));
+    /// assert_eq!(num_contours, usize::from(slots * coil_layout.layers().get()));
     /// assert_eq!(num_contours, 24);
     /// ```
     pub fn from_air_gap_winding(
@@ -674,7 +674,7 @@ impl<const LIN: bool> WindingZonesPeriodic<Contour, LIN> {
         starts_in_slot_middle: bool,
         outer_core: bool,
     ) -> Self {
-        let mut zones = Vec::with_capacity(coil_layout.layers() as usize);
+        let mut zones = Vec::with_capacity(coil_layout.layers().get() as usize);
         let ag_height = if outer_core {
             -air_gap_winding_height.get::<meter>()
         } else {
@@ -726,8 +726,9 @@ impl<const LIN: bool> WindingZonesPeriodic<Contour, LIN> {
                     ));
                 }
                 CoilLayout::MultiVertical(layers) => {
-                    let layer_height = ag_height / (*layers) as f64;
-                    for layer in 0..(*layers) {
+                    let layers = layers.get();
+                    let layer_height = ag_height / (layers) as f64;
+                    for layer in 0..(layers) {
                         zones.push(Contour::rectangle(
                             [-half_slot_width, layer as f64 * layer_height],
                             [half_slot_width, (layer + 1) as f64 * layer_height],
@@ -929,8 +930,9 @@ impl<const LIN: bool> WindingZonesPeriodic<Contour, LIN> {
                     zones.push(ps.into());
                 }
                 CoilLayout::MultiVertical(layers) => {
-                    let layer_height = ag_height / (*layers) as f64;
-                    for layer in 0..(*layers) {
+                    let layers = layers.get();
+                    let layer_height = ag_height / (layers) as f64;
+                    for layer in 0..(layers) {
                         let first_radius = agr + layer as f64 * layer_height;
                         let second_radius = agr + (layer + 1) as f64 * layer_height;
 

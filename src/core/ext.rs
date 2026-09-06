@@ -935,7 +935,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// let coil_layout = CoilLayout::Quadruple;
     ///
     /// let zones: Vec<PositionedZoneContour> = core.winding_zones(&coil_layout).collect();
-    /// assert_eq!(zones.len(), usize::from(coil_layout.layers()) * usize::from(core.slots()));
+    /// assert_eq!(zones.len(), usize::from(coil_layout.layers().get()) * usize::from(core.slots()));
     /// assert_eq!(zones.len(), 4 * 36);
     /// ```
     fn winding_zones(&self, coil_layout: &CoilLayout) -> WindingZones {

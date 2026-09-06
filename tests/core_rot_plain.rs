@@ -286,7 +286,7 @@ fn test_plot_air_gap_winding() {
                 drawable.draw(cr)?;
 
                 for d in core
-                    .winding_zones(&CoilLayout::MultiVertical(3))
+                    .winding_zones(&CoilLayout::MultiVertical(3.try_into().unwrap()))
                     .map(PositionedZoneContour::into_drawable)
                 {
                     d.draw(cr)?;
