@@ -3,7 +3,6 @@ use std::{path::PathBuf, sync::Arc};
 
 use cairo_viewport::{BoundingBox, SideLength, Viewport};
 use stem_core::prelude::*;
-use stem_slot::semi_trapezoid::SemiTrapezoidWidthsAndHeightsBuilder;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     plot_flux_barrier_comparison()?;

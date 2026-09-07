@@ -79,7 +79,6 @@ use std::sync::Arc;
 use approxim::assert_abs_diff_eq;
 
 use stem_core::prelude::*;
-use stem_slot::semi_trapezoid::SemiTrapezoidWidthsAndHeightsBuilder;
 
 let slot: SemiTrapezoidSlot = SemiTrapezoidWidthsAndHeightsBuilder {
     bottom_width: Length::new::<millimeter>(6.76),

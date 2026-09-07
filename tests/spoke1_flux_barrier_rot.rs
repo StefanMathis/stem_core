@@ -3,7 +3,6 @@ use std::sync::Arc;
 use cairo_viewport::{SideLength, Viewport, bounding_box::ToBoundingBox, compare_or_create};
 use planar_geo::draw::{Color, Style};
 use stem_core::prelude::*;
-use stem_slot::semi_trapezoid::SemiTrapezoidWidthsAndHeightsBuilder;
 
 fn create_plain_inner_core(flux_barrier: Option<Spoke1FluxBarrier>) -> RotCore {
     let air_gap = PlainAirGap {
@@ -157,9 +156,7 @@ fn plain_inner_with_relief_path() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(5.0),
-        height_split: Spoke1HeightSplit::ReliefPathWidth(
-            Length::new::<millimeter>(2.0),
-        ),
+        height_split: Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(2.0)),
     };
 
     {
@@ -263,9 +260,7 @@ fn plain_inner_no_relief_path() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(10.0),
-        height_split: Spoke1HeightSplit::ReliefPathWidth(
-            Length::new::<millimeter>(0.0),
-        ),
+        height_split: Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(0.0)),
     };
 
     {
@@ -361,9 +356,7 @@ fn slotted_inner_with_relief_path() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(5.0),
-        height_split: Spoke1HeightSplit::ReliefPathWidth(
-            Length::new::<millimeter>(2.0),
-        ),
+        height_split: Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(2.0)),
     };
 
     {
@@ -459,9 +452,7 @@ fn slotted_inner_no_relief_path() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(5.0),
-        height_split: Spoke1HeightSplit::ReliefPathWidth(
-            Length::new::<millimeter>(0.0),
-        ),
+        height_split: Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(0.0)),
     };
 
     {
@@ -557,9 +548,7 @@ fn plain_outer_with_relief_path() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(5.0),
-        height_split: Spoke1HeightSplit::ReliefPathWidth(
-            Length::new::<millimeter>(2.0),
-        ),
+        height_split: Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(2.0)),
     };
 
     {
@@ -658,9 +647,7 @@ fn plain_outer_no_relief_path() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(10.0),
-        height_split: Spoke1HeightSplit::ReliefPathWidth(
-            Length::new::<millimeter>(0.0),
-        ),
+        height_split: Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(0.0)),
     };
 
     {
@@ -756,9 +743,7 @@ fn slotted_outer_with_relief_path() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(5.0),
-        height_split: Spoke1HeightSplit::ReliefPathWidth(
-            Length::new::<millimeter>(2.0),
-        ),
+        height_split: Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(2.0)),
     };
 
     {
@@ -857,9 +842,7 @@ fn slotted_outer_no_relief_path() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(5.0),
-        height_split: Spoke1HeightSplit::ReliefPathWidth(
-            Length::new::<millimeter>(0.0),
-        ),
+        height_split: Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(0.0)),
     };
 
     {
@@ -1003,9 +986,7 @@ fn test_straight_indents_ag() {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(5.0),
-        height_split: Spoke1HeightSplit::ReliefPathWidth(
-            Length::new::<millimeter>(2.0),
-        ),
+        height_split: Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(2.0)),
     };
 
     let air_gap = StraightIndentsAirGap {

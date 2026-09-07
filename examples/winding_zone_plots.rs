@@ -6,7 +6,6 @@ use planar_geo::Transformation;
 use planar_geo::draw::*;
 use stem_core::prelude::*;
 use stem_slot::planar_geo::prelude::Composite;
-use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     plot_slotted_and_air_gap_rot()?;

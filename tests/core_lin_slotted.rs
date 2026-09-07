@@ -3,7 +3,6 @@ use std::sync::Arc;
 use cairo_viewport::bounding_box::ToBoundingBox;
 use cairo_viewport::{SideLength, Viewport, compare_or_create};
 use stem_core::prelude::*;
-use stem_core::stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
 use stem_slot::planar_geo::draw::Drawable;
 use stem_slot::planar_geo::prelude::*;
 

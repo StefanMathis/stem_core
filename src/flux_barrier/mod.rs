@@ -534,7 +534,6 @@ mod tests {
 
     use super::*;
     use crate::prelude::*;
-    use stem_slot::semi_trapezoid::SemiTrapezoidWidthsAndHeightsBuilder;
 
     fn create_core() -> RotCore {
         let slot: SemiTrapezoidSlot = SemiTrapezoidWidthsAndHeightsBuilder {

@@ -5,10 +5,8 @@ use cairo_viewport::bounding_box::ToBoundingBox;
 use cairo_viewport::{SideLength, Viewport, compare_or_create};
 use stem_core::magnets::PositionedMagnetShape;
 use stem_core::prelude::*;
-use stem_core::stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
 use stem_slot::planar_geo::draw::Drawable;
 use stem_slot::planar_geo::{DEFAULT_EPSILON, DEFAULT_MAX_RELATIVE};
-use stem_slot::semi_trapezoid::SemiTrapezoidWidthsAndHeightsBuilder;
 use uom::typenum::P2;
 
 fn create_outer_core(

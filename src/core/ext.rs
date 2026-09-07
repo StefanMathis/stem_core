@@ -408,7 +408,6 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
-    /// use stem_slot::semi_trapezoid::SemiTrapezoidWidthsAndHeightsBuilder;
     ///
     /// let slot: SemiTrapezoidSlot = SemiTrapezoidWidthsAndHeightsBuilder {
     ///     bottom_width: Length::new::<millimeter>(6.76),
@@ -507,7 +506,6 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
-    /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
     ///
     /// let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
     ///     bottom_width: Length::new::<millimeter>(9.0),
@@ -899,7 +897,6 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// use std::sync::Arc;
     ///
     /// use stem_core::prelude::*;
-    /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
     ///
     /// let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
     ///     bottom_width: Length::new::<millimeter>(9.0),
@@ -1504,7 +1501,6 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
-    /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
     ///
     /// let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
     ///     bottom_width: Length::new::<millimeter>(9.0),
@@ -1560,7 +1556,6 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
-    /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
     ///
     /// let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
     ///     bottom_width: Length::new::<millimeter>(9.0),
@@ -1829,7 +1824,6 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
-    /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
     ///
     /// let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
     ///     bottom_width: Length::new::<millimeter>(9.0),
@@ -1882,7 +1876,6 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// use approxim::assert_abs_diff_eq;
     ///
     /// use stem_core::prelude::*;
-    /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
     ///
     /// let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
     ///     bottom_width: Length::new::<millimeter>(9.0),

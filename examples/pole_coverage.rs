@@ -5,7 +5,6 @@ use cairo_viewport::{BoundingBox, SideLength, Viewport};
 use planar_geo::Transformation;
 use planar_geo::draw::*;
 use stem_core::prelude::*;
-use stem_slot::semi_trapezoid::SemiTrapezoidWidthsAndHeightsBuilder;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let slot: SemiTrapezoidSlot = SemiTrapezoidWidthsAndHeightsBuilder {

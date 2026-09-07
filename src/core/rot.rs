@@ -245,7 +245,6 @@ impl RotCore {
     /// ```
     /// use std::sync::Arc;
     /// use stem_core::prelude::*;
-    /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
     ///
     /// let air_gap = PlainAirGap::default();
     /// let plain_core: RotCore = RotCoreBuilder {
@@ -345,7 +344,6 @@ impl RotCore {
     /// use std::sync::Arc;
     /// use approxim::assert_abs_diff_eq;
     /// use stem_core::prelude::*;
-    /// use stem_slot::semi_trapezoid::SemiTrapezoidWithoutSlopesBuilder;
     ///
     /// let air_gap = PlainAirGap::default();
     /// let plain_core: RotCore = RotCoreBuilder {
