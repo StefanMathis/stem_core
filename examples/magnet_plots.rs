@@ -43,7 +43,7 @@ fn surface_and_interior_magnets_plot() -> Result<(), Box<dyn std::error::Error>>
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier: Some(Box::new(fb)),
@@ -136,7 +136,7 @@ fn surface_magnets_plot() -> Result<(), Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier: None,
@@ -155,7 +155,7 @@ fn surface_magnets_plot() -> Result<(), Box<dyn std::error::Error>> {
         num_segments: 1.try_into()?,
         indent_width: Length::new::<millimeter>(20.5),
         indent_depth: Length::new::<millimeter>(2.0),
-        indents_per_pole: 3,
+        indents_per_pole: 3.try_into()?,
     };
 
     let core_straight_indents: RotCore = RotCoreBuilder {
@@ -165,7 +165,7 @@ fn surface_magnets_plot() -> Result<(), Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier: None,

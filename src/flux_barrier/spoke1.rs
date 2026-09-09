@@ -25,6 +25,7 @@ build magnetic cores. See the struct docstring for more.
 
 use std::{
     f64::consts::{FRAC_PI_2, PI, TAU},
+    num::NonZeroU16,
     sync::Arc,
 };
 
@@ -234,7 +235,7 @@ let mut core: RotCore = RotCoreBuilder {
     axial_coil_overhang: Length::new::<millimeter>(0.0),
     iron_fill_factor: 1.0,
     material: Arc::new(Material::default()),
-    pole_pairs: 3,
+    pole_pairs: 3.try_into().expect("not zero"),
     skew_angle: 0.0,
     air_gap: Box::new(PlainAirGap::default()),
     flux_barrier: None, // Flux barrier will be added later.
@@ -387,7 +388,7 @@ pub struct Cache {
     pub yoke_leakage_segment: Segment,
     /// Number of pole pairs (copied from the `core` argument of
     /// [`FluxBarrier::combine`]).
-    pub pole_pairs: u16,
+    pub pole_pairs: NonZeroU16,
     magnets: Option<[MagnetAssembly; 1]>,
 }
 
@@ -402,8 +403,8 @@ impl Spoke1FluxBarrier {
 
     /// Returns the total magnet space height.
     ///
-    /// If the cache has been created (i.e., if [`FluxBarrier::combine`] has been
-    /// called), this is [`Cache::magnet_space_height`] plus twice the
+    /// If the cache has been created (i.e., if [`FluxBarrier::combine`] has
+    /// been called), this is [`Cache::magnet_space_height`] plus twice the
     /// [`Spoke1FluxBarrier::glue_gap`]. Otherwise, zero is returned as a
     /// default / placeholder value.
     pub fn total_magnet_space_height(&self) -> Length {
@@ -416,11 +417,11 @@ impl Spoke1FluxBarrier {
 
     /// Returns the interior [`BlockMagnet`], if the flux barrier holds one.
     ///    
-    /// If the cache has been created (i.e., if [`FluxBarrier::combine`] has been
-    /// called) and if [`Spoke1FluxBarrier::magnet_material`] isn't `None`, a
-    /// [`BlockMagnet`] is stored in the cache and can be accessed either
-    /// indirectly with [`FluxBarrier::magnet_assemblies`] or directly with
-    /// this method.
+    /// If the cache has been created (i.e., if [`FluxBarrier::combine`] has
+    /// been called) and if [`Spoke1FluxBarrier::magnet_material`] isn't
+    /// `None`, a [`BlockMagnet`] is stored in the cache and can be accessed
+    /// either indirectly with [`FluxBarrier::magnet_assemblies`] or
+    /// directly with this method.
     pub fn magnet(&self) -> Option<&BlockMagnet> {
         self.cache
             .as_ref()
@@ -515,16 +516,16 @@ impl Spoke1FluxBarrier {
         });
 
         // Repeat the contours
-        let mut contours = Vec::with_capacity(core.poles().into());
+        let mut contours = Vec::with_capacity(core.poles().get().into());
         contours.push(contour);
-        let dist_between_poles = core.width().get::<meter>() / core.poles() as f64;
+        let dist_between_poles = core.width().get::<meter>() / core.poles().get() as f64;
 
         contours
             .iter_mut()
             .for_each(|c| c.translate([0.5 * dist_between_poles, 0.0]));
 
         // Repeat the contours over all pole pairs
-        for p in 1..core.poles() {
+        for p in 1..core.poles().get() {
             let mut c0 = contours[0].clone();
             c0.translate([p as f64 * dist_between_poles, 0.0]);
             contours.push(c0);
@@ -646,7 +647,7 @@ impl Spoke1FluxBarrier {
             magnets: self.magnet_assembly(magnet_space_height, core.axial_length()),
         });
 
-        let mut contours: Vec<Contour> = Vec::with_capacity(core.poles().into());
+        let mut contours: Vec<Contour> = Vec::with_capacity(core.poles().get().into());
         contours.push(contour);
 
         // Rotate the flux barrier so the q-axis is on the x-axis
@@ -655,8 +656,8 @@ impl Spoke1FluxBarrier {
             .for_each(|c| c.rotate([0.0, 0.0], -FRAC_PI_2));
 
         // Repeat the contours over all pole pairs
-        for p in 1..core.poles() {
-            let rot_angle = p as f64 * TAU / core.poles() as f64;
+        for p in 1..core.poles().get() {
+            let rot_angle = p as f64 * TAU / core.poles().get() as f64;
 
             let mut c0 = contours[0].clone();
             c0.rotate([0.0, 0.0], rot_angle);
@@ -699,15 +700,16 @@ impl Spoke1FluxBarrier {
 impl FluxBarrier for Spoke1FluxBarrier {
     fn pole_coverage(&self, core: CoreRef<'_>) -> f64 {
         match core {
-            CoreRef::Lin(lin_core) => (self.total_magnet_space_width() * lin_core.poles() as f64
-                / lin_core.width())
-            .get::<ratio>(),
+            CoreRef::Lin(lin_core) => {
+                (self.total_magnet_space_width() * lin_core.poles().get() as f64 / lin_core.width())
+                    .get::<ratio>()
+            }
             CoreRef::Rot(rot_core) => {
                 let angle = 2.0
                     * (0.5 * self.total_magnet_space_width() / rot_core.air_gap_radius())
                         .get::<ratio>()
                         .asin();
-                return 2.0 * angle / PI * rot_core.poles() as f64;
+                return 2.0 * angle / PI * rot_core.poles().get() as f64;
             }
         }
     }
@@ -743,7 +745,7 @@ impl FluxBarrier for Spoke1FluxBarrier {
 
         match core {
             CoreRef::Lin(lin_core) => {
-                let pole_width = lin_core.width().get::<meter>() / lin_core.poles() as f64;
+                let pole_width = lin_core.width().get::<meter>() / lin_core.poles().get() as f64;
                 let shift = [
                     0.5 * magnet.thickness().get::<meter>() + 0.5 * pole_width,
                     0.5 * magnet.width().get::<meter>()
@@ -762,7 +764,7 @@ impl FluxBarrier for Spoke1FluxBarrier {
                 return MagnetsPeriodic::<true>::new(
                     lin_core.air_gap_length(),
                     shapes,
-                    core.poles().into(),
+                    core.poles().get().into(),
                     core.d_axis_offset(),
                 )
                 .into();
@@ -779,7 +781,7 @@ impl FluxBarrier for Spoke1FluxBarrier {
                 };
 
                 // Rotate the shapes by 90 degree to bring them into position
-                let angle = PI / rot_core.poles() as f64;
+                let angle = PI / rot_core.poles().get() as f64;
                 shapes.iter_mut().for_each(|s| {
                     s.translate([0.0, -0.5 * magnet.thickness().get::<meter>()]);
                     s.rotate([0.0, 0.0], FRAC_PI_2);
@@ -789,7 +791,7 @@ impl FluxBarrier for Spoke1FluxBarrier {
                 return MagnetsPeriodic::<false>::new(
                     Length::new::<meter>(radius * TAU),
                     shapes,
-                    core.poles().into(),
+                    core.poles().get().into(),
                     core.d_axis_offset(),
                 )
                 .into();

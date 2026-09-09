@@ -5,7 +5,11 @@ for all core types: [`LinCore`](crate::core::LinCore),
 [`CoreRef`] enums. It is a sealed trait. See its docstring for more.
 */
 
-use std::{f64::consts::FRAC_PI_2, sync::Arc};
+use std::{
+    f64::consts::FRAC_PI_2,
+    num::{NonZeroU16, NonZeroUsize},
+    sync::Arc,
+};
 
 use planar_geo::prelude::*;
 use rayon::prelude::*;
@@ -171,7 +175,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     fn axial_length(&self) -> Length;
 
     /// Returns the number of pole pairs of `self`.
-    fn pole_pairs(&self) -> u16;
+    fn pole_pairs(&self) -> NonZeroU16;
 
     /// Returns a reference to the core [`Material`].
     fn material(&self) -> &Arc<Material>;
@@ -306,7 +310,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into().expect("not zero"),
         air_gap: Box::new(PlainAirGap::default()),
         flux_barrier: None,
     }.try_into().expect("valid inputs");
@@ -319,7 +323,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into().expect("not zero"),
         skew_angle: 0.0,
         air_gap: Box::new(PlainAirGap::default()),
         flux_barrier: None,
@@ -428,7 +432,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// }
     /// .try_into().expect("valid slot");
     ///
-    /// let air_gap = SlottedAirGap::new(28, false, CarterFactorModel::Bin12, Box::new(slot));
+    /// let air_gap = SlottedAirGap::new(28.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Box::new(slot));
     /// let mut core: RotCore = RotCoreBuilder {
     ///     air_gap_radius: Length::new::<millimeter>(54.4),
     ///     yoke_radius: Length::new::<millimeter>(19.0),
@@ -436,7 +440,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
     ///     iron_fill_factor: 1.0,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 2,
+    ///     pole_pairs: 2.try_into().expect("not zero"),
     ///     skew_angle: 0.0,
     ///     air_gap: Box::new(air_gap),
     ///     flux_barrier: None,
@@ -521,7 +525,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// .try_into()
     /// .unwrap();
     ///
-    /// let air_gap_slotted = SlottedAirGap::new(36, false, CarterFactorModel::Bin12, Box::new(slot));
+    /// let air_gap_slotted = SlottedAirGap::new(36.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Box::new(slot));
     ///
     /// let core: RotCore = RotCoreBuilder {
     ///     air_gap_radius: Length::new::<millimeter>(55.0),
@@ -530,7 +534,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
     ///     iron_fill_factor: 1.0,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 2,
+    ///     pole_pairs: 2.try_into().expect("not zero"),
     ///     skew_angle: 0.0,
     ///     air_gap: Box::new(air_gap_slotted),
     ///     flux_barrier: None,
@@ -547,8 +551,9 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// Returns the total number of poles.
     ///
     /// This is 2 * [`Self::pole_pairs`].
-    fn poles(&self) -> u16 {
-        return 2 * self.pole_pairs();
+    fn poles(&self) -> NonZeroU16 {
+        return NonZeroU16::new(2 * self.pole_pairs().get())
+            .expect("self.pole_pairs cannot be zero");
     }
 
     /**
@@ -604,7 +609,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into().expect("not zero"),
         skew_angle: 0.0,
         air_gap: Box::new(air_gap_plain),
         flux_barrier: None,
@@ -912,7 +917,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// .try_into()
     /// .unwrap();
     ///
-    /// let air_gap_slotted = SlottedAirGap::new(36, false, CarterFactorModel::Bin12, Box::new(slot));
+    /// let air_gap_slotted = SlottedAirGap::new(36.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Box::new(slot));
     ///
     /// let core: RotCore = RotCoreBuilder {
     ///     air_gap_radius: Length::new::<millimeter>(55.0),
@@ -921,7 +926,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
     ///     iron_fill_factor: 1.0,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 2,
+    ///     pole_pairs: 2.try_into().expect("not zero"),
     ///     skew_angle: 0.0,
     ///     air_gap: Box::new(air_gap_slotted),
     ///     flux_barrier: None,
@@ -998,7 +1003,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
     ///     iron_fill_factor: 1.0,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 2,
+    ///     pole_pairs: 2.try_into().expect("not zero"),
     ///     skew_angle: 0.0,
     ///     air_gap: Box::new(PlainAirGap::default()),
     ///     flux_barrier: None,
@@ -1017,7 +1022,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///
     /// let split = true;
     /// let magnets: Vec<PositionedMagnetShape> = core.surface_magnets(&surface_magnets, split).collect();
-    /// assert_eq!(magnets.len(), (1 + usize::from(split)) * usize::from(core.poles()) * usize::from(surface_magnets.num_tangential()));
+    /// assert_eq!(magnets.len(), (1 + usize::from(split)) * usize::from(core.poles().get()) * usize::from(surface_magnets.num_tangential().get()));
     /// assert_eq!(magnets.len(), 16);
     /// for m in magnets.iter() {
     ///     assert_eq!(m.magnet_type, 0);
@@ -1025,7 +1030,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///
     /// let split = false;
     /// let magnets: Vec<PositionedMagnetShape> = core.surface_magnets(&surface_magnets, split).collect();
-    /// assert_eq!(magnets.len(), (1 + usize::from(split)) * usize::from(core.poles()) * usize::from(surface_magnets.num_tangential()));
+    /// assert_eq!(magnets.len(), (1 + usize::from(split)) * usize::from(core.poles().get()) * usize::from(surface_magnets.num_tangential().get()));
     /// assert_eq!(magnets.len(), 8);
     /// for m in magnets.iter() {
     ///     assert_eq!(m.magnet_type, 0);
@@ -1058,7 +1063,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
     ///     iron_fill_factor: 1.0,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 2,
+    ///     pole_pairs: 2.try_into().expect("not zero"),
     ///     skew_angle: 0.0,
     ///     air_gap: Box::new(PlainAirGap::default()),
     ///     flux_barrier: None,
@@ -1075,11 +1080,14 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// ).unwrap();
     /// let surface_magnets = MagnetAssembly::new(magnet, 3.try_into().unwrap(), 2.try_into().unwrap());
     ///
-    /// assert_eq!(core.num_surface_magnets(&surface_magnets), usize::from(core.poles()) * usize::from(surface_magnets.num_magnets()));
-    /// assert_eq!(core.num_surface_magnets(&surface_magnets), 24);
+    /// assert_eq!(core.num_surface_magnets(&surface_magnets).get(), usize::from(core.poles().get()) * usize::from(surface_magnets.num_magnets().get()));
+    /// assert_eq!(core.num_surface_magnets(&surface_magnets).get(), 24);
     /// ```
-    fn num_surface_magnets(&self, magnet_assembly: &MagnetAssembly) -> usize {
-        return usize::from(self.poles()) * magnet_assembly.num_magnets();
+    fn num_surface_magnets(&self, magnet_assembly: &MagnetAssembly) -> NonZeroUsize {
+        return NonZeroUsize::new(
+            usize::from(self.poles().get()) * magnet_assembly.num_magnets().get(),
+        )
+        .expect("product of two nonzeros is nonzero");
     }
 
     /// Returns an iterator over the interior
@@ -1153,22 +1161,22 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///     skew_angle: 0.0,
     ///     iron_fill_factor: 1.0,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 3,
+    ///     pole_pairs: 3.try_into().expect("not zero"),
     ///     air_gap: Box::new(PlainAirGap::default()),
     ///     flux_barrier: Some(Box::new(fb)),
     /// }
     /// .try_into().expect("valid inputs");
     ///
-    /// let magnets_per_pole: usize = core.interior_magnet_assemblies().iter().map(|m|m.num_magnets()).sum();
+    /// let magnets_per_pole: usize = core.interior_magnet_assemblies().iter().map(|m|m.num_magnets().get()).sum();
     ///
     /// let split = true;
     /// let zones: Vec<PositionedMagnetShape> = core.interior_magnets(split).collect();
-    /// assert_eq!(zones.len(), (1 + usize::from(split)) * magnets_per_pole * usize::from(core.poles()));
+    /// assert_eq!(zones.len(), (1 + usize::from(split)) * magnets_per_pole * usize::from(core.poles().get()));
     /// assert_eq!(zones.len(), 12);
     ///
     /// let split = false;
     /// let zones: Vec<PositionedMagnetShape> = core.interior_magnets(split).collect();
-    /// assert_eq!(zones.len(), (1 + usize::from(split)) * magnets_per_pole * usize::from(core.poles()));
+    /// assert_eq!(zones.len(), (1 + usize::from(split)) * magnets_per_pole * usize::from(core.poles().get()));
     /// assert_eq!(zones.len(), 6);
     /// ```
     ///
@@ -1187,7 +1195,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///     skew_angle: 0.0,
     ///     iron_fill_factor: 1.0,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 3,
+    ///     pole_pairs: 3.try_into().expect("not zero"),
     ///     air_gap: Box::new(PlainAirGap::default()),
     ///     flux_barrier: None,
     /// }
@@ -1241,7 +1249,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
     ///     iron_fill_factor: 1.0,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 2,
+    ///     pole_pairs: 2.try_into().expect("not zero"),
     ///     skew_angle: 0.0,
     ///     air_gap: Box::new(PlainAirGap::default()),
     ///     flux_barrier: None,
@@ -1258,11 +1266,11 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// ).unwrap();
     /// let surface_magnets = MagnetAssembly::new(magnet, 3.try_into().unwrap(), 2.try_into().unwrap());
     ///
-    /// assert_eq!(core.mass_surface_magnets(&surface_magnets), core.poles() as f64 * surface_magnets.mass());
+    /// assert_eq!(core.mass_surface_magnets(&surface_magnets), core.poles().get() as f64 * surface_magnets.mass());
     /// assert_abs_diff_eq!(core.mass_surface_magnets(&surface_magnets).get::<kilogram>(), 0.478546, epsilon=1e-6);
     /// ```
     fn mass_surface_magnets(&self, magnet_assembly: &MagnetAssembly) -> Mass {
-        return self.poles() as f64 * magnet_assembly.mass();
+        return self.poles().get() as f64 * magnet_assembly.mass();
     }
 
     /// Returns the total mass of all interior magnets mounted in the flux
@@ -1304,7 +1312,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
     ///     iron_fill_factor: 1.0,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 2,
+    ///     pole_pairs: 2.try_into().expect("not zero"),
     ///     skew_angle: 0.0,
     ///     air_gap: Box::new(PlainAirGap::default()),
     ///     flux_barrier: Some(Box::new(fb)),
@@ -1320,7 +1328,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
             .iter()
             .map(|m| m.mass())
             .sum();
-        return mass_per_pole * self.poles() as f64;
+        return mass_per_pole * self.poles().get() as f64;
     }
 
     /// Returns the number of "slots" for a winding.
@@ -1416,7 +1424,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into().expect("not zero"),
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier: None,
@@ -1516,7 +1524,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// .try_into()
     /// .unwrap();
     ///
-    /// let air_gap_slotted = SlottedAirGap::new(36, false, CarterFactorModel::Bin12, Box::new(slot));
+    /// let air_gap_slotted = SlottedAirGap::new(36.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Box::new(slot));
     ///
     /// let core: RotCore = RotCoreBuilder {
     ///     air_gap_radius: Length::new::<millimeter>(55.0),
@@ -1525,7 +1533,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
     ///     iron_fill_factor: 1.0,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 2,
+    ///     pole_pairs: 2.try_into().expect("not zero"),
     ///     skew_angle: 0.0,
     ///     air_gap: Box::new(air_gap_slotted),
     ///     flux_barrier: None,
@@ -1571,7 +1579,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// .try_into()
     /// .unwrap();
     ///
-    /// let air_gap_slotted = SlottedAirGap::new(36, false, CarterFactorModel::Bin12, Box::new(slot));
+    /// let air_gap_slotted = SlottedAirGap::new(36.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Box::new(slot));
     ///
     /// let core: RotCore = RotCoreBuilder {
     ///     air_gap_radius: Length::new::<millimeter>(55.0),
@@ -1580,7 +1588,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
     ///     iron_fill_factor: 1.0,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 2,
+    ///     pole_pairs: 2.try_into().expect("not zero"),
     ///     skew_angle: 0.0,
     ///     air_gap: Box::new(air_gap_slotted),
     ///     flux_barrier: None,
@@ -1634,7 +1642,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
     ///     iron_fill_factor: 1.0,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 2,
+    ///     pole_pairs: 2.try_into().expect("not zero"),
     ///     skew_angle: 0.0,
     ///     air_gap: Box::new(PlainAirGap::default()),
     ///     flux_barrier: None
@@ -1683,7 +1691,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
     ///     iron_fill_factor: 0.9,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 2,
+    ///     pole_pairs: 2.try_into().expect("not zero"),
     ///     skew_angle: 0.0,
     ///     air_gap: Box::new(PlainAirGap::default()),
     ///     flux_barrier: None
@@ -1720,7 +1728,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
     ///     iron_fill_factor: 0.9,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 2,
+    ///     pole_pairs: 2.try_into().expect("not zero"),
     ///     skew_angle: 0.0,
     ///     air_gap: Box::new(PlainAirGap::default()),
     ///     flux_barrier: None
@@ -1756,7 +1764,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
     ///     iron_fill_factor: 0.9,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 2,
+    ///     pole_pairs: 2.try_into().expect("not zero"),
     ///     skew_angle: 0.0,
     ///     air_gap: Box::new(PlainAirGap::default()),
     ///     flux_barrier: None
@@ -1793,7 +1801,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
     ///     iron_fill_factor: 0.9,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 2,
+    ///     pole_pairs: 2.try_into().expect("not zero"),
     ///     skew_angle: 0.0,
     ///     air_gap: Box::new(PlainAirGap::default()),
     ///     flux_barrier: None
@@ -1839,7 +1847,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// .try_into()
     /// .unwrap();
     ///
-    /// let air_gap_slotted = SlottedAirGap::new(36, false, CarterFactorModel::Bin12, Box::new(slot));
+    /// let air_gap_slotted = SlottedAirGap::new(36.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Box::new(slot));
     ///
     /// let core: RotCore = RotCoreBuilder {
     ///     air_gap_radius: Length::new::<millimeter>(55.0),
@@ -1848,7 +1856,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
     ///     iron_fill_factor: 1.0,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 2,
+    ///     pole_pairs: 2.try_into().expect("not zero"),
     ///     skew_angle: 0.0,
     ///     air_gap: Box::new(air_gap_slotted),
     ///     flux_barrier: None,
@@ -1891,7 +1899,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// .try_into()
     /// .unwrap();
     ///
-    /// let air_gap_slotted = SlottedAirGap::new(36, false, CarterFactorModel::Bin12, Box::new(slot));
+    /// let air_gap_slotted = SlottedAirGap::new(36.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Box::new(slot));
     ///
     /// let core: RotCore = RotCoreBuilder {
     ///     air_gap_radius: Length::new::<millimeter>(55.0),
@@ -1900,7 +1908,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
     ///     iron_fill_factor: 1.0,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 2,
+    ///     pole_pairs: 2.try_into().expect("not zero"),
     ///     skew_angle: 0.0,
     ///     air_gap: Box::new(air_gap_slotted),
     ///     flux_barrier: None,
@@ -1955,7 +1963,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into().expect("not zero"),
         skew_angle: 10.0 / 180.0 * PI,
         air_gap: Box::new(air_gap),
         flux_barrier: None,
@@ -2248,25 +2256,25 @@ use stem_core::core::SlottingOrdinals;
 use num::rational::Ratio;
 
 // Unslotted core
-let mut iter = SlottingOrdinals::new(0, 1);
+let mut iter = SlottingOrdinals::new(0, 1.try_into().expect("not zero"));
 assert_eq!(iter.next(), None);
 
 // 12 slots and 4 pole pairs => Number of slots per pole pair is 3
-let mut iter = SlottingOrdinals::new(12, 4);
+let mut iter = SlottingOrdinals::new(12, 4.try_into().expect("not zero"));
 assert_eq!(iter.next(), Some(Ratio::new(3, 1)));
 assert_eq!(iter.next(), Some(Ratio::new(6, 1)));
 assert_eq!(iter.next(), Some(Ratio::new(9, 1)));
 assert_eq!(iter.next(), Some(Ratio::new(12, 1)));
 
 // 12 slots and 5 pole pairs => Number of slots per pole pair is 12 / 5 = 2.4
-let mut iter = SlottingOrdinals::new(12, 5);
+let mut iter = SlottingOrdinals::new(12, 5.try_into().expect("not zero"));
 assert_eq!(iter.next(), Some(Ratio::new(12, 5)));
 assert_eq!(iter.next(), Some(Ratio::new(24, 5)));
 assert_eq!(iter.next(), Some(Ratio::new(36, 5)));
 assert_eq!(iter.next(), Some(Ratio::new(48, 5)));
 
 // 24 slots and 10 pole pairs => Number of slots per pole pair is 24 / 10 = 2.4
-let mut iter = SlottingOrdinals::new(24, 10);
+let mut iter = SlottingOrdinals::new(24, 10.try_into().expect("not zero"));
 assert_eq!(iter.next(), Some(Ratio::new(12, 5)));
 assert_eq!(iter.next(), Some(Ratio::new(24, 5)));
 assert_eq!(iter.next(), Some(Ratio::new(36, 5)));
@@ -2282,11 +2290,12 @@ pub struct SlottingOrdinals {
 
 impl SlottingOrdinals {
     /// Creates a new instance of the [`SlottingOrdinals`] iterator.
-    pub fn new(slots: u16, pole_pairs: u16) -> Self {
+    pub fn new(slots: u16, pole_pairs: NonZeroU16) -> Self {
         /*
         Calculate the least common multiple between slots and pole pairs ->
         This is the "base" configuration of the stator after which it simply repeats itself.
          */
+        let pole_pairs = pole_pairs.get();
         let gcd = num::integer::gcd(slots, pole_pairs);
         let slots = slots / gcd;
         let pole_pairs = pole_pairs / gcd;

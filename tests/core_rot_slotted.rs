@@ -1,4 +1,5 @@
 use std::f64::consts::{PI, TAU};
+use std::num::NonZeroU16;
 use std::sync::Arc;
 
 use cairo_viewport::bounding_box::ToBoundingBox;
@@ -10,8 +11,8 @@ use stem_slot::planar_geo::{DEFAULT_EPSILON, DEFAULT_MAX_RELATIVE};
 use uom::typenum::P2;
 
 fn create_outer_core(
-    slots: u16,
-    pole_pairs: u16,
+    slots: NonZeroU16,
+    pole_pairs: NonZeroU16,
     starts_in_slot_middle: bool,
     open_slot: bool,
 ) -> RotCore {
@@ -27,7 +28,7 @@ fn create_outer_core(
     let rat = 3.0;
 
     // Angle covered by one tooth
-    let slot_angle = TAU / slots as f64;
+    let slot_angle = TAU / slots.get() as f64;
     let alpha = slot_angle * 1.0 / (1.0 + rat);
     let beta = slot_angle - alpha;
 
@@ -38,7 +39,7 @@ fn create_outer_core(
     // Scale the air gap radius by the number of slots up to 0.9.
     // The scaling formula was created "by hand" to give a good visual
     // representation, the values are chosen arbitrarily and have no deeper meaning.
-    let scale_air_gap = 0.1 + 0.8 * (1.0 - 1.0 / (slots as f64).sqrt());
+    let scale_air_gap = 0.1 + 0.8 * (1.0 - 1.0 / (slots.get() as f64).sqrt());
     let air_gap_radius = yoke_radius * scale_air_gap;
 
     // Calculate the slot height
@@ -86,8 +87,8 @@ fn create_outer_core(
 }
 
 fn create_inner_core(
-    slots: u16,
-    pole_pairs: u16,
+    slots: NonZeroU16,
+    pole_pairs: NonZeroU16,
     starts_in_slot_middle: bool,
     open_slot: bool,
 ) -> RotCore {
@@ -102,9 +103,9 @@ fn create_inner_core(
     let opening_height = Length::new::<millimeter>(1.0);
 
     // Angle covered by one tooth
-    let slot_angle = -TAU / slots as f64;
+    let slot_angle = -TAU / slots.get() as f64;
 
-    let bottom_width = Length::new::<millimeter>(4.0) * 12.0 / slots as f64;
+    let bottom_width = Length::new::<millimeter>(4.0) * 12.0 / slots.get() as f64;
     let height = Length::new::<millimeter>(10.0);
 
     // Create slot and core object (they are just used for plotting purposes)
@@ -167,9 +168,14 @@ fn create_outer_core_from_phd(model: CarterFactorModel) -> RotCore {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into().expect("not zero"),
         skew_angle: 0.0,
-        air_gap: Box::new(SlottedAirGap::new(36, false, model, Box::new(slot.clone()))),
+        air_gap: Box::new(SlottedAirGap::new(
+            36.try_into().expect("not zero"),
+            false,
+            model,
+            Box::new(slot.clone()),
+        )),
         flux_barrier: None,
     }
     .try_into()
@@ -179,7 +185,12 @@ fn create_outer_core_from_phd(model: CarterFactorModel) -> RotCore {
 #[test]
 fn test_assembly_check() {
     {
-        let core = create_inner_core(12, 4, false, false);
+        let core = create_inner_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            false,
+            false,
+        );
 
         let magnet = ArcSegmentMagnet::with_const_thickness(
             Length::new::<millimeter>(165.0),
@@ -191,7 +202,12 @@ fn test_assembly_check() {
         .unwrap();
         let assembly = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
 
-        let core = create_inner_core(12, 4, false, true);
+        let core = create_inner_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            false,
+            true,
+        );
         assert!(
             core.assembly_check(
                 &CoilLayout::SingleFilled,
@@ -202,7 +218,12 @@ fn test_assembly_check() {
             .is_ok()
         );
 
-        let core = create_inner_core(12, 4, true, true);
+        let core = create_inner_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            true,
+            true,
+        );
         assert!(
             core.assembly_check(
                 &CoilLayout::SingleFilled,
@@ -223,7 +244,12 @@ fn test_assembly_check() {
             .is_ok()
         );
 
-        let core = create_inner_core(12, 4, true, false);
+        let core = create_inner_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            true,
+            false,
+        );
         assert!(
             core.assembly_check(
                 &CoilLayout::SingleFilled,
@@ -235,7 +261,12 @@ fn test_assembly_check() {
         );
     }
     {
-        let core = create_outer_core(12, 4, false, false);
+        let core = create_outer_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            false,
+            false,
+        );
 
         let magnet = ArcSegmentMagnet::with_const_thickness(
             Length::new::<millimeter>(165.0),
@@ -257,7 +288,12 @@ fn test_assembly_check() {
             .is_ok()
         );
 
-        let core = create_outer_core(12, 4, true, false);
+        let core = create_outer_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            true,
+            false,
+        );
         assert!(
             core.assembly_check(
                 &CoilLayout::SingleFilled,
@@ -268,7 +304,12 @@ fn test_assembly_check() {
             .is_ok()
         );
 
-        let core = create_outer_core(12, 4, false, true);
+        let core = create_outer_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            false,
+            true,
+        );
         assert!(
             core.assembly_check(
                 &CoilLayout::SingleFilled,
@@ -279,7 +320,12 @@ fn test_assembly_check() {
             .is_ok()
         );
 
-        let core = create_outer_core(12, 4, true, true);
+        let core = create_outer_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            true,
+            true,
+        );
         assert!(
             core.assembly_check(
                 &CoilLayout::SingleFilled,
@@ -295,7 +341,12 @@ fn test_assembly_check() {
 #[test]
 fn test_plot_outer_core() {
     {
-        let core = create_outer_core(12, 4, false, false);
+        let core = create_outer_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            false,
+            false,
+        );
 
         let drawable = core.drawable();
         let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
@@ -312,7 +363,12 @@ fn test_plot_outer_core() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let core = create_outer_core(12, 4, true, false);
+        let core = create_outer_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            true,
+            false,
+        );
 
         let drawable = core.drawable();
         let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
@@ -328,7 +384,12 @@ fn test_plot_outer_core() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let core = create_outer_core(12, 4, false, true);
+        let core = create_outer_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            false,
+            true,
+        );
 
         let drawable = core.drawable();
         let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
@@ -344,7 +405,12 @@ fn test_plot_outer_core() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let core = create_outer_core(12, 4, true, true);
+        let core = create_outer_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            true,
+            true,
+        );
 
         let drawable = core.drawable();
         let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
@@ -366,7 +432,12 @@ fn test_plot_outer_core() {
 #[test]
 fn test_plot_outer_assembly() {
     {
-        let core = create_outer_core(12, 4, false, false);
+        let core = create_outer_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            false,
+            false,
+        );
 
         let magnet = ArcSegmentMagnet::with_const_thickness(
             Length::new::<millimeter>(165.0),
@@ -419,7 +490,12 @@ fn test_plot_outer_assembly() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let core = create_outer_core(12, 4, false, true);
+        let core = create_outer_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            false,
+            true,
+        );
 
         let magnet = ArcSegmentMagnet::with_const_thickness(
             Length::new::<millimeter>(165.0),
@@ -472,7 +548,12 @@ fn test_plot_outer_assembly() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let core = create_outer_core(12, 4, false, true);
+        let core = create_outer_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            false,
+            true,
+        );
 
         let magnet = ArcSegmentMagnet::with_const_thickness(
             Length::new::<millimeter>(165.0),
@@ -529,7 +610,12 @@ fn test_plot_outer_assembly() {
 #[test]
 fn test_plot_inner_core() {
     {
-        let core = create_inner_core(12, 4, false, false);
+        let core = create_inner_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            false,
+            false,
+        );
 
         let drawable = core.drawable();
         let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
@@ -546,7 +632,12 @@ fn test_plot_inner_core() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let core = create_inner_core(12, 4, true, false);
+        let core = create_inner_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            true,
+            false,
+        );
 
         let drawable = core.drawable();
         let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
@@ -562,7 +653,12 @@ fn test_plot_inner_core() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let core = create_inner_core(12, 4, false, true);
+        let core = create_inner_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            false,
+            true,
+        );
 
         let drawable = core.drawable();
         let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
@@ -578,7 +674,12 @@ fn test_plot_inner_core() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let core = create_inner_core(12, 4, true, true);
+        let core = create_inner_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            true,
+            true,
+        );
 
         let drawable = core.drawable();
         let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
@@ -598,7 +699,12 @@ fn test_plot_inner_core() {
 #[test]
 fn test_plot_inner_assembly() {
     {
-        let core = create_inner_core(12, 4, false, true);
+        let core = create_inner_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            false,
+            true,
+        );
 
         let drawable = core.drawable();
 
@@ -650,7 +756,12 @@ fn test_plot_inner_assembly() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let core = create_inner_core(12, 4, false, false);
+        let core = create_inner_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            false,
+            false,
+        );
 
         let drawable = core.drawable();
 
@@ -702,7 +813,12 @@ fn test_plot_inner_assembly() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let core = create_inner_core(12, 4, false, true);
+        let core = create_inner_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            false,
+            true,
+        );
 
         let drawable = core.drawable();
 
@@ -778,8 +894,12 @@ fn test_odd_number_of_slots() {
     .expect("valid slot");
 
     {
-        let air_gap =
-            SlottedAirGap::new(15, true, CarterFactorModel::Bin12, Box::new(slot.clone()));
+        let air_gap = SlottedAirGap::new(
+            15.try_into().expect("not zero"),
+            true,
+            CarterFactorModel::Bin12,
+            Box::new(slot.clone()),
+        );
         let core: RotCore = RotCoreBuilder {
             air_gap_radius: Length::new::<millimeter>(40.0),
             yoke_radius: Length::new::<millimeter>(19.0),
@@ -787,7 +907,7 @@ fn test_odd_number_of_slots() {
             axial_coil_overhang: Length::new::<millimeter>(0.0),
             iron_fill_factor: 1.0,
             material: Arc::new(Material::default()),
-            pole_pairs: 2,
+            pole_pairs: 2.try_into().expect("not zero"),
             skew_angle: 0.0,
             air_gap: Box::new(air_gap),
             flux_barrier: None,
@@ -810,7 +930,12 @@ fn test_odd_number_of_slots() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let air_gap = SlottedAirGap::new(15, false, CarterFactorModel::Bin12, Box::new(slot));
+        let air_gap = SlottedAirGap::new(
+            15.try_into().expect("not zero"),
+            false,
+            CarterFactorModel::Bin12,
+            Box::new(slot),
+        );
         let core: RotCore = RotCoreBuilder {
             air_gap_radius: Length::new::<millimeter>(40.0),
             yoke_radius: Length::new::<millimeter>(19.0),
@@ -818,7 +943,7 @@ fn test_odd_number_of_slots() {
             axial_coil_overhang: Length::new::<millimeter>(0.0),
             iron_fill_factor: 1.0,
             material: Arc::new(Material::default()),
-            pole_pairs: 2,
+            pole_pairs: 2.try_into().expect("not zero"),
             skew_angle: 0.0,
             air_gap: Box::new(air_gap),
             flux_barrier: None,
@@ -845,7 +970,12 @@ fn test_odd_number_of_slots() {
 #[test]
 fn test_slotting_ordinals() {
     {
-        let core = create_outer_core(12, 4, true, true);
+        let core = create_outer_core(
+            12.try_into().expect("not zero"),
+            4.try_into().expect("not zero"),
+            true,
+            true,
+        );
         let mut iter = core.slotting_ordinals();
         assert_eq!(iter.next(), Some(num::rational::Ratio::new(3, 1)));
         assert_eq!(iter.next(), Some(num::rational::Ratio::new(6, 1)));
@@ -854,7 +984,12 @@ fn test_slotting_ordinals() {
     }
 
     {
-        let core = create_outer_core(12, 5, true, true);
+        let core = create_outer_core(
+            12.try_into().expect("not zero"),
+            5.try_into().expect("not zero"),
+            true,
+            true,
+        );
         let mut iter = core.slotting_ordinals();
         assert_eq!(iter.next(), Some(num::rational::Ratio::new(12, 5)));
         assert_eq!(iter.next(), Some(num::rational::Ratio::new(24, 5)));

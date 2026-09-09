@@ -6,7 +6,7 @@ used in the stem ecosystem. See its docstring for more.
 
 use compare_variables::compare_variables;
 use planar_geo::{prelude::BoundingBox, shape::Shape};
-use std::sync::Arc;
+use std::{num::NonZeroU16, sync::Arc};
 use stem_magnet::prelude::*;
 
 #[cfg(feature = "serde")]
@@ -85,7 +85,7 @@ let builder = LinCoreBuilder {
     skew_angle: 0.0,
     iron_fill_factor: 1.0,
     material: Arc::new(Material::default()),
-    pole_pairs: 2,
+    pole_pairs: 2.try_into().expect("not zero"),
     air_gap: Box::new(PlainAirGap::default()),
     flux_barrier: None,
 };
@@ -102,7 +102,7 @@ let builder = LinCoreBuilder {
     skew_angle: 0.0,
     iron_fill_factor: 1.0,
     material: Arc::new(Material::default()),
-    pole_pairs: 2,
+    pole_pairs: 2.try_into().expect("not zero"),
     air_gap: Box::new(PlainAirGap::default()),
     flux_barrier: None,
 };
@@ -164,7 +164,7 @@ pub struct LinCore {
     iron_fill_factor: f64,
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_arc_link",))]
     material: Arc<Material>,
-    pole_pairs: u16,
+    pole_pairs: NonZeroU16,
     air_gap: Box<dyn AirGap>,
     flux_barrier: Option<Box<dyn FluxBarrier>>,
     #[cfg_attr(feature = "serde", serde(skip))]
@@ -234,7 +234,7 @@ impl LinCore {
     ///     skew_angle: 0.0,
     ///     iron_fill_factor: 1.0,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 2,
+    ///     pole_pairs: 2.try_into().expect("not zero"),
     ///     air_gap: Box::new(air_gap),
     ///     flux_barrier: None, // No flux barrier at initialization
     /// }.try_into().expect("valid inputs");
@@ -355,7 +355,7 @@ impl CoreExt for LinCore {
         return self.iron_fill_factor;
     }
 
-    fn pole_pairs(&self) -> u16 {
+    fn pole_pairs(&self) -> NonZeroU16 {
         return self.pole_pairs;
     }
 
@@ -390,9 +390,8 @@ impl CoreExt for LinCore {
     fn pole_coverage(&self, surface_magnet_assembly: Option<&MagnetAssembly>) -> f64 {
         if let Some(assembly) = surface_magnet_assembly {
             let single_magnet_coverage = BoundingBox::from(&*assembly.magnet().shape()).width();
-            return 2.0
-                * self.pole_pairs() as f64
-                * assembly.num_tangential() as f64
+            return self.poles().get() as f64
+                * assembly.num_tangential().get() as f64
                 * single_magnet_coverage
                 / self.width().get::<meter>();
         } else {
@@ -469,7 +468,7 @@ pub struct LinCoreBuilder {
     /// Material used for the core.
     pub material: Arc<Material>,
     /// Number of pole pairs of the core.
-    pub pole_pairs: u16,
+    pub pole_pairs: NonZeroU16,
     /// Definition of the air gap contour. See the docstring of [`AirGap`] for
     /// details.
     pub air_gap: Box<dyn AirGap>,

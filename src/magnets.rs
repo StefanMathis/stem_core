@@ -431,7 +431,7 @@ let core: LinCore = LinCoreBuilder {
     skew_angle: 0.0,
     iron_fill_factor: 1.0,
     material: Arc::new(Default::default()),
-    pole_pairs: 2,
+    pole_pairs: 2.try_into().expect("not zero"),
     air_gap: Box::new(PlainAirGap {
         num_segments: 0,
         air_gap_winding_height: Length::new::<millimeter>(8.0),
@@ -696,11 +696,13 @@ pub fn surface_magnet_assembly_shapes_lin(
                 .unwrap_or(0.0)
         });
 
-    let mut shapes = Vec::with_capacity(magnet_assembly.num_tangential() * proto_shapes.len());
+    let mut shapes =
+        Vec::with_capacity(magnet_assembly.num_tangential().get() * proto_shapes.len());
 
-    for tan_idx in 0..magnet_assembly.num_tangential() {
+    for tan_idx in 0..magnet_assembly.num_tangential().get() {
         for mut shape in proto_shapes.iter().cloned() {
-            let offset = (tan_idx as f64 - 0.5 * (magnet_assembly.num_tangential() as f64 - 1.0))
+            let offset = (tan_idx as f64
+                - 0.5 * (magnet_assembly.num_tangential().get() as f64 - 1.0))
                 * magnet_coverage;
             shape.translate([offset, 0.0]);
             shapes.push(shape);
@@ -886,11 +888,13 @@ pub fn surface_magnet_assembly_shapes_rot(
         covered_angle(proto_shapes.iter().map(|p| &p.shape), radius)
     });
 
-    let mut shapes = Vec::with_capacity(magnet_assembly.num_tangential() * proto_shapes.len());
+    let mut shapes =
+        Vec::with_capacity(magnet_assembly.num_tangential().get() * proto_shapes.len());
 
-    for tan_idx in 0..magnet_assembly.num_tangential() {
+    for tan_idx in 0..magnet_assembly.num_tangential().get() {
         for mut shape in proto_shapes.iter().cloned() {
-            let angle = (tan_idx as f64 - 0.5 * (magnet_assembly.num_tangential() as f64 - 1.0))
+            let angle = (tan_idx as f64
+                - 0.5 * (magnet_assembly.num_tangential().get() as f64 - 1.0))
                 * magnet_coverage;
             shape.rotate([0.0, -radius.get::<meter>()], -angle);
             shapes.push(shape);

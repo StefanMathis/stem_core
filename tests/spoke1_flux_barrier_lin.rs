@@ -10,7 +10,7 @@ fn create_plain_core(flux_barrier: Option<Spoke1FluxBarrier>) -> LinCore {
         air_gap_winding_height: Length::new::<millimeter>(10.0),
         winding_coverage: 0.7,
         starts_in_slot_middle: false,
-        slots: 12,
+        slots: 12.try_into().expect("not zero"),
     };
 
     let flux_barrier: Option<Box<dyn FluxBarrier>> = flux_barrier
@@ -25,7 +25,7 @@ fn create_plain_core(flux_barrier: Option<Spoke1FluxBarrier>) -> LinCore {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into().expect("not zero"),
         air_gap: Box::new(air_gap),
         flux_barrier,
     })
@@ -47,7 +47,12 @@ fn create_slotted_core(flux_barrier: Option<Spoke1FluxBarrier>) -> LinCore {
     .try_into()
     .unwrap();
 
-    let air_gap = SlottedAirGap::new(12, false, CarterFactorModel::Bin12, Box::new(slot));
+    let air_gap = SlottedAirGap::new(
+        12.try_into().expect("not zero"),
+        false,
+        CarterFactorModel::Bin12,
+        Box::new(slot),
+    );
 
     let flux_barrier: Option<Box<dyn FluxBarrier>> = flux_barrier
         .map(Box::new)
@@ -61,7 +66,7 @@ fn create_slotted_core(flux_barrier: Option<Spoke1FluxBarrier>) -> LinCore {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into().expect("not zero"),
         air_gap: Box::new(air_gap),
         flux_barrier,
     }
@@ -167,7 +172,7 @@ fn plain_with_relief_path() {
             1,
             core.interior_magnet_assemblies()
                 .iter()
-                .map(|m| m.num_magnets())
+                .map(|m| m.num_magnets().get())
                 .sum::<usize>()
         );
     }

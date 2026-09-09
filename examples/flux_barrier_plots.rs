@@ -70,7 +70,7 @@ fn plot_spoke1_flux_barrier() -> Result<(), Box<dyn std::error::Error>> {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         air_gap: Box::new(PlainAirGap::default()),
         flux_barrier: Some(Box::new(fb.clone())),
     }
@@ -83,7 +83,7 @@ fn plot_spoke1_flux_barrier() -> Result<(), Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(PlainAirGap::default()),
         flux_barrier: Some(Box::new(fb)),
@@ -212,7 +212,12 @@ fn plot_slotted_with_and_without_flux_barrier() -> Result<(), Box<dyn std::error
         cache: None,
     };
 
-    let air_gap = SlottedAirGap::new(28, false, CarterFactorModel::Bin12, Box::new(slot));
+    let air_gap = SlottedAirGap::new(
+        28.try_into()?,
+        false,
+        CarterFactorModel::Bin12,
+        Box::new(slot),
+    );
     let core: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(54.4),
         yoke_radius: Length::new::<millimeter>(19.0),
@@ -220,7 +225,7 @@ fn plot_slotted_with_and_without_flux_barrier() -> Result<(), Box<dyn std::error
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier: None,
@@ -271,7 +276,7 @@ fn create_spoke1_flux_barrier() -> Result<RotCore, Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(PlainAirGap::default()),
         flux_barrier: Some(Box::new(fb)),
@@ -302,7 +307,7 @@ fn create_v1r_flux_barrier() -> Result<RotCore, Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(PlainAirGap::default()),
         flux_barrier: Some(Box::new(fb)),
@@ -334,7 +339,7 @@ fn create_v2r_flux_barrier() -> Result<RotCore, Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(PlainAirGap::default()),
         flux_barrier: Some(Box::new(fb)),

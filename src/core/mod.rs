@@ -142,6 +142,7 @@ doc = ::embed_doc_image::embed_image!("lin_and_rot_core_interior_magnets.svg", "
 _Image created with `/examples/lin_and_rot_core_plots.rs`._
  */
 
+use std::num::NonZeroU16;
 use std::sync::Arc;
 
 use planar_geo::prelude::Shape;
@@ -261,7 +262,7 @@ impl CoreExt for Core {
         }
     }
 
-    fn pole_pairs(&self) -> u16 {
+    fn pole_pairs(&self) -> NonZeroU16 {
         match self {
             Self::Lin(c) => c.pole_pairs(),
             Self::Rot(c) => c.pole_pairs(),
@@ -461,7 +462,7 @@ impl<'a> CoreExt for CoreRef<'a> {
         }
     }
 
-    fn pole_pairs(&self) -> u16 {
+    fn pole_pairs(&self) -> NonZeroU16 {
         match self {
             Self::Lin(c) => c.pole_pairs(),
             Self::Rot(c) => c.pole_pairs(),

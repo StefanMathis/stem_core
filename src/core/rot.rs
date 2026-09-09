@@ -6,7 +6,7 @@ used in the stem ecosystem. See its docstring for more.
 
 use compare_variables::compare_variables;
 use planar_geo::{prelude::BoundingBox, shape::Shape};
-use std::{f64::consts::TAU, sync::Arc};
+use std::{f64::consts::TAU, num::NonZeroU16, sync::Arc};
 use stem_magnet::prelude::*;
 
 #[cfg(feature = "serde")]
@@ -87,7 +87,7 @@ let builder = RotCoreBuilder {
     axial_coil_overhang: Length::new::<millimeter>(0.0),
     iron_fill_factor: 1.0,
     material: Arc::new(Material::default()),
-    pole_pairs: 2,
+    pole_pairs: 2.try_into().expect("not zero"),
     skew_angle: 0.0,
     air_gap: Box::new(PlainAirGap::default()),
     flux_barrier: None,
@@ -104,7 +104,7 @@ let builder = RotCoreBuilder {
     axial_coil_overhang: Length::new::<millimeter>(0.0),
     iron_fill_factor: 1.0,
     material: Arc::new(Material::default()),
-    pole_pairs: 2,
+    pole_pairs: 2.try_into().expect("not zero"),
     skew_angle: 0.0,
     air_gap: Box::new(PlainAirGap::default()),
     flux_barrier: None,
@@ -165,7 +165,7 @@ pub struct RotCore {
     iron_fill_factor: f64,
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_arc_link",))]
     material: Arc<Material>,
-    pole_pairs: u16,
+    pole_pairs: NonZeroU16,
     skew_angle: f64,
     air_gap: Box<dyn AirGap>,
     flux_barrier: Option<Box<dyn FluxBarrier>>,
@@ -255,7 +255,7 @@ impl RotCore {
     ///     skew_angle: 0.0,
     ///     iron_fill_factor: 1.0,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 3,
+    ///     pole_pairs: 3.try_into().expect("not zero"),
     ///     air_gap: Box::new(air_gap),
     ///     flux_barrier: None,
     /// }.try_into().expect("valid inputs");
@@ -276,7 +276,7 @@ impl RotCore {
     /// .try_into()
     /// .unwrap();
     /// let air_gap = SlottedAirGap::new(
-    ///     12,
+    ///     12.try_into().expect("not zero"),
     ///     true,
     ///     CarterFactorModel::Bin12,
     ///     Box::new(slot),
@@ -289,7 +289,7 @@ impl RotCore {
     ///     skew_angle: 0.0,
     ///     iron_fill_factor: 1.0,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 3,
+    ///     pole_pairs: 3.try_into().expect("not zero"),
     ///     air_gap: Box::new(air_gap),
     ///     flux_barrier: None,
     /// }.try_into().expect("valid inputs");
@@ -354,7 +354,7 @@ impl RotCore {
     ///     skew_angle: 0.0,
     ///     iron_fill_factor: 1.0,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 3,
+    ///     pole_pairs: 3.try_into().expect("not zero"),
     ///     air_gap: Box::new(air_gap),
     ///     flux_barrier: None,
     /// }.try_into().expect("valid inputs");
@@ -374,7 +374,7 @@ impl RotCore {
     /// .try_into()
     /// .unwrap();
     /// let air_gap = SlottedAirGap::new(
-    ///     12,
+    ///     12.try_into().expect("not zero"),
     ///     true,
     ///     CarterFactorModel::Bin12,
     ///     Box::new(slot),
@@ -387,7 +387,7 @@ impl RotCore {
     ///     skew_angle: 0.0,
     ///     iron_fill_factor: 1.0,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 3,
+    ///     pole_pairs: 3.try_into().expect("not zero"),
     ///     air_gap: Box::new(air_gap),
     ///     flux_barrier: None,
     /// }.try_into().expect("valid inputs");
@@ -436,7 +436,7 @@ impl RotCore {
     ///     skew_angle: 0.0,
     ///     iron_fill_factor: 1.0,
     ///     material: Arc::new(Material::default()),
-    ///     pole_pairs: 3,
+    ///     pole_pairs: 3.try_into().expect("not zero"),
     ///     air_gap: Box::new(PlainAirGap::default()),
     ///     flux_barrier: None, // No flux barrier at initialization
     /// }.try_into().expect("valid inputs");
@@ -566,7 +566,7 @@ impl CoreExt for RotCore {
         return &self.material;
     }
 
-    fn pole_pairs(&self) -> u16 {
+    fn pole_pairs(&self) -> NonZeroU16 {
         return self.pole_pairs;
     }
 
@@ -600,9 +600,8 @@ impl CoreExt for RotCore {
                 std::iter::once(&*assembly.magnet().shape()),
                 self.air_gap_radius.get::<meter>(),
             );
-            return 2.0
-                * self.pole_pairs() as f64
-                * assembly.num_tangential() as f64
+            return self.poles().get() as f64
+                * assembly.num_tangential().get() as f64
                 * single_magnet_coverage
                 / TAU;
         } else {
@@ -687,7 +686,7 @@ pub struct RotCoreBuilder {
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_arc_link"))]
     pub material: Arc<Material>,
     /// Number of pole pairs of the core.
-    pub pole_pairs: u16,
+    pub pole_pairs: NonZeroU16,
     /// Definition of the air gap contour. See the docstring of [`AirGap`] for
     /// details.
     pub air_gap: Box<dyn AirGap>,

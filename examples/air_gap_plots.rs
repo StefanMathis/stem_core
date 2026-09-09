@@ -24,7 +24,7 @@ fn plot_comparison_rot() -> Result<(), Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(PlainAirGap::default()),
         flux_barrier: None,
@@ -51,7 +51,12 @@ fn plot_comparison_rot() -> Result<(), Box<dyn std::error::Error>> {
     .try_into()
     .expect("valid slot");
 
-    let air_gap = SlottedAirGap::new(15, false, CarterFactorModel::Bin12, Box::new(slot));
+    let air_gap = SlottedAirGap::new(
+        15.try_into()?,
+        false,
+        CarterFactorModel::Bin12,
+        Box::new(slot),
+    );
     let slotted_air_pap: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(40.0),
         yoke_radius: Length::new::<millimeter>(19.0),
@@ -59,7 +64,7 @@ fn plot_comparison_rot() -> Result<(), Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier: None,
@@ -70,7 +75,7 @@ fn plot_comparison_rot() -> Result<(), Box<dyn std::error::Error>> {
         num_segments: 1.try_into()?,
         indent_width: Length::new::<millimeter>(10.0),
         indent_depth: Length::new::<millimeter>(2.0),
-        indents_per_pole: 2,
+        indents_per_pole: 2.try_into()?,
     };
 
     let straight_indents_air_pap: RotCore = RotCoreBuilder {
@@ -80,7 +85,7 @@ fn plot_comparison_rot() -> Result<(), Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier: None,
@@ -126,7 +131,7 @@ fn plot_comparison_lin() -> Result<(), Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(PlainAirGap::default()),
         flux_barrier: None,
@@ -153,7 +158,12 @@ fn plot_comparison_lin() -> Result<(), Box<dyn std::error::Error>> {
     .try_into()
     .expect("valid slot");
 
-    let air_gap = SlottedAirGap::new(9, false, CarterFactorModel::Bin12, Box::new(slot));
+    let air_gap = SlottedAirGap::new(
+        9.try_into()?,
+        false,
+        CarterFactorModel::Bin12,
+        Box::new(slot),
+    );
     let slotted_air_pap: LinCore = LinCoreBuilder {
         width: Length::new::<millimeter>(100.0),
         height: Length::new::<millimeter>(15.0),
@@ -161,7 +171,7 @@ fn plot_comparison_lin() -> Result<(), Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier: None,
@@ -172,7 +182,7 @@ fn plot_comparison_lin() -> Result<(), Box<dyn std::error::Error>> {
         num_segments: 1.try_into()?,
         indent_width: Length::new::<millimeter>(15.0),
         indent_depth: Length::new::<millimeter>(2.0),
-        indents_per_pole: 1,
+        indents_per_pole: 1.try_into()?,
     };
 
     let straight_indents_air_pap: LinCore = LinCoreBuilder {
@@ -182,7 +192,7 @@ fn plot_comparison_lin() -> Result<(), Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier: None,
@@ -230,7 +240,7 @@ fn plot_plain() -> Result<(), Box<dyn std::error::Error>> {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         air_gap: Box::new(PlainAirGap::default()),
         flux_barrier: None,
     }
@@ -243,7 +253,7 @@ fn plot_plain() -> Result<(), Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(PlainAirGap::default()),
         flux_barrier: None,
@@ -304,7 +314,7 @@ fn plot_plain() -> Result<(), Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(ag),
         flux_barrier: None,
@@ -376,7 +386,12 @@ fn plot_slotted() -> Result<(), Box<dyn std::error::Error>> {
     .try_into()
     .expect("valid slot");
 
-    let air_gap = SlottedAirGap::new(12, false, CarterFactorModel::Bin12, Box::new(slot));
+    let air_gap = SlottedAirGap::new(
+        12.try_into()?,
+        false,
+        CarterFactorModel::Bin12,
+        Box::new(slot),
+    );
 
     let lin_core: LinCore = LinCoreBuilder {
         height: Length::new::<millimeter>(20.0),
@@ -386,7 +401,7 @@ fn plot_slotted() -> Result<(), Box<dyn std::error::Error>> {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         air_gap: Box::new(air_gap),
         flux_barrier: None,
     }
@@ -412,7 +427,12 @@ fn plot_slotted() -> Result<(), Box<dyn std::error::Error>> {
     .try_into()
     .expect("valid slot");
 
-    let air_gap = SlottedAirGap::new(15, false, CarterFactorModel::Bin12, Box::new(slot));
+    let air_gap = SlottedAirGap::new(
+        15.try_into()?,
+        false,
+        CarterFactorModel::Bin12,
+        Box::new(slot),
+    );
     let rot_core: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(40.0),
         yoke_radius: Length::new::<millimeter>(19.0),
@@ -420,7 +440,7 @@ fn plot_slotted() -> Result<(), Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier: None,
@@ -488,7 +508,12 @@ fn plot_slotted() -> Result<(), Box<dyn std::error::Error>> {
     .try_into()
     .expect("valid slot");
 
-    let air_gap = SlottedAirGap::new(9, false, CarterFactorModel::Bin12, Box::new(slot.clone()));
+    let air_gap = SlottedAirGap::new(
+        9.try_into()?,
+        false,
+        CarterFactorModel::Bin12,
+        Box::new(slot.clone()),
+    );
     let lin_core_tooth_middle: LinCore = LinCoreBuilder {
         height: Length::new::<millimeter>(20.0),
         width: Length::new::<millimeter>(120.0),
@@ -497,14 +522,18 @@ fn plot_slotted() -> Result<(), Box<dyn std::error::Error>> {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         air_gap: Box::new(air_gap),
         flux_barrier: None,
     }
     .try_into()?;
 
-    let air_gap: SlottedAirGap =
-        SlottedAirGap::new(9, true, CarterFactorModel::Bin12, Box::new(slot.clone()));
+    let air_gap: SlottedAirGap = SlottedAirGap::new(
+        9.try_into()?,
+        true,
+        CarterFactorModel::Bin12,
+        Box::new(slot.clone()),
+    );
     let lin_core_slot_middle: LinCore = LinCoreBuilder {
         height: Length::new::<millimeter>(20.0),
         width: Length::new::<millimeter>(120.0),
@@ -513,7 +542,7 @@ fn plot_slotted() -> Result<(), Box<dyn std::error::Error>> {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         air_gap: Box::new(air_gap),
         flux_barrier: None,
     }
@@ -583,7 +612,7 @@ fn plot_straight_indents() -> Result<(), Box<dyn std::error::Error>> {
         num_segments: 1.try_into()?,
         indent_width: Length::new::<millimeter>(10.0),
         indent_depth: Length::new::<millimeter>(-2.0),
-        indents_per_pole: 2,
+        indents_per_pole: 2.try_into()?,
     };
 
     let lin_core: LinCore = LinCoreBuilder {
@@ -594,7 +623,7 @@ fn plot_straight_indents() -> Result<(), Box<dyn std::error::Error>> {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         air_gap: Box::new(air_gap),
         flux_barrier: None,
     }
@@ -604,7 +633,7 @@ fn plot_straight_indents() -> Result<(), Box<dyn std::error::Error>> {
         num_segments: 1.try_into()?,
         indent_width: Length::new::<millimeter>(10.0),
         indent_depth: Length::new::<millimeter>(2.0),
-        indents_per_pole: 2,
+        indents_per_pole: 2.try_into()?,
     };
 
     let rot_core: RotCore = RotCoreBuilder {
@@ -614,7 +643,7 @@ fn plot_straight_indents() -> Result<(), Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier: None,
@@ -665,8 +694,8 @@ fn plot_straight_indents() -> Result<(), Box<dyn std::error::Error>> {
 
     let air_gap: StraightIndentsAirGap = PolygonAirGapBuilder {
         num_segments: 2.try_into().expect("valid inputs"),
-        indents_per_pole: 2,
-        pole_pairs: 3,
+        indents_per_pole: 2.try_into()?,
+        pole_pairs: 3.try_into()?,
         air_gap_radius: outer_radius,
     }
     .try_into()?;
@@ -678,7 +707,7 @@ fn plot_straight_indents() -> Result<(), Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier: None,
@@ -687,8 +716,8 @@ fn plot_straight_indents() -> Result<(), Box<dyn std::error::Error>> {
 
     let air_gap: StraightIndentsAirGap = PolygonAirGapBuilder {
         num_segments: 2.try_into().expect("valid inputs"),
-        indents_per_pole: 2,
-        pole_pairs: 3,
+        indents_per_pole: 2.try_into()?,
+        pole_pairs: 3.try_into()?,
         air_gap_radius: inner_radius,
     }
     .try_into()?;
@@ -700,7 +729,7 @@ fn plot_straight_indents() -> Result<(), Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier: None,

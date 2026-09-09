@@ -21,7 +21,7 @@ fn set_fb_lin_core() -> Result<(), Box<dyn std::error::Error>> {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into()?,
         air_gap: Box::new(air_gap),
         flux_barrier: None, // No flux barrier at initialization
     }
@@ -33,9 +33,7 @@ fn set_fb_lin_core() -> Result<(), Box<dyn std::error::Error>> {
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(4.0),
         magnet_space_width: Length::new::<millimeter>(10.0),
-        height_split: Spoke1HeightSplit::ReliefPathWidth(
-            Length::new::<millimeter>(2.0),
-        ),
+        height_split: Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(2.0)),
         glue_gap: Length::new::<millimeter>(0.0),
         magnet_material: None,
         cache: None,
@@ -47,9 +45,7 @@ fn set_fb_lin_core() -> Result<(), Box<dyn std::error::Error>> {
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(4.0),
         magnet_space_width: Length::new::<millimeter>(30.0), // Too wide for the core width
-        height_split: Spoke1HeightSplit::ReliefPathWidth(
-            Length::new::<millimeter>(2.0),
-        ),
+        height_split: Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(2.0)),
         glue_gap: Length::new::<millimeter>(0.0),
         magnet_material: None,
         cache: None,
@@ -140,7 +136,7 @@ fn set_fb_rot_core() -> Result<(), Box<dyn std::error::Error>> {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         air_gap: Box::new(air_gap),
         flux_barrier: None, // No flux barrier at initialization
     }
@@ -152,9 +148,7 @@ fn set_fb_rot_core() -> Result<(), Box<dyn std::error::Error>> {
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(4.0),
         magnet_space_width: Length::new::<millimeter>(10.0),
-        height_split: Spoke1HeightSplit::ReliefPathWidth(
-            Length::new::<millimeter>(2.0),
-        ),
+        height_split: Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(2.0)),
         glue_gap: Length::new::<millimeter>(0.0),
         magnet_material: None,
         cache: None,
@@ -166,9 +160,7 @@ fn set_fb_rot_core() -> Result<(), Box<dyn std::error::Error>> {
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
         relief_path_air_gap_width: Length::new::<millimeter>(4.0),
         magnet_space_width: Length::new::<millimeter>(30.0), // Too wide for the core width
-        height_split: Spoke1HeightSplit::ReliefPathWidth(
-            Length::new::<millimeter>(2.0),
-        ),
+        height_split: Spoke1HeightSplit::ReliefPathWidth(Length::new::<millimeter>(2.0)),
         glue_gap: Length::new::<millimeter>(0.0),
         magnet_material: None,
         cache: None,

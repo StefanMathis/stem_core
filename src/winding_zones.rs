@@ -91,6 +91,7 @@ use planar_geo::prelude::{Polysegment, ToBoundingBox};
 use planar_geo::segment::ArcSegment;
 use planar_geo::{Transformation, contour::Contour};
 use std::f64::consts::{FRAC_1_SQRT_2, FRAC_PI_2, TAU};
+use std::num::NonZeroU16;
 use stem_slot::prelude::*;
 use stem_slot::{slot::Slot, stem_coil_layout::CoilLayout};
 
@@ -505,7 +506,7 @@ impl<const LIN: bool> WindingZonesPeriodic<Polysegment, LIN> {
     /// and examples.
     pub fn from_slot<S: Slot + ?Sized>(
         air_gap_length: Length,
-        slots: u16,
+        slots: NonZeroU16,
         slot: &S,
         starts_in_slot_middle: bool,
         outer_core: bool,
@@ -529,7 +530,7 @@ impl<const LIN: bool> WindingZonesPeriodic<Polysegment, LIN> {
         };
 
         return Self {
-            slots,
+            slots: slots.get(),
             air_gap_length,
             zones: vec![slot_outline],
             starts_in_slot_middle,
@@ -1005,7 +1006,7 @@ let core: LinCore = LinCoreBuilder {
     skew_angle: 0.0,
     iron_fill_factor: 1.0,
     material: Arc::new(Default::default()),
-    pole_pairs: 1,
+    pole_pairs: 1.try_into().expect("not zero"),
     air_gap: Box::new(PlainAirGap {
         num_segments: 0,
         air_gap_winding_height: Length::new::<millimeter>(8.0),

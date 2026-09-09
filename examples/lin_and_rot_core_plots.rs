@@ -36,7 +36,12 @@ fn plot_lin_core() -> Result<(), Box<dyn std::error::Error>> {
     }
     .try_into()?;
 
-    let air_gap = SlottedAirGap::new(12, false, CarterFactorModel::Bin12, Box::new(slot.clone()));
+    let air_gap = SlottedAirGap::new(
+        12.try_into()?,
+        false,
+        CarterFactorModel::Bin12,
+        Box::new(slot.clone()),
+    );
     let flux_barrier = Spoke1FluxBarrier {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
         yoke_leakage_path_width: Length::new::<millimeter>(1.0),
@@ -56,7 +61,7 @@ fn plot_lin_core() -> Result<(), Box<dyn std::error::Error>> {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into()?,
         air_gap: Box::new(air_gap),
         flux_barrier: Some(Box::new(flux_barrier)),
     }
@@ -100,7 +105,7 @@ fn plot_rot_core() -> Result<(), Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(air_gap_plain),
         flux_barrier: Some(Box::new(flux_barrier)),
@@ -120,7 +125,12 @@ fn plot_rot_core() -> Result<(), Box<dyn std::error::Error>> {
     }
     .try_into()?;
 
-    let air_gap_slotted = SlottedAirGap::new(36, false, CarterFactorModel::Bin12, Box::new(slot));
+    let air_gap_slotted = SlottedAirGap::new(
+        36.try_into()?,
+        false,
+        CarterFactorModel::Bin12,
+        Box::new(slot),
+    );
 
     let outer_core: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(55.0),
@@ -129,7 +139,7 @@ fn plot_rot_core() -> Result<(), Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(air_gap_slotted),
         flux_barrier: None,
@@ -175,7 +185,7 @@ fn plot_lin_core_air_gap_and_slotted_winding() -> Result<(), Box<dyn std::error:
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into()?,
         air_gap: Box::new(plain_air_gap),
         flux_barrier: None,
     }
@@ -200,7 +210,12 @@ fn plot_lin_core_air_gap_and_slotted_winding() -> Result<(), Box<dyn std::error:
     }
     .try_into()?;
 
-    let air_gap = SlottedAirGap::new(12, false, CarterFactorModel::Bin12, Box::new(slot.clone()));
+    let air_gap = SlottedAirGap::new(
+        12.try_into()?,
+        false,
+        CarterFactorModel::Bin12,
+        Box::new(slot.clone()),
+    );
 
     let slotted_lin_core: LinCore = LinCoreBuilder {
         height: Length::new::<meter>(height),
@@ -210,7 +225,7 @@ fn plot_lin_core_air_gap_and_slotted_winding() -> Result<(), Box<dyn std::error:
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into()?,
         air_gap: Box::new(air_gap),
         flux_barrier: None,
     }
@@ -260,7 +275,7 @@ fn plot_lin_and_rot_core_surface_magnets() -> Result<(), Box<dyn std::error::Err
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         air_gap: Box::new(PlainAirGap::default()),
         flux_barrier: None,
     }
@@ -273,7 +288,7 @@ fn plot_lin_and_rot_core_surface_magnets() -> Result<(), Box<dyn std::error::Err
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(PlainAirGap::default()),
         flux_barrier: None,
@@ -366,7 +381,7 @@ fn plot_lin_and_rot_core_interior_magnets() -> Result<(), Box<dyn std::error::Er
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         air_gap: Box::new(PlainAirGap::default()),
         flux_barrier: Some(Box::new(fb.clone())),
     }
@@ -379,7 +394,7 @@ fn plot_lin_and_rot_core_interior_magnets() -> Result<(), Box<dyn std::error::Er
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 3,
+        pole_pairs: 3.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(PlainAirGap::default()),
         flux_barrier: Some(Box::new(fb.clone())),

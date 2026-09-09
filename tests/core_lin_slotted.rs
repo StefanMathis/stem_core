@@ -28,7 +28,7 @@ fn create_core(starts_in_slot_middle: bool, open_slot: bool) -> LinCore {
     .unwrap();
 
     let air_gap = SlottedAirGap::new(
-        12,
+        12.try_into().expect("not zero"),
         starts_in_slot_middle,
         CarterFactorModel::Bin12,
         Box::new(slot),
@@ -42,7 +42,7 @@ fn create_core(starts_in_slot_middle: bool, open_slot: bool) -> LinCore {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into().expect("not zero"),
         air_gap: Box::new(air_gap),
         flux_barrier: None,
     }

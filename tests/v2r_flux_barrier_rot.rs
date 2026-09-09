@@ -37,7 +37,12 @@ fn create_slotted_core(flux_barrier: Option<V2rFluxBarrier>) -> RotCore {
         .map(Box::new)
         .map(|fb| fb as Box<dyn FluxBarrier>);
 
-    let air_gap = SlottedAirGap::new(28, true, CarterFactorModel::Bin12, Box::new(slot));
+    let air_gap = SlottedAirGap::new(
+        28.try_into().expect("not zero"),
+        true,
+        CarterFactorModel::Bin12,
+        Box::new(slot),
+    );
     let core = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(54.4),
         yoke_radius: Length::new::<millimeter>(19.0),
@@ -45,7 +50,7 @@ fn create_slotted_core(flux_barrier: Option<V2rFluxBarrier>) -> RotCore {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into().expect("not zero"),
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier,
@@ -168,7 +173,7 @@ fn test_slotted_core_180deg() {
             2,
             core.interior_magnet_assemblies()
                 .iter()
-                .map(|m| m.num_magnets())
+                .map(|m| m.num_magnets().get())
                 .sum::<usize>()
         );
     }
@@ -312,7 +317,7 @@ fn test_plain_core_180deg() {
             axial_coil_overhang: Length::new::<millimeter>(0.0),
             iron_fill_factor: 1.0,
             material: Arc::new(Material::default()),
-            pole_pairs: 2,
+            pole_pairs: 2.try_into().expect("not zero"),
             skew_angle: 0.0,
             air_gap: Box::new(air_gap),
             flux_barrier: None,
@@ -355,7 +360,7 @@ fn test_plain_core_180deg() {
             axial_coil_overhang: Length::new::<millimeter>(0.0),
             iron_fill_factor: 1.0,
             material: Arc::new(Material::default()),
-            pole_pairs: 2,
+            pole_pairs: 2.try_into().expect("not zero"),
             skew_angle: 0.0,
             air_gap: Box::new(air_gap),
             flux_barrier: Some(Box::new(barrier)),
@@ -436,7 +441,7 @@ fn test_plain_core_90deg() {
             axial_coil_overhang: Length::new::<millimeter>(0.0),
             iron_fill_factor: 1.0,
             material: Arc::new(Material::default()),
-            pole_pairs: 2,
+            pole_pairs: 2.try_into().expect("not zero"),
             skew_angle: 0.0,
             air_gap: Box::new(air_gap),
             flux_barrier: None,
@@ -479,7 +484,7 @@ fn test_plain_core_90deg() {
             axial_coil_overhang: Length::new::<millimeter>(0.0),
             iron_fill_factor: 1.0,
             material: Arc::new(Material::default()),
-            pole_pairs: 2,
+            pole_pairs: 2.try_into().expect("not zero"),
             skew_angle: 0.0,
             air_gap: Box::new(air_gap),
             flux_barrier: Some(Box::new(barrier)),
@@ -560,7 +565,7 @@ fn test_plain_core_90deg_no_relief() {
             axial_coil_overhang: Length::new::<millimeter>(0.0),
             iron_fill_factor: 1.0,
             material: Arc::new(Material::default()),
-            pole_pairs: 2,
+            pole_pairs: 2.try_into().expect("not zero"),
             skew_angle: 0.0,
             air_gap: Box::new(air_gap),
             flux_barrier: None,
@@ -603,7 +608,7 @@ fn test_plain_core_90deg_no_relief() {
             axial_coil_overhang: Length::new::<millimeter>(0.0),
             iron_fill_factor: 1.0,
             material: Arc::new(Material::default()),
-            pole_pairs: 2,
+            pole_pairs: 2.try_into().expect("not zero"),
             skew_angle: 0.0,
             air_gap: Box::new(air_gap),
             flux_barrier: Some(Box::new(barrier)),
@@ -694,7 +699,7 @@ fn test_var_poles() {
             axial_coil_overhang: Length::new::<millimeter>(0.0),
             iron_fill_factor: 1.0,
             material: Arc::new(Material::default()),
-            pole_pairs,
+            pole_pairs: pole_pairs.try_into().expect("not zero"),
             skew_angle: 0.0,
             air_gap: Box::new(PlainAirGap::default()),
             flux_barrier: Some(Box::new(fb.clone())),

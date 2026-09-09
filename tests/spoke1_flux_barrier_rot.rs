@@ -10,7 +10,7 @@ fn create_plain_inner_core(flux_barrier: Option<Spoke1FluxBarrier>) -> RotCore {
         air_gap_winding_height: Length::new::<millimeter>(10.0),
         winding_coverage: 0.7,
         starts_in_slot_middle: false,
-        slots: 12,
+        slots: 12.try_into().expect("not zero"),
     };
 
     let flux_barrier: Option<Box<dyn FluxBarrier>> = flux_barrier
@@ -24,7 +24,7 @@ fn create_plain_inner_core(flux_barrier: Option<Spoke1FluxBarrier>) -> RotCore {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 4,
+        pole_pairs: 4.try_into().expect("not zero"),
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier,
@@ -39,7 +39,7 @@ fn create_plain_outer_core(flux_barrier: Option<Spoke1FluxBarrier>) -> RotCore {
         air_gap_winding_height: Length::new::<millimeter>(10.0),
         winding_coverage: 0.7,
         starts_in_slot_middle: false,
-        slots: 12,
+        slots: 12.try_into().expect("not zero"),
     };
 
     let flux_barrier: Option<Box<dyn FluxBarrier>> = flux_barrier
@@ -53,7 +53,7 @@ fn create_plain_outer_core(flux_barrier: Option<Spoke1FluxBarrier>) -> RotCore {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 4,
+        pole_pairs: 4.try_into().expect("not zero"),
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier,
@@ -87,7 +87,12 @@ fn create_slotted_inner_core(flux_barrier: Option<Spoke1FluxBarrier>) -> RotCore
         .map(Box::new)
         .map(|fb| fb as Box<dyn FluxBarrier>);
 
-    let air_gap = SlottedAirGap::new(28, true, CarterFactorModel::Bin12, Box::new(slot));
+    let air_gap = SlottedAirGap::new(
+        28.try_into().expect("not zero"),
+        true,
+        CarterFactorModel::Bin12,
+        Box::new(slot),
+    );
     let core = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(54.4),
         yoke_radius: Length::new::<millimeter>(19.0),
@@ -95,7 +100,7 @@ fn create_slotted_inner_core(flux_barrier: Option<Spoke1FluxBarrier>) -> RotCore
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 4,
+        pole_pairs: 4.try_into().expect("not zero"),
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier,
@@ -129,7 +134,12 @@ fn create_slotted_outer_core(flux_barrier: Option<Spoke1FluxBarrier>) -> RotCore
         .map(Box::new)
         .map(|fb| fb as Box<dyn FluxBarrier>);
 
-    let air_gap = SlottedAirGap::new(8, true, CarterFactorModel::Bin12, Box::new(slot));
+    let air_gap = SlottedAirGap::new(
+        8.try_into().expect("not zero"),
+        true,
+        CarterFactorModel::Bin12,
+        Box::new(slot),
+    );
     let core = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(19.0),
         yoke_radius: Length::new::<millimeter>(54.4),
@@ -137,7 +147,7 @@ fn create_slotted_outer_core(flux_barrier: Option<Spoke1FluxBarrier>) -> RotCore
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 4,
+        pole_pairs: 4.try_into().expect("not zero"),
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier,
@@ -244,7 +254,7 @@ fn plain_inner_with_relief_path() {
             1,
             core.interior_magnet_assemblies()
                 .iter()
-                .map(|m| m.num_magnets())
+                .map(|m| m.num_magnets().get())
                 .sum::<usize>()
         );
     }
@@ -993,7 +1003,7 @@ fn test_straight_indents_ag() {
         num_segments: 1.try_into().unwrap(),
         indent_width: Length::new::<millimeter>(20.0),
         indent_depth: Length::new::<millimeter>(-1.0),
-        indents_per_pole: 1,
+        indents_per_pole: 1.try_into().expect("not zero"),
     };
 
     let core: RotCore = RotCoreBuilder {
@@ -1003,7 +1013,7 @@ fn test_straight_indents_ag() {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into().expect("not zero"),
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier: Some(Box::new(barrier)),

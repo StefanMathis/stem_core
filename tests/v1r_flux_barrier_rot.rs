@@ -37,7 +37,12 @@ fn create_slotted_core(flux_barrier: Option<V1rFluxBarrier>) -> RotCore {
         .map(Box::new)
         .map(|fb| fb as Box<dyn FluxBarrier>);
 
-    let air_gap = SlottedAirGap::new(28, false, CarterFactorModel::Bin12, Box::new(slot));
+    let air_gap = SlottedAirGap::new(
+        28.try_into().expect("not zero"),
+        false,
+        CarterFactorModel::Bin12,
+        Box::new(slot),
+    );
     let core = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(54.4),
         yoke_radius: Length::new::<millimeter>(19.0),
@@ -45,7 +50,7 @@ fn create_slotted_core(flux_barrier: Option<V1rFluxBarrier>) -> RotCore {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into().expect("not zero"),
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier,
@@ -178,7 +183,7 @@ fn test_slotted_core_90deg_open() {
             2,
             core.interior_magnet_assemblies()
                 .iter()
-                .map(|m| m.num_magnets())
+                .map(|m| m.num_magnets().get())
                 .sum::<usize>()
         );
     }
@@ -319,7 +324,7 @@ fn test_plain_core_90deg_open() {
         air_gap_winding_height: Length::new::<millimeter>(0.0),
         winding_coverage: 1.0,
         starts_in_slot_middle: true,
-        slots: 28,
+        slots: 28.try_into().expect("not zero"),
     };
 
     let core: RotCore = RotCoreBuilder {
@@ -329,7 +334,7 @@ fn test_plain_core_90deg_open() {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into().expect("not zero"),
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier: Some(Box::new(barrier)),
@@ -406,7 +411,7 @@ fn test_plain_core_90deg_closed() {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into().expect("not zero"),
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier: Some(Box::new(barrier)),
@@ -937,7 +942,7 @@ fn test_var_poles() {
             axial_coil_overhang: Length::new::<millimeter>(0.0),
             iron_fill_factor: 1.0,
             material: Arc::new(Material::default()),
-            pole_pairs,
+            pole_pairs: pole_pairs.try_into().expect("not zero"),
             skew_angle: 0.0,
             air_gap: Box::new(PlainAirGap::default()),
             flux_barrier: Some(Box::new(fb.clone())),

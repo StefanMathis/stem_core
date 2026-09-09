@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{num::NonZeroUsize, sync::Arc};
 
 use cairo_viewport::{SideLength, Viewport, bounding_box::ToBoundingBox, compare_or_create};
 use stem_core::{magnets::PositionedMagnetShape, prelude::*};
@@ -12,7 +12,7 @@ fn test_radii_calc() {
             num_segments: 1.try_into().unwrap(),
             indent_width: Length::new::<millimeter>(20.0),
             indent_depth: Length::new::<millimeter>(0.0),
-            indents_per_pole: 3,
+            indents_per_pole: 3.try_into().expect("not zero"),
         };
 
         approxim::assert_abs_diff_eq!(
@@ -69,7 +69,7 @@ fn test_radii_calc() {
             num_segments: 1.try_into().unwrap(),
             indent_width: Length::new::<millimeter>(20.0),
             indent_depth: Length::new::<millimeter>(5.0),
-            indents_per_pole: 3,
+            indents_per_pole: 3.try_into().expect("not zero"),
         };
 
         approxim::assert_abs_diff_eq!(
@@ -107,7 +107,7 @@ fn test_radii_calc() {
             num_segments: 1.try_into().unwrap(),
             indent_width: Length::new::<millimeter>(20.0),
             indent_depth: Length::new::<millimeter>(-5.0),
-            indents_per_pole: 3,
+            indents_per_pole: 3.try_into().expect("not zero"),
         };
 
         approxim::assert_abs_diff_eq!(
@@ -160,7 +160,7 @@ fn test_polygon_air_gap_builder() {
             axial_coil_overhang: Length::new::<millimeter>(0.0),
             iron_fill_factor: 1.0,
             material: Arc::new(Material::default()),
-            pole_pairs: 3,
+            pole_pairs: 3.try_into().expect("not zero"),
             skew_angle: 0.0,
             air_gap: Box::new(air_gap),
             flux_barrier: None,
@@ -200,7 +200,7 @@ fn test_polygon_air_gap_builder() {
             axial_coil_overhang: Length::new::<millimeter>(0.0),
             iron_fill_factor: 1.0,
             material: Arc::new(Material::default()),
-            pole_pairs: 3,
+            pole_pairs: 3.try_into().expect("not zero"),
             skew_angle: 0.0,
             air_gap: Box::new(air_gap),
             flux_barrier: None,
@@ -229,7 +229,7 @@ fn test_polygon_air_gap_builder() {
 fn create_core(
     indent_width: f64,
     indent_depth: f64,
-    indents_per_pole: usize,
+    indents_per_pole: NonZeroUsize,
     outer: bool,
 ) -> RotCore {
     let (ag, yoke) = if outer { (60.0, 80.0) } else { (80.0, 60.0) };
@@ -240,7 +240,7 @@ fn create_core(
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into().expect("not zero"),
         skew_angle: 0.0,
         air_gap: Box::new(StraightIndentsAirGap {
             num_segments: 1.try_into().unwrap(),
@@ -260,7 +260,7 @@ fn test_assembly_check_block() {
         num_segments: 1.try_into().unwrap(),
         indent_width: Length::new::<millimeter>(20.5),
         indent_depth: Length::new::<millimeter>(2.0),
-        indents_per_pole: 3,
+        indents_per_pole: 3.try_into().expect("not zero"),
     };
 
     let core: RotCore = RotCoreBuilder {
@@ -270,7 +270,7 @@ fn test_assembly_check_block() {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into().expect("not zero"),
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier: None,
@@ -315,7 +315,7 @@ fn test_assembly_check_inner() {
     let assembly = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
 
     {
-        let core = create_core(20.0, 0.0, 3, false);
+        let core = create_core(20.0, 0.0, 3.try_into().expect("not zero"), false);
         assert!(
             core.assembly_check(
                 &CoilLayout::SingleFilled,
@@ -327,7 +327,7 @@ fn test_assembly_check_inner() {
         );
     }
     {
-        let core = create_core(20.0, -2.0, 3, false);
+        let core = create_core(20.0, -2.0, 3.try_into().expect("not zero"), false);
         assert!(
             core.assembly_check(
                 &CoilLayout::SingleFilled,
@@ -339,7 +339,7 @@ fn test_assembly_check_inner() {
         );
     }
     {
-        let core = create_core(20.0, 2.0, 3, false);
+        let core = create_core(20.0, 2.0, 3.try_into().expect("not zero"), false);
         assert!(
             core.assembly_check(
                 &CoilLayout::SingleFilled,
@@ -351,7 +351,7 @@ fn test_assembly_check_inner() {
         );
     }
     {
-        let core = create_core(20.0, -5.0, 3, false);
+        let core = create_core(20.0, -5.0, 3.try_into().expect("not zero"), false);
         assert!(
             core.assembly_check(
                 &CoilLayout::SingleFilled,
@@ -363,7 +363,7 @@ fn test_assembly_check_inner() {
         );
     }
     {
-        let core = create_core(20.0, 5.0, 3, false);
+        let core = create_core(20.0, 5.0, 3.try_into().expect("not zero"), false);
         assert!(
             core.assembly_check(
                 &CoilLayout::SingleFilled,
@@ -375,7 +375,7 @@ fn test_assembly_check_inner() {
         );
     }
     {
-        let core = create_core(17.0, 2.0, 3, false);
+        let core = create_core(17.0, 2.0, 3.try_into().expect("not zero"), false);
         assert!(
             core.assembly_check(
                 &CoilLayout::SingleFilled,
@@ -401,7 +401,7 @@ fn test_assembly_check_outer() {
     let assembly = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
 
     {
-        let core = create_core(20.0, 0.0, 3, true);
+        let core = create_core(20.0, 0.0, 3.try_into().expect("not zero"), true);
         assert!(
             core.assembly_check(
                 &CoilLayout::SingleFilled,
@@ -413,7 +413,7 @@ fn test_assembly_check_outer() {
         );
     }
     {
-        let core = create_core(20.0, -2.0, 3, true);
+        let core = create_core(20.0, -2.0, 3.try_into().expect("not zero"), true);
         assert!(
             core.assembly_check(
                 &CoilLayout::SingleFilled,
@@ -425,7 +425,7 @@ fn test_assembly_check_outer() {
         );
     }
     {
-        let core = create_core(20.0, 2.0, 3, true);
+        let core = create_core(20.0, 2.0, 3.try_into().expect("not zero"), true);
         assert!(
             core.assembly_check(
                 &CoilLayout::SingleFilled,
@@ -437,7 +437,7 @@ fn test_assembly_check_outer() {
         );
     }
     {
-        let core = create_core(20.0, -5.0, 3, true);
+        let core = create_core(20.0, -5.0, 3.try_into().expect("not zero"), true);
         assert!(
             core.assembly_check(
                 &CoilLayout::SingleFilled,
@@ -449,7 +449,7 @@ fn test_assembly_check_outer() {
         );
     }
     {
-        let core = create_core(20.0, 5.0, 3, true);
+        let core = create_core(20.0, 5.0, 3.try_into().expect("not zero"), true);
         assert!(
             core.assembly_check(
                 &CoilLayout::SingleFilled,
@@ -475,7 +475,7 @@ fn test_plot_inner_assembly() {
         .unwrap();
         let assembly = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
 
-        let core = create_core(20.0, indent_depth, 3, false);
+        let core = create_core(20.0, indent_depth, 3.try_into().expect("not zero"), false);
         let drawable: Drawable = core.drawable().into();
 
         let magnets: Vec<Drawable> = core
@@ -526,7 +526,7 @@ fn test_plot_outer_assembly() {
         .unwrap();
         let assembly = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
 
-        let core = create_core(20.0, indent_depth, 3, true);
+        let core = create_core(20.0, indent_depth, 3.try_into().expect("not zero"), true);
         let drawable: Drawable = core.drawable().into();
 
         let magnets: Vec<Drawable> = core
@@ -567,7 +567,9 @@ fn test_plot_outer_assembly() {
 #[test]
 fn test_plot_outer_core() {
     {
-        let drawable: Drawable = create_core(20.0, 0.0, 3, true).drawable().into();
+        let drawable: Drawable = create_core(20.0, 0.0, 3.try_into().expect("not zero"), true)
+            .drawable()
+            .into();
         let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
         let path = std::path::Path::new("tests/img/rot_straight_indents/outer_1.png");
         let callback = |path: &std::path::Path| {
@@ -580,7 +582,9 @@ fn test_plot_outer_core() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let drawable: Drawable = create_core(30.0, 0.0, 2, true).drawable().into();
+        let drawable: Drawable = create_core(30.0, 0.0, 2.try_into().expect("not zero"), true)
+            .drawable()
+            .into();
         let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
         let path = std::path::Path::new("tests/img/rot_straight_indents/outer_2.png");
         let callback = |path: &std::path::Path| {
@@ -593,7 +597,9 @@ fn test_plot_outer_core() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let drawable: Drawable = create_core(30.0, 2.0, 2, true).drawable().into();
+        let drawable: Drawable = create_core(30.0, 2.0, 2.try_into().expect("not zero"), true)
+            .drawable()
+            .into();
         let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
         let path = std::path::Path::new("tests/img/rot_straight_indents/outer_3.png");
         let callback = |path: &std::path::Path| {
@@ -606,7 +612,9 @@ fn test_plot_outer_core() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let drawable: Drawable = create_core(30.0, -2.0, 2, true).drawable().into();
+        let drawable: Drawable = create_core(30.0, -2.0, 2.try_into().expect("not zero"), true)
+            .drawable()
+            .into();
         let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
         let path = std::path::Path::new("tests/img/rot_straight_indents/outer_4.png");
         let callback = |path: &std::path::Path| {
@@ -619,7 +627,9 @@ fn test_plot_outer_core() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let drawable: Drawable = create_core(20.0, -2.0, 3, true).drawable().into();
+        let drawable: Drawable = create_core(20.0, -2.0, 3.try_into().expect("not zero"), true)
+            .drawable()
+            .into();
         let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
         let path = std::path::Path::new("tests/img/rot_straight_indents/outer_5.png");
         let callback = |path: &std::path::Path| {
@@ -636,7 +646,9 @@ fn test_plot_outer_core() {
 #[test]
 fn test_plot_inner_core() {
     {
-        let drawable: Drawable = create_core(20.0, 0.0, 3, false).drawable().into();
+        let drawable: Drawable = create_core(20.0, 0.0, 3.try_into().expect("not zero"), false)
+            .drawable()
+            .into();
         let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
         let path = std::path::Path::new("tests/img/rot_straight_indents/inner_1.png");
         let callback = |path: &std::path::Path| {
@@ -649,7 +661,9 @@ fn test_plot_inner_core() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let drawable: Drawable = create_core(30.0, 0.0, 2, false).drawable().into();
+        let drawable: Drawable = create_core(30.0, 0.0, 2.try_into().expect("not zero"), false)
+            .drawable()
+            .into();
         let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
         let path = std::path::Path::new("tests/img/rot_straight_indents/inner_2.png");
         let callback = |path: &std::path::Path| {
@@ -662,7 +676,9 @@ fn test_plot_inner_core() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let drawable: Drawable = create_core(30.0, 2.0, 2, false).drawable().into();
+        let drawable: Drawable = create_core(30.0, 2.0, 2.try_into().expect("not zero"), false)
+            .drawable()
+            .into();
         let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
         let path = std::path::Path::new("tests/img/rot_straight_indents/inner_3.png");
         let callback = |path: &std::path::Path| {
@@ -675,7 +691,9 @@ fn test_plot_inner_core() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let drawable: Drawable = create_core(30.0, -2.0, 2, false).drawable().into();
+        let drawable: Drawable = create_core(30.0, -2.0, 2.try_into().expect("not zero"), false)
+            .drawable()
+            .into();
         let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
         let path = std::path::Path::new("tests/img/rot_straight_indents/inner_4.png");
         let callback = |path: &std::path::Path| {
@@ -688,7 +706,9 @@ fn test_plot_inner_core() {
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
     {
-        let drawable: Drawable = create_core(20.0, -2.0, 3, false).drawable().into();
+        let drawable: Drawable = create_core(20.0, -2.0, 3.try_into().expect("not zero"), false)
+            .drawable()
+            .into();
         let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
         let path = std::path::Path::new("tests/img/rot_straight_indents/inner_5.png");
         let callback = |path: &std::path::Path| {

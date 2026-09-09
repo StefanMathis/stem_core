@@ -25,6 +25,7 @@ build magnetic cores. See the struct docstring for more.
 
 use std::{
     f64::consts::{FRAC_PI_2, PI, TAU},
+    num::NonZeroU16,
     sync::Arc,
 };
 
@@ -142,7 +143,7 @@ let mut core: RotCore = RotCoreBuilder {
     axial_coil_overhang: Length::new::<millimeter>(0.0),
     iron_fill_factor: 1.0,
     material: Arc::new(Material::default()),
-    pole_pairs: 3,
+    pole_pairs: 3.try_into().expect("not zero"),
     skew_angle: 0.0,
     air_gap: Box::new(PlainAirGap::default()),
     flux_barrier: None, // Flux barrier will be added later.
@@ -320,7 +321,7 @@ pub struct Cache {
     pub leakage_segment: Segment,
     /// Number of pole pairs (copied from the `core` argument of
     /// [`FluxBarrier::combine`]).
-    pub pole_pairs: u16,
+    pub pole_pairs: NonZeroU16,
     magnets: Option<[MagnetAssembly; 1]>,
 }
 
@@ -357,7 +358,9 @@ impl V2rFluxBarrier {
     /// value is zero.
     pub fn distance_to_q_axis_at_yoke(&self) -> Length {
         match self.cache.as_ref() {
-            Some(c) => Length::new::<meter>(dist_to_q_axis(c.pt_magnet_relief_q, c.pole_pairs)),
+            Some(c) => {
+                Length::new::<meter>(dist_to_q_axis(c.pt_magnet_relief_q, c.pole_pairs.get()))
+            }
             None => Length::new::<meter>(0.0),
         }
     }
@@ -368,9 +371,10 @@ impl V2rFluxBarrier {
     /// value is zero.
     pub fn distance_to_q_axis_at_air_gap(&self) -> Length {
         match self.cache.as_ref() {
-            Some(c) => {
-                Length::new::<meter>(dist_to_q_axis(c.pt_relief_outer_corner_q, c.pole_pairs))
-            }
+            Some(c) => Length::new::<meter>(dist_to_q_axis(
+                c.pt_relief_outer_corner_q,
+                c.pole_pairs.get(),
+            )),
             None => Length::new::<meter>(0.0),
         }
     }
@@ -383,11 +387,11 @@ impl V2rFluxBarrier {
         match self.cache.as_ref() {
             Some(c) => {
                 if let Some(q_corner) = c.pt_q_axis_fillet {
-                    return Length::new::<meter>(dist_to_q_axis(q_corner, c.pole_pairs));
+                    return Length::new::<meter>(dist_to_q_axis(q_corner, c.pole_pairs.get()));
                 } else {
                     return Length::new::<meter>(dist_to_q_axis(
                         c.pt_magnet_relief_q,
-                        c.pole_pairs,
+                        c.pole_pairs.get(),
                     ));
                 }
             }
@@ -397,11 +401,11 @@ impl V2rFluxBarrier {
 
     /// Returns the interior [`BlockMagnet`], if the flux barrier holds one.
     ///    
-    /// If the cache has been created (i.e., if [`FluxBarrier::combine`] has been
-    /// called) and if [`V2rFluxBarrier::magnet_material`] isn't `None`, a
-    /// [`BlockMagnet`] is stored in the cache and can be accessed either
-    /// indirectly with [`FluxBarrier::magnet_assemblies`] or directly with
-    /// this method.
+    /// If the cache has been created (i.e., if [`FluxBarrier::combine`] has
+    /// been called) and if [`V2rFluxBarrier::magnet_material`] isn't
+    /// `None`, a [`BlockMagnet`] is stored in the cache and can be accessed
+    /// either indirectly with [`FluxBarrier::magnet_assemblies`] or
+    /// directly with this method.
     pub fn magnet(&self) -> Option<&BlockMagnet> {
         self.cache
             .as_ref()
@@ -466,7 +470,7 @@ impl V2rFluxBarrier {
             coordinate system, where the x-axis equals the q-axis. Then transform the result back
              */
             let pole_pairs = core.pole_pairs();
-            let rotate_to_core_coords = -FRAC_PI_2 + TAU / (4.0 * pole_pairs as f64);
+            let rotate_to_core_coords = -FRAC_PI_2 + TAU / (4.0 * pole_pairs.get() as f64);
             middle.rotate([0.0, 0.0], rotate_to_core_coords);
 
             let (mut closest_slot_bottom, slot) =
@@ -681,19 +685,19 @@ impl V2rFluxBarrier {
 
         ps.append(&mut ps_mirror);
 
-        let mut contours: Vec<Contour> = Vec::with_capacity(core.poles().into());
+        let mut contours: Vec<Contour> = Vec::with_capacity(core.poles().get().into());
         contours.push(ps.into());
 
         // Rotate flux barrier clockwise by 90°-180°/(2 p) to have the negative
         // q-axis start in the x-axis (d-axis at 90° electrical)
-        let q_axis_alignment_angle = FRAC_PI_2 * (1.0 - 2.0 / (core.poles() as f64));
+        let q_axis_alignment_angle = FRAC_PI_2 * (1.0 - 2.0 / (core.poles().get() as f64));
         contours
             .iter_mut()
             .for_each(|c| c.rotate([0.0, 0.0], q_axis_alignment_angle));
 
         // Repeat the contours over all pole pairs
-        for p in 1..core.poles() {
-            let rot_angle = p as f64 * TAU / core.poles() as f64;
+        for p in 1..core.poles().get() {
+            let rot_angle = p as f64 * TAU / core.poles().get() as f64;
 
             let mut c1 = contours[0].clone();
             c1.rotate([0.0, 0.0], rot_angle);
@@ -712,7 +716,7 @@ impl FluxBarrier for V2rFluxBarrier {
             .as_ref()
             .map_or([0.0, 0.0], |c| c.leakage_segment.segment_point(0.5));
         let angle = FRAC_PI_2 - middle_leakage_segment[1].atan2(middle_leakage_segment[0]);
-        return 2.0 * angle / PI * core.pole_pairs() as f64;
+        return 2.0 * angle / PI * core.pole_pairs().get() as f64;
     }
 
     fn interior_magnets(&self, core: CoreRef<'_>, split: bool) -> Magnets {
@@ -769,7 +773,7 @@ impl FluxBarrier for V2rFluxBarrier {
         return MagnetsPeriodic::<false>::new(
             Length::new::<meter>(radius * TAU),
             shapes,
-            core.poles().into(),
+            core.poles().get().into(),
             core.d_axis_offset(),
         )
         .into();

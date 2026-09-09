@@ -25,7 +25,7 @@ calculating the [`carter_factor`](AirGap::carter_factor) of a core. It is used
 as an argument when creating a [`SlottedAirGap`].
 */
 
-use std::f64::consts::FRAC_2_PI;
+use std::{f64::consts::FRAC_2_PI, num::NonZeroU16};
 
 use crate::{
     magnets::{surface_magnet_assembly_shapes_lin, surface_magnet_assembly_shapes_rot},
@@ -237,7 +237,7 @@ pub struct SlottedAirGap {
     /// [`Slot::outline`] of the
     /// [`SlottedAirGap::slot`](struct.SlottedAirGap.html#structfield.slot)
     /// field is placed along the [`CoreExt::air_gap_length`].
-    pub slots: u16,
+    pub slots: NonZeroU16,
     /// Whether the air gap surface starts in the middle of a slot or in between
     /// two slots.
     ///
@@ -269,7 +269,7 @@ impl SlottedAirGap {
     /// This is a convenience alternative to using the native struct constructor
     /// directly. See the documentation for the struct fields for details.
     pub fn new(
-        slots: u16,
+        slots: NonZeroU16,
         starts_in_slot_middle: bool,
         carter_factor_model: CarterFactorModel,
         slot: Box<dyn Slot>,
@@ -505,7 +505,7 @@ impl AirGap for SlottedAirGap {
     }
 
     fn slots(&self, _: CoreRef<'_>) -> u16 {
-        return self.slots;
+        return self.slots.get();
     }
 
     fn slot(&self, _core: CoreRef<'_>) -> Option<&dyn Slot> {
@@ -524,7 +524,7 @@ impl AirGap for SlottedAirGap {
                 MagnetsPeriodic::<true>::new(
                     core.air_gap_length(),
                     magnets,
-                    core.poles().into(),
+                    core.poles().get().into(),
                     core.d_axis_offset(),
                 )
                 .into()
@@ -540,7 +540,7 @@ impl AirGap for SlottedAirGap {
                 MagnetsPeriodic::<false>::new(
                     core.air_gap_length(),
                     magnets,
-                    core.poles().into(),
+                    core.poles().get().into(),
                     core.d_axis_offset(),
                 )
                 .into()
@@ -575,7 +575,7 @@ impl AirGap for SlottedAirGap {
         return super::slot_opening_factor(
             slot_pitch,
             self.slot.opening_width(),
-            self.slots,
+            self.slots.get(),
             mech_ordinal,
         );
     }

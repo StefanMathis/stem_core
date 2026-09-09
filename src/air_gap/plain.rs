@@ -337,7 +337,7 @@ impl AirGap for PlainAirGap {
                 MagnetsPeriodic::<true>::new(
                     core.air_gap_length(),
                     magnets,
-                    core.poles().into(),
+                    core.poles().get().into(),
                     core.d_axis_offset(),
                 )
                 .into()
@@ -353,7 +353,7 @@ impl AirGap for PlainAirGap {
                 MagnetsPeriodic::<false>::new(
                     core.air_gap_length(),
                     magnets,
-                    core.poles().into(),
+                    core.poles().get().into(),
                     core.d_axis_offset(),
                 )
                 .into()

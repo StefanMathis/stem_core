@@ -29,7 +29,12 @@ fn full_core_assembly_plot() -> Result<(), Box<dyn std::error::Error>> {
     }
     .try_into()?;
 
-    let air_gap = SlottedAirGap::new(28, false, CarterFactorModel::Bin12, Box::new(slot));
+    let air_gap = SlottedAirGap::new(
+        28.try_into()?,
+        false,
+        CarterFactorModel::Bin12,
+        Box::new(slot),
+    );
 
     let fb = V1rFluxBarrier {
         yoke_distance: Length::new::<millimeter>(4.0),
@@ -52,7 +57,7 @@ fn full_core_assembly_plot() -> Result<(), Box<dyn std::error::Error>> {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into()?,
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier: Some(Box::new(fb)),

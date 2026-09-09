@@ -1,3 +1,4 @@
+use std::num::NonZeroUsize;
 use std::sync::Arc;
 
 use cairo_viewport::{SideLength, Viewport, bounding_box::ToBoundingBox, compare_or_create};
@@ -6,7 +7,11 @@ use stem_core::prelude::*;
 use stem_slot::planar_geo::draw::Drawable;
 use stem_slot::planar_geo::prelude::*;
 
-fn create_core(indent_width: Length, indent_depth: Length, indents_per_pole: usize) -> LinCore {
+fn create_core(
+    indent_width: Length,
+    indent_depth: Length,
+    indents_per_pole: NonZeroUsize,
+) -> LinCore {
     let air_gap = StraightIndentsAirGap {
         num_segments: 1.try_into().unwrap(),
         indent_width,
@@ -22,7 +27,7 @@ fn create_core(indent_width: Length, indent_depth: Length, indents_per_pole: usi
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into().expect("not zero"),
         air_gap: Box::new(air_gap),
         flux_barrier: None,
     }
@@ -46,7 +51,7 @@ fn test_assembly_check_breadloaf() {
         let core = create_core(
             Length::new::<millimeter>(10.0),
             Length::new::<millimeter>(0.0),
-            3,
+            3.try_into().expect("not zero"),
         );
         assert!(
             core.assembly_check(
@@ -62,7 +67,7 @@ fn test_assembly_check_breadloaf() {
         let core = create_core(
             Length::new::<millimeter>(10.0),
             Length::new::<millimeter>(5.0),
-            3,
+            3.try_into().expect("not zero"),
         );
         assert!(
             core.assembly_check(
@@ -78,7 +83,7 @@ fn test_assembly_check_breadloaf() {
         let core = create_core(
             Length::new::<millimeter>(10.0),
             Length::new::<millimeter>(-5.0),
-            3,
+            3.try_into().expect("not zero"),
         );
         assert!(
             core.assembly_check(
@@ -94,7 +99,7 @@ fn test_assembly_check_breadloaf() {
         let core = create_core(
             Length::new::<millimeter>(7.0), // Indent too small
             Length::new::<millimeter>(-5.0),
-            3,
+            3.try_into().expect("not zero"),
         );
         assert!(
             core.assembly_check(
@@ -120,7 +125,7 @@ fn test_assembly_check_breadloaf() {
         let core = create_core(
             Length::new::<millimeter>(7.0),
             Length::new::<millimeter>(-5.0),
-            3,
+            3.try_into().expect("not zero"),
         );
         assert!(
             core.assembly_check(
@@ -140,7 +145,7 @@ fn test_plot_core() {
         let core = create_core(
             Length::new::<millimeter>(10.0),
             Length::new::<millimeter>(0.0),
-            3,
+            3.try_into().expect("not zero"),
         );
 
         let drawable = core.drawable();
@@ -159,7 +164,7 @@ fn test_plot_core() {
         let core = create_core(
             Length::new::<millimeter>(10.0),
             Length::new::<millimeter>(5.0),
-            3,
+            3.try_into().expect("not zero"),
         );
 
         let drawable = core.drawable();
@@ -179,7 +184,7 @@ fn test_plot_core() {
         let core = create_core(
             Length::new::<millimeter>(10.0),
             Length::new::<millimeter>(-5.0),
-            3,
+            3.try_into().expect("not zero"),
         );
 
         let drawable = core.drawable();
@@ -213,7 +218,7 @@ fn test_plot_assembly() {
         let core = create_core(
             Length::new::<millimeter>(10.0),
             Length::new::<millimeter>(0.0),
-            3,
+            3.try_into().expect("not zero"),
         );
         let drawable = core.drawable();
 
@@ -251,7 +256,7 @@ fn test_plot_assembly() {
         let core = create_core(
             Length::new::<millimeter>(10.0),
             Length::new::<millimeter>(5.0),
-            3,
+            3.try_into().expect("not zero"),
         );
         let drawable = core.drawable();
 
@@ -290,7 +295,7 @@ fn test_plot_assembly() {
         let core = create_core(
             Length::new::<millimeter>(10.0),
             Length::new::<millimeter>(-5.0),
-            3,
+            3.try_into().expect("not zero"),
         );
         let drawable = core.drawable();
 

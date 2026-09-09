@@ -190,7 +190,7 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     ///         skew_angle: 0.0,
     ///         iron_fill_factor: 1.0,
     ///         material: Arc::new(Material::default()),
-    ///         pole_pairs: 3,
+    ///         pole_pairs: 3.try_into().expect("not zero"),
     ///         air_gap: Box::new(PlainAirGap::default()),
     ///         flux_barrier: None, // No flux barrier at initialization
     ///     }.try_into()?;
@@ -384,7 +384,7 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into().expect("not zero"),
         skew_angle: 0.0,
         air_gap: Box::new(PlainAirGap::default()),
         flux_barrier: Some(Box::new(spoke1)),
@@ -412,7 +412,7 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into().expect("not zero"),
         skew_angle: 0.0,
         air_gap: Box::new(PlainAirGap::default()),
         flux_barrier: Some(Box::new(v1r)),
@@ -422,12 +422,12 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
 
     let binding = spoke1_core.flux_barrier();
     let spoke1 = binding.as_ref().expect("has flux barrier");
-    let sum_spoke1_mags: usize = spoke1.magnet_assemblies(spoke1_core.as_core_ref()).iter().map(|m|m.num_magnets()).sum();
+    let sum_spoke1_mags: usize = spoke1.magnet_assemblies(spoke1_core.as_core_ref()).iter().map(|m|m.num_magnets().get()).sum();
     assert_eq!(sum_spoke1_mags, 1);
 
     let binding = v1r_core.flux_barrier();
     let v1r = binding.as_ref().expect("has flux barrier");
-    let sum_v1r_mags: usize = v1r.magnet_assemblies(v1r_core.as_core_ref()).iter().map(|m|m.num_magnets()).sum();
+    let sum_v1r_mags: usize = v1r.magnet_assemblies(v1r_core.as_core_ref()).iter().map(|m|m.num_magnets().get()).sum();
     assert_eq!(sum_v1r_mags, 2);
     ```
      */
@@ -555,7 +555,12 @@ mod tests {
         }
         .try_into()
         .unwrap();
-        let air_gap = SlottedAirGap::new(28, false, CarterFactorModel::Bin12, Box::new(slot));
+        let air_gap = SlottedAirGap::new(
+            28.try_into().expect("not zero"),
+            false,
+            CarterFactorModel::Bin12,
+            Box::new(slot),
+        );
         let core = RotCoreBuilder {
             air_gap_radius: Length::new::<millimeter>(54.4),
             yoke_radius: Length::new::<millimeter>(19.0),
@@ -563,7 +568,7 @@ mod tests {
             axial_coil_overhang: Length::new::<millimeter>(0.0),
             iron_fill_factor: 1.0,
             material: Arc::new(Material::default()),
-            pole_pairs: 2,
+            pole_pairs: 2.try_into().expect("not zero"),
             skew_angle: 0.0,
             air_gap: Box::new(air_gap),
             flux_barrier: None,

@@ -164,7 +164,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     ///         skew_angle: 0.0,
     ///         iron_fill_factor: 1.0,
     ///         material: Arc::new(Material::default()),
-    ///         pole_pairs: 2,
+    ///         pole_pairs: 2.try_into()?,
     ///         air_gap: Box::new(PlainAirGap::default()),
     ///         flux_barrier: None,
     ///     }.try_into()?;
@@ -183,7 +183,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     ///     num_segments: 1.try_into().expect("is not zero"),
     ///     indent_width: Length::new::<millimeter>(20.0),
     ///     indent_depth: Length::new::<millimeter>(2.0),
-    ///     indents_per_pole: 1,
+    ///     indents_per_pole: 1.try_into().expect("is not zero"),
     /// };
     ///
     /// assert!(new_core(Box::new(ag_comp)).is_ok());
@@ -195,7 +195,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     ///     num_segments: 1.try_into().expect("is not zero"),
     ///     indent_width: Length::new::<millimeter>(20.0),
     ///     indent_depth: Length::new::<millimeter>(2.0),
-    ///     indents_per_pole: 2,
+    ///     indents_per_pole: 2.try_into().expect("is not zero"),
     /// };
     /// assert!(new_core(Box::new(ag_incomp)).is_err());
     /// ```
@@ -297,7 +297,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
         axial_coil_overhang: Length::new::<millimeter>(0.0),
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into().expect("is not zero"),
         skew_angle: 0.0,
         air_gap: Box::new(air_gap),
         flux_barrier: None,

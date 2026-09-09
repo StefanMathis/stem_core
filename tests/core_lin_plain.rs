@@ -22,7 +22,7 @@ fn test_properties() {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 5,
+        pole_pairs: 5.try_into().expect("not zero"),
         air_gap: Box::new(air_gap),
         flux_barrier: None,
     })
@@ -61,7 +61,7 @@ fn test_current_displacement_coefficients() {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 5,
+        pole_pairs: 5.try_into().expect("not zero"),
         air_gap: Box::new(air_gap),
         flux_barrier: None,
     })
@@ -90,7 +90,7 @@ fn test_failed_creating_core() {
             skew_angle: 0.0,
             iron_fill_factor: -0.1,
             material: Arc::new(Material::default()),
-            pole_pairs: 4,
+            pole_pairs: 4.try_into().expect("not zero"),
             air_gap: Box::new(air_gap.clone()),
             flux_barrier: None,
         })
@@ -107,7 +107,7 @@ fn test_failed_creating_core() {
             skew_angle: 0.0,
             iron_fill_factor: 1.1,
             material: Arc::new(Material::default()),
-            pole_pairs: 4,
+            pole_pairs: 4.try_into().expect("not zero"),
             air_gap: Box::new(air_gap.clone()),
             flux_barrier: None,
         })
@@ -127,7 +127,7 @@ fn test_pole_coverage() {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 1,
+        pole_pairs: 1.try_into().expect("not zero"),
         air_gap: Box::new(air_gap),
         flux_barrier: None,
     })
@@ -166,7 +166,7 @@ fn test_plot_core() {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 5,
+        pole_pairs: 5.try_into().expect("not zero"),
         air_gap: Box::new(air_gap),
         flux_barrier: None,
     })
@@ -204,7 +204,7 @@ fn test_plot_air_gap_winding() {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 5,
+        pole_pairs: 5.try_into().expect("not zero"),
         air_gap: Box::new(air_gap),
         flux_barrier: None,
     })
@@ -296,7 +296,7 @@ fn test_plot_air_gap_winding_slot_middle() {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 5,
+        pole_pairs: 5.try_into().expect("not zero"),
         air_gap: Box::new(air_gap),
         flux_barrier: None,
     })
@@ -370,7 +370,7 @@ fn test_plot_air_gap_winding_zero_coverage() {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 5,
+        pole_pairs: 5.try_into().expect("not zero"),
         air_gap: Box::new(air_gap),
         flux_barrier: None,
     })
@@ -416,7 +416,7 @@ fn test_plot_air_gap_surface_magnets() {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 1,
+        pole_pairs: 1.try_into().expect("not zero"),
         air_gap: Box::new(air_gap),
         flux_barrier: None,
     })
@@ -493,7 +493,7 @@ fn serialize_and_deserialize() {
         skew_angle: 0.0,
         iron_fill_factor: 1.0,
         material: Arc::new(Material::default()),
-        pole_pairs: 2,
+        pole_pairs: 2.try_into().expect("not zero"),
         air_gap: Box::new(air_gap),
         flux_barrier: None,
     };
