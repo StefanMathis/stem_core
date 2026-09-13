@@ -62,6 +62,41 @@ fn test_read_properties() {
         epsilon = 1e-6
     );
     approxim::assert_abs_diff_eq!(core.yoke_height().get::<millimeter>(), 7.25, epsilon = 1e-6);
+
+    // Test that only valid zones are accepted
+    let slots = core.slots();
+    assert!(
+        core.winding_zone_at(&CoilLayout::DoubleHorizontal, Zone { slot: 0, layer: 0 })
+            .is_some()
+    );
+    assert!(
+        core.winding_zone_at(&CoilLayout::DoubleHorizontal, Zone { slot: 0, layer: 1 })
+            .is_some()
+    );
+    assert!(
+        core.winding_zone_at(
+            &CoilLayout::DoubleHorizontal,
+            Zone {
+                slot: slots - 1,
+                layer: 1
+            }
+        )
+        .is_some()
+    );
+    assert!(
+        core.winding_zone_at(&CoilLayout::DoubleHorizontal, Zone { slot: 0, layer: 2 })
+            .is_none()
+    );
+    assert!(
+        core.winding_zone_at(
+            &CoilLayout::DoubleHorizontal,
+            Zone {
+                slot: slots,
+                layer: 0
+            }
+        )
+        .is_none()
+    );
 }
 
 #[test]

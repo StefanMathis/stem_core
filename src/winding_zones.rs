@@ -445,40 +445,41 @@ impl<T: Transformation + Clone, const LIN: bool> WindingZonesPeriodic<T, LIN> {
 
 impl<T: Transformation + Clone + ToBoundingBox, const LIN: bool> WindingZonesPeriodic<T, LIN> {
     fn next_priv(&mut self) -> Option<(T, Zone)> {
-        let layers = self.layers();
+        let result = self.nth_priv(self.index);
+        self.index = self.index + 1;
+        result
+    }
 
-        // Check for iterator exhaustion (also covers the case of the contour
-        // vector being empty)
-        if self.index >= (self.slots as usize) * layers {
+    fn nth_priv(&mut self, n: usize) -> Option<(T, Zone)> {
+        let layers = self.layers();
+        if n >= (self.slots as usize) * layers {
             return None;
         }
-
-        let current_layer = self.index.rem_euclid(layers);
-        let current_slot = (self.index / layers) as f64;
-        self.index = self.index + 1;
+        let layer = n.rem_euclid(layers);
+        let slot = n / layers;
 
         // Cannot panic, because the index is the remainder of a division by the
         // total number of layers and therefore is always in bounds
-        let mut geom = self.zones[current_layer].clone();
+        let mut geom = self.zones[layer].clone();
 
         if LIN {
             // If all vertices of the contour are negative, shift it to the
             // end of the core. This can only happen for the first slot in
             // case the slot starts in the tooth middle
-            let factor = if current_slot == 0.0
+            let factor = if slot == 0
                 && self.starts_in_slot_middle
                 && geom.bounding_box().xmax() <= DEFAULT_EPSILON
             {
                 1.0
             } else {
                 1.0 / f64::from(self.slots)
-                    * (current_slot + 0.5 * (!self.starts_in_slot_middle) as u32 as f64)
+                    * (slot as f64 + 0.5 * (!self.starts_in_slot_middle) as u32 as f64)
             };
             geom.translate([self.air_gap_length.get::<meter>() * factor, 0.0]);
         } else {
             geom.translate([0.0, self.air_gap_length.get::<meter>() / TAU]);
             let angle = -TAU
-                * (current_slot + 0.5 * (!self.starts_in_slot_middle) as u32 as f64) as f64
+                * (slot as f64 + 0.5 * (!self.starts_in_slot_middle) as u32 as f64) as f64
                 / self.slots as f64
                 + FRAC_PI_2;
             geom.rotate([0.0, 0.0], angle);
@@ -486,8 +487,8 @@ impl<T: Transformation + Clone + ToBoundingBox, const LIN: bool> WindingZonesPer
         return Some((
             geom,
             Zone {
-                slot: current_slot as u16,
-                layer: current_layer as u16,
+                slot: slot as u16,
+                layer: layer as u16,
             },
         ));
     }
@@ -977,6 +978,10 @@ impl<const LIN: bool> Iterator for WindingZonesPeriodic<Polysegment, LIN> {
     fn next(&mut self) -> Option<Self::Item> {
         self.next_priv().map(|t| t.0)
     }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        self.nth_priv(n).map(|t| t.0)
+    }
 }
 
 impl<const LIN: bool> Iterator for WindingZonesPeriodic<Contour, LIN> {
@@ -984,6 +989,10 @@ impl<const LIN: bool> Iterator for WindingZonesPeriodic<Contour, LIN> {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.next_priv().map(From::from)
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        self.nth_priv(n).map(From::from)
     }
 }
 
@@ -1037,7 +1046,11 @@ assert!(wz_double.next().is_none());
 ```
 
 All predefined specialized iterators (such as [`WindingZonesPeriodic`]) can be
-converted into [`WindingZones`] via its [`From`] implementations.
+converted into [`WindingZones`] via its [`From`] implementations. The
+[`Iterator::nth`] method, which is used in
+[`CoreExt::winding_zone_at`](crate::core::CoreExt::winding_zone_at)
+implementation of [`WindingZones`] dispatches to that of the underlying
+iterator, so it is recommended to implement that method if possible.
 
 When implementing
 [`AirGap::winding_zones`](crate::air_gap::AirGap::winding_zones) (which drives
@@ -1084,6 +1097,14 @@ impl Iterator for WindingZones {
             WindingZonesInner::WindingZonesPeriodicLin(i) => i.next(),
             WindingZonesInner::WindingZonesPeriodicRot(i) => i.next(),
             WindingZonesInner::Other(i) => i.next(),
+        }
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        match &mut self.0 {
+            WindingZonesInner::WindingZonesPeriodicLin(i) => i.nth(n),
+            WindingZonesInner::WindingZonesPeriodicRot(i) => i.nth(n),
+            WindingZonesInner::Other(i) => i.nth(n),
         }
     }
 }

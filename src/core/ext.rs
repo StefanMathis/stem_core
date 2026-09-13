@@ -946,6 +946,29 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
             .winding_zones(self.as_core_ref(), coil_layout);
     }
 
+    /// Returns the contour of the winding zone, if it exists.
+    ///
+    /// This method returns the [`nth`](WindingZones::nth) contour of the
+    /// [`WindingZones`] iterator created by [`CoreExt::winding_zones`]. `n` is
+    /// calculated as:
+    ///
+    /// `n = zone.slot * coil_layout.layers().get() + zone.layer`
+    fn winding_zone_at(
+        &self,
+        coil_layout: &CoilLayout,
+        zone: stem_slot::stem_coil_layout::Zone,
+    ) -> Option<Contour> {
+        let layers = coil_layout.layers().get();
+        if zone.layer >= layers || zone.slot >= self.slots() {
+            return None;
+        }
+
+        let n = zone.slot * layers + zone.layer;
+        self.winding_zones(coil_layout)
+            .nth(n.into())
+            .map(|pc| pc.contour)
+    }
+
     /// Returns an iterator over the surface
     /// [`PositionedMagnetShape`](crate::magnets::PositionedMagnetShape)s for
     /// the given `magnet_assembly`.
@@ -1550,10 +1573,11 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// Returns the tooth width at a specific height, measured from the air gap.
     ///
     /// This method forwards to [`AirGap::tooth_width_at`] with `self` as the
-    /// second and `height` argument. The coordinate system of `height` starts
-    /// at the air gap and is perpendicular to it with positive values going
-    /// inside the core. Essentially, it is the same coordinate system as that
-    /// of a [`Slot`], just located in the tooth instead of in the slot middle.
+    /// second and `height` as the third argument. The coordinate system of
+    /// `height` starts at the air gap and is perpendicular to it with positive
+    /// values going inside the core. Essentially, it is the same coordinate
+    /// system as that of a [`Slot`], just located in the tooth instead of in
+    /// the slot middle.
     ///
     /// # Examples
     ///
