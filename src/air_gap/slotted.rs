@@ -514,8 +514,8 @@ impl AirGap for SlottedAirGap {
 
     fn surface_magnets(
         &self,
-        magnet_assembly: &MagnetAssembly,
         core: CoreRef<'_>,
+        magnet_assembly: &MagnetAssembly,
         split: bool,
     ) -> Magnets {
         match core {

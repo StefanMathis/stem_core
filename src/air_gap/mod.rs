@@ -389,8 +389,8 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// of [`PlainAirGap::surface_magnets`] for an example.
     fn surface_magnets(
         &self,
-        _magnet_assembly: &MagnetAssembly,
         core: CoreRef<'_>,
+        _magnet_assembly: &MagnetAssembly,
         _split: bool,
     ) -> Magnets {
         // Dummy implementation, to be overwritten.

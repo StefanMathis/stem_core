@@ -1062,7 +1062,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     fn surface_magnets(&self, magnet_assembly: &MagnetAssembly, split: bool) -> Magnets {
         return self
             .air_gap()
-            .surface_magnets(magnet_assembly, self.as_core_ref(), split);
+            .surface_magnets(self.as_core_ref(), magnet_assembly, split);
     }
 
     /// Returns the total number of surface magnets mounted on `self`.
