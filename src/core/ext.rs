@@ -1387,7 +1387,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
 
     /**
     Returns the slot opening factor for the harmonic with the specified
-    `mech_ordinal`.
+    `mech_order`.
 
     When determining the electric loading / induction distribution along the air
     gap, analytical methods assume that the whole electric loading produced by
@@ -1405,17 +1405,17 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
 
     `ξ = sin(k) / k`
 
-    with `k = mech_ordinal * slot_opening_width / slot_pitch * PI / slots`
+    with `k = mech_order * slot_opening_width / slot_pitch * PI / slots`
     [\[1\]](#air_gap_slot_opening_factor_1), eq. (1.2.62). The mechanical
-    ordinal is related to the electrical ordinal via:
+    order is related to the electrical order via:
 
-    `mech_ordinal = el_ordinal * pole_pairs`
+    `mech_order = el_order * pole_pairs`
 
     Multiplying the absolute of this factor with the corresponding harmonic
     amplitude for the idealized case returns the actual harmonic amplitude.
 
     This method forwards to [`AirGap::slots`], using `self` as the second
-    and `mech_ordinal` as the third argument.
+    and `mech_order` as the third argument.
 
     # Literature
     <a id="air_gap_slot_opening_factor_1">\[1\]</a>
@@ -1463,10 +1463,10 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     assert_abs_diff_eq!(core.slot_opening_factor(14), 0.848221, epsilon = 1e-6);
     ```
      */
-    fn slot_opening_factor(&self, mech_ordinal: i32) -> f64 {
+    fn slot_opening_factor(&self, mech_order: i32) -> f64 {
         return self
             .air_gap()
-            .slot_opening_factor(self.as_core_ref(), mech_ordinal);
+            .slot_opening_factor(self.as_core_ref(), mech_order);
     }
 
     /// Returns the current displacement coefficients for a winding mounted on
@@ -1946,18 +1946,18 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         return self.mass() - self.teeth_mass();
     }
 
-    /// Returns the skew factor of the core for the given `mech_ordinal`.
+    /// Returns the skew factor of the core for the given `mech_order`.
     ///
-    /// The mechanical ordinal is related to the electrical ordinal via:
+    /// The mechanical order is related to the electrical order via:
     ///
-    /// `mech_ordinal = el_ordinal * pole_pairs`
+    /// `mech_order = el_order * pole_pairs`
     ///
     /// This method forwards to the free function [`skew_factor`] with
     /// [`CoreExt::skew_angle`] and [`CoreExt::num_segments`] as the third and
     /// fourth argument. See the docstring of [`skew_factor`] for details and
     /// examples.
-    fn skew_factor(&self, mech_ordinal: usize) -> f64 {
-        return skew_factor(mech_ordinal, self.skew_angle(), self.num_segments());
+    fn skew_factor(&self, mech_order: usize) -> f64 {
+        return skew_factor(mech_order, self.skew_angle(), self.num_segments());
     }
 
     /**
@@ -2003,12 +2003,12 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     }
 
     /**
-    Returns an iterator over the slotting ordinals.
+    Returns an iterator over the slotting orderss.
 
-    For details, see the docstring of [`SlottingOrdinals`].
+    For details, see the docstring of [`SlottingOrders`].
      */
-    fn slotting_ordinals(&self) -> SlottingOrdinals {
-        return SlottingOrdinals::new(self.slots(), self.pole_pairs());
+    fn slotting_orders(&self) -> SlottingOrders {
+        return SlottingOrders::new(self.slots(), self.pole_pairs());
     }
 
     /// Returns the offset of the first positive d-axis against the "start" of
@@ -2057,7 +2057,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
 }
 
 /**
-Calculates the skew factor for a `mech_ordinal` for an either continuously
+Calculates the skew factor for a `mech_order` for an either continuously
 skewed or discretized core.
 
 One way to suppress unwanted harmonics of the magnetic air gap field is to
@@ -2065,17 +2065,17 @@ One way to suppress unwanted harmonics of the magnetic air gap field is to
 contains background information.
 
 This function calculates the "skew factor" for an harmonic with the specified
-`mech_ordinal` where the core is skewed by the `skew_angle`. Multiplying
+`mech_order` where the core is skewed by the `skew_angle`. Multiplying
 the skew factor with the amplitude of that harmonic calculated for the unskewed
-core returns its resulting (actual) amplitude. The mechanical ordinal is related
-to the electrical ordinal via:
+core returns its resulting (actual) amplitude. The mechanical order is related
+to the electrical order via:
 
 ```ignore
-mech_ordinal = el_ordinal * pole_pairs
+mech_order = el_order * pole_pairs
 ```
 
-i.e., the electrical ordinal gives the number of maxima of the sinusoidal curve
-over one pole pair and the mechanical ordinal the number of maxima over the
+i.e., the electrical order gives the number of maxima of the sinusoidal curve
+over one pole pair and the mechanical order the number of maxima over the
 entire air gap.
 
 If `num_segments` is zero, the core is continuously twisted along its axial
@@ -2089,14 +2089,14 @@ from the formula for the staggered skew factor taken from
 [\[1\]](#skew_factor_1), eq. (3):
 
 ```ignore
-skew_factor = sin(0.5 * mech_ordinal * skew_angle) / (num_segments * sin(0.5 * mech_ordinal * skew_angle / num_segments))
+skew_factor = sin(0.5 * mech_order * skew_angle) / (num_segments * sin(0.5 * mech_order * skew_angle / num_segments))
 ```
 
 For `num_segments = 0`, the formula simplifies to [\[2\]](#skew_factor_2), eq.
 (6.5-18):
 
 ```ignore
-skew_factor = sin(0.5 * mech_ordinal * skew_angle) / (0.5 * mech_ordinal * skew_angle)
+skew_factor = sin(0.5 * mech_order * skew_angle) / (0.5 * mech_order * skew_angle)
 ```
 
 # Literature
@@ -2113,7 +2113,7 @@ Berlin Heidelberg
 ## Continuous skewing
 
 A core with 15 slots and 5 pole pairs produces cogging torque harmonics with
-the mechanical ordinals 15, 30, 45 and so on due to the slotting. These can be
+the mechanical orderss 15, 30, 45 and so on due to the slotting. These can be
 suppressed by skewing with a full slot pitch (360 / 15 = 24 degree)
 
 ```
@@ -2136,7 +2136,7 @@ for k in 1..100 {
 assert_abs_diff_eq!(skew_factor(pole_pairs, angle, num_segments), 0.82699, epsilon = 1e-5);
 ```
 
-If especially the 30th ordinal is problematic, it might be more sensible to
+If especially the 30th order is problematic, it might be more sensible to
 skew by 360 / 30 = 12 degree. This reduces the losses for the first harmonic
 massively while still fully suppressing the 30th and its multiples.
 
@@ -2173,14 +2173,14 @@ let pole_pairs = 5;
 let angle = 0.5 * TAU / slots as f64;
 let num_segments = 1;
 
-// No suppression of any ordinal
+// No suppression of any order
 for k in 1..100 {
     assert_abs_diff_eq!(skew_factor(2 * slots * k, angle, num_segments), 1.0, epsilon = 1e-5);
 }
 assert_abs_diff_eq!(skew_factor(pole_pairs, angle, num_segments), 1.0, epsilon = 1e-5);
 ```
 
-With two segments, the 30th ordinal can already be suppressed, but some of its
+With two segments, the 30th order can already be suppressed, but some of its
 multiples aren't. By increasing the number of segments further, more and more
 of these are suppressed as well. For a sufficiently high number of segments,
 the staggered rotor behaves like the skewed one and suppresses all multiples.
@@ -2223,11 +2223,11 @@ assert_abs_diff_eq!(skew_factor(8 * slots, angle, 100), 0.0, epsilon = 1e-5);
 assert_abs_diff_eq!(skew_factor(pole_pairs, angle, 100), 0.95493, epsilon = 1e-5); // Equals skewed case
 ```
  */
-pub fn skew_factor(mech_ordinal: usize, skew_angle: f64, num_segments: usize) -> f64 {
+pub fn skew_factor(mech_order: usize, skew_angle: f64, num_segments: usize) -> f64 {
     if skew_angle == 0.0 {
         return 1.0;
     } else {
-        let arg = mech_ordinal as f64 * skew_angle / 2.0;
+        let arg = mech_order as f64 * skew_angle / 2.0;
         if num_segments == 0 {
             return arg.sin() / arg;
         } else {
@@ -2237,7 +2237,7 @@ pub fn skew_factor(mech_ordinal: usize, skew_angle: f64, num_segments: usize) ->
 }
 
 /**
-An iterator over the slotting ordinals of a core.
+An iterator over the slotting orderss of a core.
 
 When moving along the [`CoreExt::air_gap_length`] of a core, the slot openings
 cause a variation in the magnetic resistance / reluctance of the air gap.
@@ -2248,57 +2248,58 @@ influence of the tooth head / slot opening geometry on phenomena such as cogging
 torque. To do that, the graph is disassembled into its harmonics via Fourier
 transformation.
 
-This iterator returns the "electrical" ordinals of those harmonics, i.e., the
-ordinal is normalized to a pole pair. To obtain the "mechanical" ordinals,
-simply multiply the electrical ordinals by the number of pole pairs.
+This iterator returns the electrical orders of those harmonics, i.e. the
+harmonic orders normalized to a single pole pair. The corresponding
+mechanical orders are obtained by multiplying the electrical orders by the
+number of pole pairs.
 
-The ordinals are calculated by [\[1\]](#SlottingOrdinals_1), eq. (8):
+The orderss are calculated by [\[1\]](#SlottingOrders_1), eq. (8):
 `o = k * N / p`
 where
 `k = 0, 1, 2, ...`
 `N`: Number of slots
 `p`: Number of pole pairs
 
-Since `k` goes from 0 to infinity, the number of ordinals and therefore this
+Since `k` goes from 0 to infinity, the number of orderss and therefore this
 iterator are also infinite (although it will panic / overflow when
 [`usize::MAX`] items have been requested).
 
 The returned iterator items are [`Ratio`](num::rational::Ratio)s instead of
 floating point numbers so the underlying physical meaning is clearly visible.
 To convert the ratio into a floating point number, use:
-`*ratio.denom() as f64 / *ratio.numer() as f64`
+`*ratio.numer() as f64 / *ratio.denom() as f64`
 
 # Literature
-<a id="SlottingOrdinals_1">\[1\]</a>
+<a id="SlottingOrders_1">\[1\]</a>
 Huth, Gerhard: Nutrastung von permanenterregten AC-Servomotoren mit gestaffelter
 Rotoranordnung, Electrical Engineering 78 (1995), p. 391-397, Springer-Verlag
 
 # Examples
 
 ```
-use stem_core::core::SlottingOrdinals;
+use stem_core::core::SlottingOrders;
 use num::rational::Ratio;
 
 // Unslotted core
-let mut iter = SlottingOrdinals::new(0, 1.try_into().expect("not zero"));
+let mut iter = SlottingOrders::new(0, 1.try_into().expect("not zero"));
 assert_eq!(iter.next(), None);
 
 // 12 slots and 4 pole pairs => Number of slots per pole pair is 3
-let mut iter = SlottingOrdinals::new(12, 4.try_into().expect("not zero"));
+let mut iter = SlottingOrders::new(12, 4.try_into().expect("not zero"));
 assert_eq!(iter.next(), Some(Ratio::new(3, 1)));
 assert_eq!(iter.next(), Some(Ratio::new(6, 1)));
 assert_eq!(iter.next(), Some(Ratio::new(9, 1)));
 assert_eq!(iter.next(), Some(Ratio::new(12, 1)));
 
 // 12 slots and 5 pole pairs => Number of slots per pole pair is 12 / 5 = 2.4
-let mut iter = SlottingOrdinals::new(12, 5.try_into().expect("not zero"));
+let mut iter = SlottingOrders::new(12, 5.try_into().expect("not zero"));
 assert_eq!(iter.next(), Some(Ratio::new(12, 5)));
 assert_eq!(iter.next(), Some(Ratio::new(24, 5)));
 assert_eq!(iter.next(), Some(Ratio::new(36, 5)));
 assert_eq!(iter.next(), Some(Ratio::new(48, 5)));
 
 // 24 slots and 10 pole pairs => Number of slots per pole pair is 24 / 10 = 2.4
-let mut iter = SlottingOrdinals::new(24, 10.try_into().expect("not zero"));
+let mut iter = SlottingOrders::new(24, 10.try_into().expect("not zero"));
 assert_eq!(iter.next(), Some(Ratio::new(12, 5)));
 assert_eq!(iter.next(), Some(Ratio::new(24, 5)));
 assert_eq!(iter.next(), Some(Ratio::new(36, 5)));
@@ -2306,14 +2307,14 @@ assert_eq!(iter.next(), Some(Ratio::new(48, 5)));
 ```
  */
 #[derive(Debug, Clone, Copy)]
-pub struct SlottingOrdinals {
+pub struct SlottingOrders {
     slots: u16,
     pole_pairs: u16,
     counter: usize,
 }
 
-impl SlottingOrdinals {
-    /// Creates a new instance of the [`SlottingOrdinals`] iterator.
+impl SlottingOrders {
+    /// Creates a new instance of the [`SlottingOrders`] iterator.
     pub fn new(slots: u16, pole_pairs: NonZeroU16) -> Self {
         /*
         Calculate the least common multiple between slots and pole pairs ->
@@ -2323,7 +2324,7 @@ impl SlottingOrdinals {
         let gcd = num::integer::gcd(slots, pole_pairs);
         let slots = slots / gcd;
         let pole_pairs = pole_pairs / gcd;
-        return SlottingOrdinals {
+        return SlottingOrders {
             slots,
             pole_pairs,
             counter: 0,
@@ -2331,7 +2332,7 @@ impl SlottingOrdinals {
     }
 }
 
-impl Iterator for SlottingOrdinals {
+impl Iterator for SlottingOrders {
     type Item = num::rational::Ratio<usize>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -2339,9 +2340,9 @@ impl Iterator for SlottingOrdinals {
             // Unslotted core
             return None;
         } else {
-            let ordinal = self.nth(self.counter);
+            let order = self.nth(self.counter);
             self.counter += 1;
-            return ordinal;
+            return order;
         }
     }
 

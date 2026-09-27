@@ -75,16 +75,16 @@ fn test_skew_factor_multiple_segments() {
         fn angle(idx: usize, offset: f64) -> f64 {
             return (idx as f64 / NUMBER_POINTS as f64) * TAU + offset;
         }
-        fn curve(beta: f64, ordinal: usize) -> Vec<f64> {
-            let offset = beta * ordinal as f64;
+        fn curve(beta: f64, order: usize) -> Vec<f64> {
+            let offset = beta * order as f64;
             return (0..NUMBER_POINTS)
                 .map(|idx| angle(idx, offset).sin())
                 .collect();
         }
-        fn amplitude_two_segments(skew_angle: f64, ordinal: usize) -> f64 {
+        fn amplitude_two_segments(skew_angle: f64, order: usize) -> f64 {
             // Difference between the segments is beta = segments * skew_angle
-            let first_segment = curve(-0.25 * skew_angle, ordinal);
-            let second_segment = curve(0.25 * skew_angle, ordinal);
+            let first_segment = curve(-0.25 * skew_angle, order);
+            let second_segment = curve(0.25 * skew_angle, order);
             let amplitude = first_segment
                 .iter()
                 .zip(second_segment.iter())

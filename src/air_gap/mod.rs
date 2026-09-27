@@ -232,7 +232,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
 
     /**
     Returns the slot opening factor for the harmonic with the specified
-    `mech_ordinal`.
+    `mech_order`.
 
     This method implements [`CoreExt::slot_opening_factor`]. When determining
     the electric loading / induction distribution along the air gap, analytical
@@ -250,12 +250,12 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
 
     `ξ = sin(k) / k`
 
-    with `k = mech_ordinal * slot_opening_width / slot_pitch * PI / slots`
+    with `k = mech_order * slot_opening_width / slot_pitch * PI / slots`
     [\[1\]](#air_gap_slot_opening_factor_1), eq. (1.2.62).
 
-    The mechanical ordinal is related to the electrical ordinal via:
+    The mechanical order is related to the electrical order via:
 
-    `mech_ordinal = el_ordinal * pole_pairs`
+    `mech_order = el_order * pole_pairs`
 
     Multiplying the absolute of this factor with the corresponding harmonic
     amplitude for the idealized case returns the actual harmonic amplitude.
@@ -313,7 +313,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     assert_abs_diff_eq!(core.air_gap().slot_opening_factor(core.as_core_ref(), 14), 0.848221, epsilon = 1e-6);
     ```
      */
-    fn slot_opening_factor(&self, core: CoreRef<'_>, mech_ordinal: i32) -> f64;
+    fn slot_opening_factor(&self, core: CoreRef<'_>, mech_order: i32) -> f64;
 
     /// Returns the Carter factor of `self` for the given `core`.
     ///
@@ -553,7 +553,7 @@ dyn_clone::clone_trait_object!(AirGap);
 
 /**
 Returns the slot opening factor for the harmonic with the specified
-`mech_ordinal`.
+`mech_order`.
 
 When determining the electric loading / induction distribution along the air
 gap, analytical methods assume that the whole electric loading produced by
@@ -569,18 +569,18 @@ with the "slot opening factor" ξ which is defined as:
 
 `ξ = sin(k) / k`
 
-with `k = mech_ordinal * slot_opening_width / slot_pitch * PI / slots`
+with `k = mech_order * slot_opening_width / slot_pitch * PI / slots`
 [\[1\]](#air_gap_slot_opening_factor_1), eq. (1.2.62).
 
-The mechanical ordinal is related to the electrical ordinal via:
+The mechanical order is related to the electrical order via:
 
-`mech_ordinal = el_ordinal * pole_pairs`
+`mech_order = el_order * pole_pairs`
 
 Multiplying the absolute of this factor with the corresponding harmonic
 amplitude for the idealized case returns the actual harmonic amplitude.
 
-The mechanical ordinal can be specified as an integer (as one would expect), but
-also as a float. This enables plotting ξ as a continuous curve over the ordinals.
+The mechanical order can be specified as an integer (as one would expect), but
+also as a float. This enables plotting ξ as a continuous curve over the orders.
 
 # Literature
 <a id="air_gap_slot_opening_factor_1">\[1\]</a>
@@ -639,10 +639,10 @@ pub fn slot_opening_factor<I: Into<f64>>(
     slot_pitch: Length,
     slot_opening_width: Length,
     slots: u16,
-    mech_ordinal: I,
+    mech_order: I,
 ) -> f64 {
-    let mech_ordinal: f64 = mech_ordinal.into();
-    let k = mech_ordinal * (slot_opening_width / slot_pitch).get::<ratio>() * PI / f64::from(slots);
+    let mech_order: f64 = mech_order.into();
+    let k = mech_order * (slot_opening_width / slot_pitch).get::<ratio>() * PI / f64::from(slots);
 
     // Avoid division of 0/0. This is physically correct, see [1], eq. (1.2.63).
     if k == 0.0 {

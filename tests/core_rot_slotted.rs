@@ -968,7 +968,7 @@ fn test_odd_number_of_slots() {
 }
 
 #[test]
-fn test_slotting_ordinals() {
+fn test_slotting_orders() {
     {
         let core = create_outer_core(
             12.try_into().expect("not zero"),
@@ -976,7 +976,7 @@ fn test_slotting_ordinals() {
             true,
             true,
         );
-        let mut iter = core.slotting_ordinals();
+        let mut iter = core.slotting_orders();
         assert_eq!(iter.next(), Some(num::rational::Ratio::new(3, 1)));
         assert_eq!(iter.next(), Some(num::rational::Ratio::new(6, 1)));
         assert_eq!(iter.next(), Some(num::rational::Ratio::new(9, 1)));
@@ -990,7 +990,7 @@ fn test_slotting_ordinals() {
             true,
             true,
         );
-        let mut iter = core.slotting_ordinals();
+        let mut iter = core.slotting_orders();
         assert_eq!(iter.next(), Some(num::rational::Ratio::new(12, 5)));
         assert_eq!(iter.next(), Some(num::rational::Ratio::new(24, 5)));
         assert_eq!(iter.next(), Some(num::rational::Ratio::new(36, 5)));

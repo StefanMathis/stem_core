@@ -90,7 +90,7 @@ If the d-axis offset isn't `pi/2`, trying to [`combine`](AirGap::combine) the
 core and the air gap will return an error.
 
 The effect of the indents on the air gap field is neglected in the analytical
-approximations like [`CoreExt::carter_factor`] or [`CoreExt::slotting_ordinals`].
+approximations like [`CoreExt::carter_factor`] or [`CoreExt::slotting_orders`].
 
 # Dimensions
 
@@ -652,7 +652,7 @@ impl AirGap for StraightIndentsAirGap {
         }
     }
 
-    fn slot_opening_factor(&self, _core: CoreRef<'_>, _mech_ordinal: i32) -> f64 {
+    fn slot_opening_factor(&self, _core: CoreRef<'_>, _mech_order: i32) -> f64 {
         0.0
     }
 

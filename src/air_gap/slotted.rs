@@ -191,7 +191,7 @@ for space inside the air gap.
 to introduce further fixation.
 
 One disadvantage, especially for open slots, is the introduction of additional
-magnetic harmonics (see [`SlottingOrdinals`](crate::core::SlottingOrdinals)) due
+magnetic harmonics (see [`SlottingOrders`](crate::core::SlottingOrders)) due
 to the non-smoothness of the air gap. Even for closed slots, this is still an
 issue, because the small bridge between slot and air gap tends to saturate,
 making the air gap non-smooth from a magnetic perspective. This non-smoothness
@@ -570,13 +570,13 @@ impl AirGap for SlottedAirGap {
         );
     }
 
-    fn slot_opening_factor(&self, core: CoreRef<'_>, mech_ordinal: i32) -> f64 {
+    fn slot_opening_factor(&self, core: CoreRef<'_>, mech_order: i32) -> f64 {
         let slot_pitch = core.slot_pitch();
         return super::slot_opening_factor(
             slot_pitch,
             self.slot.opening_width(),
             self.slots.get(),
-            mech_ordinal,
+            mech_order,
         );
     }
 }

@@ -107,16 +107,16 @@ assert_abs_diff_eq!(core.carter_factor(Length::new::<millimeter>(0.5)), 1.0478, 
 // The core has a slot -> Retrieve the "Slot" trait object
 assert!(core.slot().is_some());
 
-// Evaluate the slotting ordinals (infinite iterator)
+// Evaluate the slotting orders (infinite iterator)
 use num::rational::Ratio;
-let mut ordinals = core.slotting_ordinals();
-assert_eq!(ordinals.next(), Some(Ratio::new(14, 1)));
-assert_eq!(ordinals.next(), Some(Ratio::new(28, 1)));
-assert_eq!(ordinals.next(), Some(Ratio::new(42, 1)));
-assert_eq!(ordinals.next(), Some(Ratio::new(56, 1)));
+let mut orders = core.slotting_orders();
+assert_eq!(orders.next(), Some(Ratio::new(14, 1)));
+assert_eq!(orders.next(), Some(Ratio::new(28, 1)));
+assert_eq!(orders.next(), Some(Ratio::new(42, 1)));
+assert_eq!(orders.next(), Some(Ratio::new(56, 1)));
 // ...
 
-// Calculate the skew factor for different mechanical ordinals
+// Calculate the skew factor for different mechanical harmonic orders
 assert_abs_diff_eq!(core.skew_factor(1), 0.9979, epsilon=1e-3);
 assert_abs_diff_eq!(core.skew_factor(7), 0.9003, epsilon=1e-3);
 
