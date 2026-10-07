@@ -857,6 +857,73 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         return self.air_gap().num_segments(self.as_core_ref());
     }
 
+    /// Returns the staggering angle of a particular `segment`.
+    ///
+    /// Each segment in a staggered laminated core has the same angular offset
+    /// to its neighbors:
+    ///
+    /// `offset_angle = skew_angle / num_segments`.
+    ///
+    /// The segment count starts at zero, the last segment of a staggered
+    /// component has therefore the index `num_segments-1`.
+    ///
+    /// The angle is given relative to the reference axis, which intersects the
+    /// skew angle line at its middle. Therefore, the sum of all segment angles
+    /// is always zero.
+    #[doc = ""]
+    #[cfg_attr(feature = "doc-images", doc = "![Staggering angle][segment_angle]")]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image("segment_angle", "docs/img/cad_segment_angle.svg")
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    ///
+    /// If [`CoreExt::num_segments`] is zero, this method just returns 0.
+    /// Otherwise, it forwards to [`segment_angle`], using
+    /// [`CoreExt::skew_angle`] and [`CoreExt::num_segments`] as the second and
+    /// third argument.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::sync::Arc;
+    ///
+    /// use approxim::assert_abs_diff_eq;
+    /// use stem_core::prelude::*;
+    ///
+    /// let mut ag = PlainAirGap::default();
+    /// ag.num_segments = 3;
+    ///
+    /// let core: RotCore = RotCoreBuilder {
+    ///     air_gap_radius: Length::new::<millimeter>(55.0),
+    ///     yoke_radius: Length::new::<millimeter>(90.0),
+    ///     axial_length: Length::new::<millimeter>(165.0),
+    ///     axial_coil_overhang: Length::new::<millimeter>(0.0),
+    ///     iron_fill_factor: 1.0,
+    ///     material: Arc::new(Material::default()),
+    ///     pole_pairs: 2.try_into().expect("not zero"),
+    ///     skew_angle: 6.0,
+    ///     air_gap: Box::new(ag),
+    ///     flux_barrier: None,
+    /// }
+    /// .try_into()
+    /// .unwrap();
+    ///
+    /// assert_abs_diff_eq!(core.segment_angle(0), -2.0);
+    /// assert_abs_diff_eq!(core.segment_angle(1), 0.0);
+    /// assert_abs_diff_eq!(core.segment_angle(2), 2.0);
+    /// ```
+    fn segment_angle(&self, segment: usize) -> f64 {
+        match NonZeroUsize::new(self.num_segments()) {
+            Some(num_segments) => segment_angle(segment, self.skew_angle(), num_segments),
+            None => 0.0,
+        }
+    }
+
     /// Returns an iterator over the [`PositionedZoneContour`]s for the given
     /// `coil_layout`.
     ///
@@ -2234,6 +2301,66 @@ pub fn skew_factor(mech_order: usize, skew_angle: f64, num_segments: usize) -> f
             return arg.sin() / (num_segments as f64 * (arg / num_segments as f64).sin());
         }
     }
+}
+
+/**
+Returns the staggering angle of a particular `segment`.
+
+Each segment in a staggered laminated core has the same angular offset to its
+neighbors:
+
+`offset_angle = skew_angle / num_segments`.
+
+The segment count starts at zero, the last segment of a staggered component has
+therefore the index `num_segments-1`.
+
+
+The angle is given relative to the reference axis, which intersects the
+skew angle line at its middle. Therefore, the sum of all segment angles is
+always zero.
+*/
+#[doc = ""]
+#[cfg_attr(feature = "doc-images", doc = "![Staggering angle][segment_angle]")]
+#[cfg_attr(
+    feature = "doc-images",
+    embed_doc_image::embed_doc_image("segment_angle", "docs/img/cad_segment_angle.svg")
+)]
+#[cfg_attr(
+    not(feature = "doc-images"),
+    doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+)]
+/**
+
+This method implements [`CoreExt::segment_angle`].
+
+# Examples
+
+```
+use std::num::NonZeroUsize;
+
+use stem_core::core::segment_angle;
+use approxim::assert_abs_diff_eq;
+
+// Two segments
+let num_segments = NonZeroUsize::new(2).expect("not zero");
+assert_abs_diff_eq!(segment_angle(0, 6.0, num_segments), -1.5);
+assert_abs_diff_eq!(segment_angle(1, 6.0, num_segments), 1.5);
+
+// Three segments
+let num_segments = NonZeroUsize::new(3).expect("not zero");
+assert_abs_diff_eq!(segment_angle(0, 6.0, num_segments), -2.0);
+assert_abs_diff_eq!(segment_angle(1, 6.0, num_segments), 0.0);
+assert_abs_diff_eq!(segment_angle(2, 6.0, num_segments), 2.0);
+
+// Segment indices are clamped
+assert_abs_diff_eq!(segment_angle(3, 6.0, num_segments), 2.0);
+assert_abs_diff_eq!(segment_angle(4, 6.0, num_segments), 2.0);
+```
+ */
+pub fn segment_angle(segment: usize, skew_angle: f64, num_segments: NonZeroUsize) -> f64 {
+    let beta = skew_angle / num_segments.get() as f64;
+    return (0.5 + segment.clamp(0, num_segments.get() - 1) as f64) * beta - 0.5 * skew_angle;
 }
 
 /**

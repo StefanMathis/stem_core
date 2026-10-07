@@ -12,12 +12,13 @@ repository = "https://github.com/StefanMathis/stem_core.git"
 [dependencies]
 approxim = { version = "0.6" }
 compare_variables = { version = "0.3.0", features = ["proc_macro"] }
-stem_magnet = { version = "0.5" }
+# stem_magnet = { version = "0.5" }
+stem_magnet = { path = "../stem_magnet" }
 stem_slot = { path = "../stem_slot" }
 num = {version = "0.4"}
 rayon = "1.5"
 serde_mosaic = { version = "0.3", optional = true }
-deserialize_untagged_verbose_error = { version = "0.1.5", optional = true }
+deserialize_untagged_verbose_error = { version = "0.1.8", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
 dyn-clone = "1"
 typetag = { version = "^0.2", optional = true }

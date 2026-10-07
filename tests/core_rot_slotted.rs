@@ -145,14 +145,12 @@ fn create_inner_core(
 }
 
 fn create_outer_core_from_phd(model: CarterFactorModel) -> RotCore {
-    let slot_angle = PI / 18.0;
-    let bottom_width = Length::new::<millimeter>(9.2);
     let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
-        bottom_width,
+        bottom_width: Length::new::<millimeter>(9.21),
         opening_width: Length::new::<millimeter>(2.0),
         height: Length::new::<millimeter>(17.75),
         opening_height: Length::new::<millimeter>(2.0),
-        slot_angle,
+        slot_angle: PI / 18.0,
         bottom_radius: Length::new::<millimeter>(2.0),
         top_radius: Length::new::<millimeter>(2.0),
         opening_radius: Length::new::<millimeter>(0.5),
@@ -1023,14 +1021,14 @@ fn test_dimensions_and_mass() {
     approxim::assert_abs_diff_eq!(
         core.tooth_width_at(Length::new::<millimeter>(5.0))
             .get::<meter>(),
-        0.003514,
+        0.003504,
         epsilon = 1e-6
     );
 
     // Check the mass of yoke and teeth
     approxim::assert_abs_diff_eq!(
         core.tooth_mass().get::<kilogram>(),
-        0.012194,
+        0.012170,
         epsilon = 1e-6
     );
     approxim::assert_abs_diff_eq!(
@@ -1067,6 +1065,6 @@ fn test_current_displacement_coefficients() {
         ElectricalConductivity::new::<siemens_per_meter>(57e6),
         1.0,
     );
-    approxim::assert_abs_diff_eq!(coeffs.resistance, 4.839075, epsilon = 1e-6);
+    approxim::assert_abs_diff_eq!(coeffs.resistance, 4.843104, epsilon = 1e-6);
     approxim::assert_abs_diff_eq!(coeffs.inductance, 0.659253, epsilon = 1e-3);
 }
