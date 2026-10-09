@@ -34,8 +34,10 @@ use crate::{
 use planar_geo::prelude::*;
 use stem_magnet::assembly::MagnetAssembly;
 use stem_slot::{
-    current_displacement::CurrentDisplacementCalculator, prelude::stem_material::prelude::*,
-    slot::Slot, stem_coil_layout::CoilLayout,
+    current_displacement::CurrentDisplacementCalculator,
+    prelude::stem_material::prelude::*,
+    slot::Slot,
+    stem_types::{CoilLayout, SpatialOrder},
 };
 
 #[cfg(feature = "serde")]
@@ -570,13 +572,14 @@ impl AirGap for SlottedAirGap {
         );
     }
 
-    fn slot_opening_factor(&self, core: CoreRef<'_>, mech_order: i32) -> f64 {
+    fn slot_opening_factor(&self, core: CoreRef<'_>, spatial_order: SpatialOrder) -> f64 {
         let slot_pitch = core.slot_pitch();
         return super::slot_opening_factor(
             slot_pitch,
             self.slot.opening_width(),
             self.slots.get(),
-            mech_order,
+            core.pole_pairs(),
+            spatial_order,
         );
     }
 }

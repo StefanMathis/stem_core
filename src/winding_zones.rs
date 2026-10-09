@@ -93,7 +93,7 @@ use planar_geo::{Transformation, contour::Contour};
 use std::f64::consts::{FRAC_1_SQRT_2, FRAC_PI_2, TAU};
 use std::num::NonZeroU16;
 use stem_slot::prelude::*;
-use stem_slot::{slot::Slot, stem_coil_layout::CoilLayout};
+use stem_slot::{slot::Slot, stem_types::CoilLayout};
 
 #[cfg(feature = "cairo")]
 use stem_slot::planar_geo::draw::{Drawable, DrawableRef};

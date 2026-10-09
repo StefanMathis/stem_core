@@ -280,7 +280,11 @@ fn test_plot_assembly() {
         };
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
 
-        approxim::assert_abs_diff_eq!(core.slot_opening_factor(1), 0.9997075, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(
+            core.slot_opening_factor(SpatialOrder::Mechanical(1)),
+            0.9997075,
+            epsilon = 1e-6
+        );
     }
 }
 

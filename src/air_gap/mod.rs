@@ -20,7 +20,7 @@ struct to easily create a polygonal rotary air gap surface from a
 See the [trait documentation](AirGap) for details.
  */
 
-use std::f64::consts::PI;
+use std::{f64::consts::PI, num::NonZeroU16};
 
 use dyn_clone::DynClone;
 use planar_geo::{polysegment::Polysegment, shape::Shape};
@@ -208,8 +208,8 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// of multiple individual segments against each other as defined by the
     /// [`CoreExt::skew_angle`](crate::core::CoreExt::skew_angle). This affects
     /// the [`skew_factor`](crate::core::skew_factor) of the core, which can be
-    /// used to suppress unwanted magnetic harmonics. See the docstrings of
-    /// [`CoreExt::skew_angle`](crate::core::CoreExt::skew_angle) and
+    /// used to suppress unwanted magnetic harmonic orders. See the docstrings
+    /// of [`CoreExt::skew_angle`](crate::core::CoreExt::skew_angle) and
     /// [`skew_factor`](crate::core::skew_factor) for details. If this value
     /// is 0, the core is continuously skewed. If it is 1, the component is not
     /// skewed at all, as it consists of a single straight (non-twisted)
@@ -231,46 +231,12 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     fn slots(&self, core: CoreRef<'_>) -> u16;
 
     /**
-    Returns the slot opening factor for the harmonic with the specified
-    `mech_order`.
+    Returns the slot opening factor for the specified `spatial_order`.
 
-    This method implements [`CoreExt::slot_opening_factor`]. When determining
-    the electric loading / induction distribution along the air gap, analytical
-    methods assume that the whole electric loading produced by a particular slot
-    is concentrated in its center at the air gap. For real core and winding
-    geometries, this is obviously not the case. For the example of a
-    [`SlottedAirGap`], the electric loading is distributed along the slot,
-    opening whereas a wound [`PlainAirGap`] distributes the load along the
-    entire air gap surface covered by coils. For further information, see
-    standard electric machines literature like e.g.,
-    [\[1\]](#air_gap_slot_opening_factor_1), section 1.2.3.3.
-
-    The effect of this distribution on a particular harmonic can be calculated
-    with the "slot opening factor" ξ which is defined as:
-
-    `ξ = sin(k) / k`
-
-    with `k = mech_order * slot_opening_width / slot_pitch * PI / slots`
-    [\[1\]](#air_gap_slot_opening_factor_1), eq. (1.2.62).
-
-    The mechanical order is related to the electrical order via:
-
-    `mech_order = el_order * pole_pairs`
-
-    Multiplying the absolute of this factor with the corresponding harmonic
-    amplitude for the idealized case returns the actual harmonic amplitude.
-
-    Eq. (1.2.62) from [\[1\]](#air_gap_slot_opening_factor_1) is implemented in
-    the free [`slot_opening_factor`] function. It is recommended to use this
-    function when implementing an [`AirGap`] unless there is a good reason to
-    use a custom formula. See the implementations of [`PlainAirGap`] and
-    [`SlottedAirGap`] for examples on how to utilize [`slot_opening_factor`] for
-    implementing this method.
-
-    # Literature
-    <a id="air_gap_slot_opening_factor_1">\[1\]</a>
-    Müller, G., Vogt, K. and Ponick, B.: Berechnung elektrischer Maschinen,
-    6th edition, Wiley-VCH, 2008
+    This method implements [`CoreExt::slot_opening_factor`]. It is recommended
+    to use the [`slot_opening_factor`] function when implementing an [`AirGap`]
+    unless there is a good reason to use a custom formula. See the
+    implementations of [`PlainAirGap`] and [`SlottedAirGap`] for examples.
 
     # Examples
 
@@ -305,15 +271,29 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     .try_into()
     .unwrap();
 
-    // First electrical / second mechanical harmonic
-    assert_abs_diff_eq!(core.air_gap().slot_opening_factor(core.as_core_ref(), 2), 0.996754, epsilon = 1e-6);
+    // Electrical fundamental / second mechanical spatial harmonic
+    assert_abs_diff_eq!(
+        core.air_gap().slot_opening_factor(core.as_core_ref(), SpatialOrder::Mechanical(2)),
+        0.996754,
+        epsilon = 1e-6
+    );
 
-    // Superharmonics produced by the winding like the electrical 5th and 7th one.
-    assert_abs_diff_eq!(core.air_gap().slot_opening_factor(core.as_core_ref(), 10), 0.920725, epsilon = 1e-6);
-    assert_abs_diff_eq!(core.air_gap().slot_opening_factor(core.as_core_ref(), 14), 0.848221, epsilon = 1e-6);
+    // Electrical 5th and 7th harmonics
+    assert_abs_diff_eq!(
+        core.air_gap().slot_opening_factor(core.as_core_ref(),
+        SpatialOrder::Mechanical(10)),
+        0.920725,
+        epsilon = 1e-6
+    );
+    assert_abs_diff_eq!(
+        core.air_gap().slot_opening_factor(core.as_core_ref(),
+        SpatialOrder::Mechanical(14)),
+        0.848221,
+        epsilon = 1e-6
+    );
     ```
      */
-    fn slot_opening_factor(&self, core: CoreRef<'_>, mech_order: i32) -> f64;
+    fn slot_opening_factor(&self, core: CoreRef<'_>, spatial_order: SpatialOrder) -> f64;
 
     /// Returns the Carter factor of `self` for the given `core`.
     ///
@@ -553,16 +533,16 @@ dyn_clone::clone_trait_object!(AirGap);
 
 /**
 Returns the slot opening factor for the harmonic with the specified
-`mech_order`.
+`spatial_order`.
 
-When determining the electric loading / induction distribution along the air
-gap, analytical methods assume that the whole electric loading produced by
-a particular slot is concentrated in its center. For real core and slot
-geometries, this is obviously not the case. The the electric loading of a
- [`SlottedAirGap`] is distributed along the slot opening whereas a wound
- [`PlainAirGap`] distributes the load along the entire air gap surface covered
- by coils. For further information, see standard electric machines literature
- like e.g., [\[1\]](#air_gap_slot_opening_factor_1), section 1.2.3.3.
+When determining the induction distribution along the air gap, analytical
+methods assume that the whole electric loading produced by a particular slot is
+concentrated in its center. For real core and slot geometries, this is obviously
+not the case. The the electric loading of a [`SlottedAirGap`] is distributed
+along the slot opening whereas a wound [`PlainAirGap`] distributes the load
+along the entire air gap surface covered
+by coils. For further information, see standard electric machines literature
+like e.g., [\[1\]](#air_gap_slot_opening_factor_1), section 1.2.3.3.
 
 The effect of this distribution on a particular harmonic can be calculated
 with the "slot opening factor" ξ which is defined as:
@@ -572,15 +552,11 @@ with the "slot opening factor" ξ which is defined as:
 with `k = mech_order * slot_opening_width / slot_pitch * PI / slots`
 [\[1\]](#air_gap_slot_opening_factor_1), eq. (1.2.62).
 
-The mechanical order is related to the electrical order via:
+The mechanical order `mech_order` is retrieved from the `spatial_order`
+argument, see [`SpatialOrder::to_mechanical`] documentation for more.
 
-`mech_order = el_order * pole_pairs`
-
-Multiplying the absolute of this factor with the corresponding harmonic
-amplitude for the idealized case returns the actual harmonic amplitude.
-
-The mechanical order can be specified as an integer (as one would expect), but
-also as a float. This enables plotting ξ as a continuous curve over the orders.
+Multiplying the absolute of the slot opening factor with the corresponding
+harmonic amplitude for the idealized case returns the actual harmonic amplitude.
 
 # Literature
 <a id="air_gap_slot_opening_factor_1">\[1\]</a>
@@ -590,6 +566,8 @@ Müller, G., Vogt, K. and Ponick, B.: Berechnung elektrischer Maschinen,
 # Examples
 
 ```
+use std::num::NonZeroU16;
+
 use approxim::assert_abs_diff_eq;
 
 use stem_core::air_gap::slot_opening_factor;
@@ -597,14 +575,17 @@ use stem_core::prelude::*;
 
 let slot_pitch = Length::new::<millimeter>(10.0);
 
+// Is ignored, since we are using mechanical orders anyway
+let pole_pairs = NonZeroU16::new(2).expect("not zero");
+
 // Special (theoretical) case of the current load being concentrated in the slot middle
 assert_abs_diff_eq!(
-    slot_opening_factor(slot_pitch, Length::new::<millimeter>(0.0), 36, 1),
+    slot_opening_factor(slot_pitch, Length::new::<millimeter>(0.0), 36, pole_pairs, SpatialOrder::Mechanical(1)),
     1.0,
     epsilon = 1e-6
 );
 assert_abs_diff_eq!(
-    slot_opening_factor(slot_pitch, Length::new::<millimeter>(0.0), 36, 10),
+    slot_opening_factor(slot_pitch, Length::new::<millimeter>(0.0), 36, pole_pairs, SpatialOrder::Mechanical(10)),
     1.0,
     epsilon = 1e-6
 );
@@ -612,39 +593,41 @@ assert_abs_diff_eq!(
 // Special case of the current load being distributed along the entire slot
 // pitch
 assert_abs_diff_eq!(
-    slot_opening_factor(slot_pitch, slot_pitch, 36, 1),
+    slot_opening_factor(slot_pitch, slot_pitch, 36, pole_pairs, SpatialOrder::Mechanical(1)),
     0.998731,
     epsilon = 1e-6
 );
 assert_abs_diff_eq!(
-    slot_opening_factor(slot_pitch, slot_pitch, 36, 10),
+    slot_opening_factor(slot_pitch, slot_pitch, 36, pole_pairs, SpatialOrder::Mechanical(10)),
     0.877822,
     epsilon = 1e-6
 );
 
 // Slot opening of 2 mm
 assert_abs_diff_eq!(
-    slot_opening_factor(slot_pitch, Length::new::<millimeter>(2.0), 36, 1),
+    slot_opening_factor(slot_pitch, Length::new::<millimeter>(2.0), 36, pole_pairs, SpatialOrder::Mechanical(1)),
     0.9999492,
     epsilon = 1e-6
 );
 assert_abs_diff_eq!(
-    slot_opening_factor(slot_pitch, Length::new::<millimeter>(2.0), 36, 10),
+    slot_opening_factor(slot_pitch, Length::new::<millimeter>(2.0), 36, pole_pairs, SpatialOrder::Mechanical(10)),
     0.9949307,
     epsilon = 1e-6
 );
 ```
  */
-pub fn slot_opening_factor<I: Into<f64>>(
+pub fn slot_opening_factor(
     slot_pitch: Length,
     slot_opening_width: Length,
     slots: u16,
-    mech_order: I,
+    pole_pairs: NonZeroU16,
+    spatial_order: SpatialOrder,
 ) -> f64 {
-    let mech_order: f64 = mech_order.into();
+    let mech_order = f64::from(spatial_order.to_mechanical(pole_pairs));
     let k = mech_order * (slot_opening_width / slot_pitch).get::<ratio>() * PI / f64::from(slots);
 
-    // Avoid division of 0/0. This is physically correct, see [1], eq. (1.2.63).
+    // Avoid the undefined value 0/0. The return value of 1 is physically correct,
+    // see [1], eq. (1.2.63).
     if k == 0.0 {
         return 1.0;
     } else {

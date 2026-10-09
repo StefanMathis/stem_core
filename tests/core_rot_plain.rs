@@ -73,7 +73,11 @@ fn test_read_core_properties() {
         );
         assert_eq!(core.pole_pairs(), 5.try_into().expect("not zero"));
         assert_eq!(core.slots(), 12);
-        approxim::assert_abs_diff_eq!(core.slot_opening_factor(1), 0.9886159, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(
+            core.slot_opening_factor(SpatialOrder::Mechanical(1)),
+            0.9886159,
+            epsilon = 1e-6
+        );
     }
     {
         let air_gap = PlainAirGap {

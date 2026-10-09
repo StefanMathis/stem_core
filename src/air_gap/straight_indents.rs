@@ -34,7 +34,7 @@ use crate::{
 use compare_variables::compare_variables;
 use planar_geo::prelude::*;
 use stem_magnet::prelude::*;
-use stem_slot::stem_coil_layout::CoilLayout;
+use stem_slot::stem_types::{CoilLayout, SpatialOrder};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -652,8 +652,8 @@ impl AirGap for StraightIndentsAirGap {
         }
     }
 
-    fn slot_opening_factor(&self, _core: CoreRef<'_>, _mech_order: i32) -> f64 {
-        0.0
+    fn slot_opening_factor(&self, _core: CoreRef<'_>, _spatial_order: SpatialOrder) -> f64 {
+        1.0
     }
 
     fn carter_factor(&self, _core: CoreRef<'_>, _air_gap_width: Length) -> f64 {

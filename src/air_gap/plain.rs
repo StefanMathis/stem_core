@@ -29,7 +29,10 @@ use crate::{
 };
 use compare_variables::compare_variables;
 use stem_magnet::assembly::MagnetAssembly;
-use stem_slot::{prelude::stem_material::prelude::*, stem_coil_layout::CoilLayout};
+use stem_slot::{
+    prelude::stem_material::prelude::*,
+    stem_types::{CoilLayout, SpatialOrder},
+};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -404,13 +407,14 @@ impl AirGap for PlainAirGap {
         return Ok(shape);
     }
 
-    fn slot_opening_factor(&self, core: CoreRef<'_>, mech_order: i32) -> f64 {
+    fn slot_opening_factor(&self, core: CoreRef<'_>, spatial_order: SpatialOrder) -> f64 {
         let slot_pitch = core.slot_pitch();
         return super::slot_opening_factor(
             slot_pitch,
             slot_pitch * self.winding_coverage,
             self.slots,
-            mech_order,
+            core.pole_pairs(),
+            spatial_order,
         );
     }
 

@@ -7,7 +7,7 @@ for all core types: [`LinCore`](crate::core::LinCore),
 
 use std::{
     f64::consts::FRAC_PI_2,
-    num::{NonZeroU16, NonZeroUsize},
+    num::{NonZeroU16, NonZeroU32, NonZeroUsize},
     sync::Arc,
 };
 
@@ -15,7 +15,9 @@ use planar_geo::prelude::*;
 use rayon::prelude::*;
 use stem_magnet::prelude::*;
 use stem_slot::{
-    current_displacement::CurrentDisplacementCalculator, slot::Slot, stem_coil_layout::CoilLayout,
+    current_displacement::CurrentDisplacementCalculator,
+    slot::Slot,
+    stem_types::{CoilLayout, SpatialOrder},
 };
 
 use super::CoreRef;
@@ -47,7 +49,7 @@ pub enum Component {
         /// [`CoreExt::winding_zones`], which collided with another component.
         idx: usize,
         /// The winding zone contour and the
-        /// [`Zone`](stem_slot::stem_coil_layout::Zone) index.
+        /// [`Zone`](stem_slot::stem_types::Zone) index.
         contour: PositionedZoneContour,
     },
     /// Shape of a surface magnet which collided with another component.
@@ -169,6 +171,9 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
 
     /// Returns the axial length of the core, i.e., the length into the image
     /// plane when looking at the cross section of the core.
+    ///
+    /// This method should NOT be used to determine the axial length of a coil,
+    /// use [`CoreExt::coil_axial_length`] instead.
     ///
     /// See the docstrings of [`LinCore`](crate::core::LinCore) and
     /// [`RotCore`](crate::core::RotCore) for a visualization.
@@ -1023,7 +1028,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     fn winding_zone_at(
         &self,
         coil_layout: &CoilLayout,
-        zone: stem_slot::stem_coil_layout::Zone,
+        zone: stem_slot::stem_types::Zone,
     ) -> Option<Contour> {
         let layers = coil_layout.layers().get();
         if zone.layer >= layers || zone.slot >= self.slots() {
@@ -1454,40 +1459,16 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
 
     /**
     Returns the slot opening factor for the harmonic with the specified
-    `mech_order`.
-
-    When determining the electric loading / induction distribution along the air
-    gap, analytical methods assume that the whole electric loading produced by
-    a particular slot is concentrated in its center at the air gap. For real
-    core and winding geometries, this is obviously not the case. For the example
-    of a [`SlottedAirGap`](crate::air_gap::SlottedAirGap), the electric loading
-    is distributed along the slot openings whereas a wound
-    [`PlainAirGap`](crate::air_gap::PlainAirGap) distributes the load along the
-    entire air gap surface covered by coils. For further information, see
-    standard electric machines literature like e.g.,
-    [\[1\]](#air_gap_slot_opening_factor_1), section 1.2.3.3.
-
-    The effect of this distribution on a particular harmonic can be calculated
-    with the "slot opening factor" ξ which is defined as:
-
-    `ξ = sin(k) / k`
-
-    with `k = mech_order * slot_opening_width / slot_pitch * PI / slots`
-    [\[1\]](#air_gap_slot_opening_factor_1), eq. (1.2.62). The mechanical
-    order is related to the electrical order via:
-
-    `mech_order = el_order * pole_pairs`
+    `spatial_order`.
 
     Multiplying the absolute of this factor with the corresponding harmonic
     amplitude for the idealized case returns the actual harmonic amplitude.
 
-    This method forwards to [`AirGap::slots`], using `self` as the second
-    and `mech_order` as the third argument.
-
-    # Literature
-    <a id="air_gap_slot_opening_factor_1">\[1\]</a>
-    Müller, G., Vogt, K. and Ponick, B.: Berechnung elektrischer Maschinen,
-    6th edition, Wiley-VCH, 2008
+    This method forwards to [`AirGap::slot_opening_factor`], using `self` as the
+    second and `spatial_order` as the third argument. That method in turn is
+    usually implemented with the
+    [`slot_opening_factor`](crate::air_gap::slot_opening_factor) function. See
+    its documentation for the physical background.
 
     # Examples
 
@@ -1522,18 +1503,30 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     .try_into()
     .unwrap();
 
-    // First electrical / second mechanical harmonic
-    assert_abs_diff_eq!(core.air_gap().slot_opening_factor(core.as_core_ref(), 2), 0.996754, epsilon = 1e-6);
+    // Electrical fundamental / second mechanical spatial harmonic
+    assert_abs_diff_eq!(
+        core.slot_opening_factor(SpatialOrder::Mechanical(2)),
+        0.996754,
+        epsilon = 1e-6
+    );
 
-    // Superharmonics produced by the winding like the electrical 5th and 7th one.
-    assert_abs_diff_eq!(core.slot_opening_factor(10), 0.920725, epsilon = 1e-6);
-    assert_abs_diff_eq!(core.slot_opening_factor(14), 0.848221, epsilon = 1e-6);
+    // Electrical 5th and 7th harmonics
+    assert_abs_diff_eq!(
+        core.slot_opening_factor(SpatialOrder::Mechanical(10)),
+        0.920725,
+        epsilon = 1e-6
+    );
+    assert_abs_diff_eq!(
+        core.slot_opening_factor(SpatialOrder::Mechanical(14)),
+        0.848221,
+        epsilon = 1e-6
+    );
     ```
      */
-    fn slot_opening_factor(&self, mech_order: i32) -> f64 {
+    fn slot_opening_factor(&self, spatial_order: SpatialOrder) -> f64 {
         return self
             .air_gap()
-            .slot_opening_factor(self.as_core_ref(), mech_order);
+            .slot_opening_factor(self.as_core_ref(), spatial_order);
     }
 
     /// Returns the current displacement coefficients for a winding mounted on
@@ -2013,18 +2006,19 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         return self.mass() - self.teeth_mass();
     }
 
-    /// Returns the skew factor of the core for the given `mech_order`.
-    ///
-    /// The mechanical order is related to the electrical order via:
-    ///
-    /// `mech_order = el_order * pole_pairs`
+    /// Returns the skew factor of the core for the given `spatial_order`.`
     ///
     /// This method forwards to the free function [`skew_factor`] with
     /// [`CoreExt::skew_angle`] and [`CoreExt::num_segments`] as the third and
     /// fourth argument. See the docstring of [`skew_factor`] for details and
     /// examples.
-    fn skew_factor(&self, mech_order: usize) -> f64 {
-        return skew_factor(mech_order, self.skew_angle(), self.num_segments());
+    fn skew_factor(&self, spatial_order: SpatialOrder) -> f64 {
+        return skew_factor(
+            self.skew_angle(),
+            self.num_segments(),
+            self.pole_pairs(),
+            spatial_order,
+        );
     }
 
     /**
@@ -2070,12 +2064,30 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     }
 
     /**
-    Returns an iterator over the slotting orderss.
+    Returns the spatial order of the `k`-th slotting harmonic.
 
-    For details, see the docstring of [`SlottingOrders`].
-     */
-    fn slotting_orders(&self) -> SlottingOrders {
-        return SlottingOrders::new(self.slots(), self.pole_pairs());
+    When moving along the [`CoreExt::air_gap_length`] of a core, the slot openings
+    cause a variation in the magnetic resistance / reluctance of the air gap.
+    Plotting the air gap _permeance_ (inverse reluctance) over the air gap width
+    will result in a straight line over the tooth heads interrupted by sudden drops
+    in the slot opening area. This graph can be used to analytically assess the
+    influence of the tooth head / slot opening geometry on phenomena such as cogging
+    torque. To do that, the graph is disassembled into its harmonics via Fourier
+    transformation.
+
+    The orders are calculated by [\[1\]](#slotting_order_1), eq. (8):
+
+    `o_mech = k * N`
+
+    where `k = 1, 2, ...` and `N` is the number of slots.
+
+    # Literature
+    <a id="slotting_order_1">\[1\]</a>
+    Huth, Gerhard: Nutrastung von permanenterregten AC-Servomotoren mit gestaffelter
+    Rotoranordnung, Electrical Engineering 78 (1995), p. 391-397, Springer-Verlag
+    */
+    fn slotting_order(&self, k: NonZeroU32) -> SpatialOrder {
+        return SpatialOrder::Mechanical(u32::from(self.slots()) * k.get());
     }
 
     /// Returns the offset of the first positive d-axis against the "start" of
@@ -2124,7 +2136,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
 }
 
 /**
-Calculates the skew factor for a `mech_order` for an either continuously
+Calculates the skew factor for a `spatial_order` for an either continuously
 skewed or discretized core.
 
 One way to suppress unwanted harmonics of the magnetic air gap field is to
@@ -2132,18 +2144,9 @@ One way to suppress unwanted harmonics of the magnetic air gap field is to
 contains background information.
 
 This function calculates the "skew factor" for an harmonic with the specified
-`mech_order` where the core is skewed by the `skew_angle`. Multiplying
+`spatial_order` where the core is skewed by the `skew_angle`. Multiplying
 the skew factor with the amplitude of that harmonic calculated for the unskewed
-core returns its resulting (actual) amplitude. The mechanical order is related
-to the electrical order via:
-
-```ignore
-mech_order = el_order * pole_pairs
-```
-
-i.e., the electrical order gives the number of maxima of the sinusoidal curve
-over one pole pair and the mechanical order the number of maxima over the
-entire air gap.
+core returns its resulting (actual) amplitude.
 
 If `num_segments` is zero, the core is continuously twisted along its axial
 length, otherwise it is composed of `num_segments` straight segments which are
@@ -2153,16 +2156,17 @@ core is effectively unskewed). If the number of segments approach infinity, the
 core is effectively continuously skewed and the resulting skew factor is
 identical to that of `num_segments = 0`. These relations can be directly seen
 from the formula for the staggered skew factor taken from
-[\[1\]](#skew_factor_1), eq. (3):
+[\[1\]](#skew_factor_1), eq. (3) (`mech_order` is retrieved from `spatial_order`
+with [`SpatialOrder::to_mechanical`]):
 
-```ignore
+```text
 skew_factor = sin(0.5 * mech_order * skew_angle) / (num_segments * sin(0.5 * mech_order * skew_angle / num_segments))
 ```
 
 For `num_segments = 0`, the formula simplifies to [\[2\]](#skew_factor_2), eq.
 (6.5-18):
 
-```ignore
+```text
 skew_factor = sin(0.5 * mech_order * skew_angle) / (0.5 * mech_order * skew_angle)
 ```
 
@@ -2180,27 +2184,30 @@ Berlin Heidelberg
 ## Continuous skewing
 
 A core with 15 slots and 5 pole pairs produces cogging torque harmonics with
-the mechanical orderss 15, 30, 45 and so on due to the slotting. These can be
+the mechanical orders 15, 30, 45 and so on due to the slotting. These can be
 suppressed by skewing with a full slot pitch (360 / 15 = 24 degree)
 
 ```
+use std::num::NonZeroU16;
 use std::f64::consts::TAU;
+
 use stem_core::core::skew_factor;
+use stem_core::prelude::SpatialOrder;
 use approxim::assert_abs_diff_eq;
 
 let slots = 15;
-let pole_pairs = 5;
+let p = NonZeroU16::new(5).expect("not zero"); // pole pairs
 let angle = TAU / slots as f64;
 let num_segments = 0;
 
 // All cogging harmonics are fully suppressed
 for k in 1..100 {
-    assert_abs_diff_eq!(skew_factor(slots * k, angle, num_segments), 0.0, epsilon = 1e-5);
+    assert_abs_diff_eq!(skew_factor(angle, num_segments, p, SpatialOrder::Mechanical(slots * k)), 0.0, epsilon = 1e-5);
 }
 
 // Other harmonics like the first stator harmonic (which creates the torque)
 // are reduced as well.
-assert_abs_diff_eq!(skew_factor(pole_pairs, angle, num_segments), 0.82699, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, num_segments, p, SpatialOrder::Mechanical(p.get().into())), 0.82699, epsilon = 1e-5);
 ```
 
 If especially the 30th order is problematic, it might be more sensible to
@@ -2208,22 +2215,25 @@ skew by 360 / 30 = 12 degree. This reduces the losses for the first harmonic
 massively while still fully suppressing the 30th and its multiples.
 
 ```
+use std::num::NonZeroU16;
 use std::f64::consts::TAU;
+
 use stem_core::core::skew_factor;
+use stem_core::prelude::SpatialOrder;
 use approxim::assert_abs_diff_eq;
 
 let slots = 15;
-let pole_pairs = 5;
+let p = NonZeroU16::new(5).expect("not zero"); // pole pairs
 let angle = 0.5 * TAU / slots as f64;
 let num_segments = 0;
 
 // Every second cogging harmonic is still fully suppressed
 for k in 1..100 {
-    assert_abs_diff_eq!(skew_factor(2 * slots * k, angle, num_segments), 0.0, epsilon = 1e-5);
+    assert_abs_diff_eq!(skew_factor(angle, num_segments, p, SpatialOrder::Mechanical(2 * slots * k)), 0.0, epsilon = 1e-5);
 }
 
 // Torque-creating harmonic is much less affected
-assert_abs_diff_eq!(skew_factor(pole_pairs, angle, num_segments), 0.95493, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, num_segments, p, SpatialOrder::Mechanical(p.get().into())), 0.95493, epsilon = 1e-5);
 ```
 
 ## Staggering
@@ -2231,20 +2241,23 @@ assert_abs_diff_eq!(skew_factor(pole_pairs, angle, num_segments), 0.95493, epsil
 As discussed above, having only one segment is equal to not skewing at all:
 
 ```
+use std::num::NonZeroU16;
 use std::f64::consts::TAU;
+
 use stem_core::core::skew_factor;
+use stem_core::prelude::SpatialOrder;
 use approxim::assert_abs_diff_eq;
 
 let slots = 15;
-let pole_pairs = 5;
+let p = NonZeroU16::new(5).expect("not zero"); // pole pairs
 let angle = 0.5 * TAU / slots as f64;
 let num_segments = 1;
 
 // No suppression of any order
 for k in 1..100 {
-    assert_abs_diff_eq!(skew_factor(2 * slots * k, angle, num_segments), 1.0, epsilon = 1e-5);
+    assert_abs_diff_eq!(skew_factor(angle, num_segments, p, SpatialOrder::Mechanical(2 * slots * k)), 1.0, epsilon = 1e-5);
 }
-assert_abs_diff_eq!(skew_factor(pole_pairs, angle, num_segments), 1.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, num_segments, p, SpatialOrder::Mechanical(p.get().into())), 1.0, epsilon = 1e-5);
 ```
 
 With two segments, the 30th order can already be suppressed, but some of its
@@ -2253,48 +2266,56 @@ of these are suppressed as well. For a sufficiently high number of segments,
 the staggered rotor behaves like the skewed one and suppresses all multiples.
 
 ```
+use std::num::NonZeroU16;
 use std::f64::consts::TAU;
+
 use stem_core::core::skew_factor;
+use stem_core::prelude::SpatialOrder;
 use approxim::assert_abs_diff_eq;
 
 let slots = 15;
-let pole_pairs = 5;
+let p = NonZeroU16::new(5).expect("not zero"); // pole pairs
 let angle = 0.5 * TAU / slots as f64;
 
 // Two segments
-assert_abs_diff_eq!(skew_factor(2 * slots, angle, 2), 0.0, epsilon = 1e-5);
-assert_abs_diff_eq!(skew_factor(4 * slots, angle, 2), -1.0, epsilon = 1e-5);
-assert_abs_diff_eq!(skew_factor(6 * slots, angle, 2), 0.0, epsilon = 1e-5);
-assert_abs_diff_eq!(skew_factor(8 * slots, angle, 2), 1.0, epsilon = 1e-5);
-assert_abs_diff_eq!(skew_factor(pole_pairs, angle, 2), 0.96592, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, 2, p, SpatialOrder::Mechanical(2 * slots)), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, 2, p, SpatialOrder::Mechanical(4 * slots)), -1.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, 2, p, SpatialOrder::Mechanical(6 * slots)), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, 2, p, SpatialOrder::Mechanical(8 * slots)), 1.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, 2, p, SpatialOrder::Mechanical(p.get().into())), 0.96592, epsilon = 1e-5);
 
 // Three segments
-assert_abs_diff_eq!(skew_factor(2 * slots, angle, 3), 0.0, epsilon = 1e-5);
-assert_abs_diff_eq!(skew_factor(4 * slots, angle, 3), 0.0, epsilon = 1e-5);
-assert_abs_diff_eq!(skew_factor(6 * slots, angle, 3), 1.0, epsilon = 1e-5);
-assert_abs_diff_eq!(skew_factor(8 * slots, angle, 3), 0.0, epsilon = 1e-5);
-assert_abs_diff_eq!(skew_factor(pole_pairs, angle, 3), 0.95979, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, 3, p, SpatialOrder::Mechanical(2 * slots)), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, 3, p, SpatialOrder::Mechanical(4 * slots)), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, 3, p, SpatialOrder::Mechanical(6 * slots)), 1.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, 3, p, SpatialOrder::Mechanical(8 * slots)), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, 3, p, SpatialOrder::Mechanical(p.get().into())), 0.95979, epsilon = 1e-5);
 
 // Four segments
-assert_abs_diff_eq!(skew_factor(2 * slots, angle, 4), 0.0, epsilon = 1e-5);
-assert_abs_diff_eq!(skew_factor(4 * slots, angle, 4), 0.0, epsilon = 1e-5);
-assert_abs_diff_eq!(skew_factor(6 * slots, angle, 4), 0.0, epsilon = 1e-5);
-assert_abs_diff_eq!(skew_factor(8 * slots, angle, 4), -1.0, epsilon = 1e-5);
-assert_abs_diff_eq!(skew_factor(pole_pairs, angle, 4), 0.95766, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, 4, p, SpatialOrder::Mechanical(2 * slots)), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, 4, p, SpatialOrder::Mechanical(4 * slots)), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, 4, p, SpatialOrder::Mechanical(6 * slots)), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, 4, p, SpatialOrder::Mechanical(8 * slots)), -1.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, 4, p, SpatialOrder::Mechanical(p.get().into())), 0.95766, epsilon = 1e-5);
 
 // 100 segments
-assert_abs_diff_eq!(skew_factor(2 * slots, angle, 100), 0.0, epsilon = 1e-5);
-assert_abs_diff_eq!(skew_factor(4 * slots, angle, 100), 0.0, epsilon = 1e-5);
-assert_abs_diff_eq!(skew_factor(6 * slots, angle, 100), 0.0, epsilon = 1e-5);
-assert_abs_diff_eq!(skew_factor(8 * slots, angle, 100), 0.0, epsilon = 1e-5);
-assert_abs_diff_eq!(skew_factor(pole_pairs, angle, 100), 0.95493, epsilon = 1e-5); // Equals skewed case
+assert_abs_diff_eq!(skew_factor(angle, 100, p, SpatialOrder::Mechanical(2 * slots)), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, 100, p, SpatialOrder::Mechanical(4 * slots)), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, 100, p, SpatialOrder::Mechanical(6 * slots)), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, 100, p, SpatialOrder::Mechanical(8 * slots)), 0.0, epsilon = 1e-5);
+assert_abs_diff_eq!(skew_factor(angle, 100, p, SpatialOrder::Mechanical(p.get().into())), 0.95493, epsilon = 1e-5);
 ```
  */
-pub fn skew_factor(mech_order: usize, skew_angle: f64, num_segments: usize) -> f64 {
+pub fn skew_factor(
+    skew_angle: f64,
+    num_segments: usize,
+    pole_pairs: NonZeroU16,
+    spatial_order: SpatialOrder,
+) -> f64 {
     if skew_angle == 0.0 {
         return 1.0;
     } else {
-        let arg = mech_order as f64 * skew_angle / 2.0;
+        let arg = spatial_order.to_mechanical(pole_pairs) as f64 * skew_angle / 2.0;
         if num_segments == 0 {
             return arg.sin() / arg;
         } else {
@@ -2361,122 +2382,4 @@ assert_abs_diff_eq!(segment_angle(4, 6.0, num_segments), 2.0);
 pub fn segment_angle(segment: usize, skew_angle: f64, num_segments: NonZeroUsize) -> f64 {
     let beta = skew_angle / num_segments.get() as f64;
     return (0.5 + segment.clamp(0, num_segments.get() - 1) as f64) * beta - 0.5 * skew_angle;
-}
-
-/**
-An iterator over the slotting orderss of a core.
-
-When moving along the [`CoreExt::air_gap_length`] of a core, the slot openings
-cause a variation in the magnetic resistance / reluctance of the air gap.
-Plotting the air gap _permeance_ (inverse reluctance) over the air gap width
-will result in a straight line over the tooth heads interrupted by sudden drops
-in the slot opening area. This graph can be used to analytically assess the
-influence of the tooth head / slot opening geometry on phenomena such as cogging
-torque. To do that, the graph is disassembled into its harmonics via Fourier
-transformation.
-
-This iterator returns the electrical orders of those harmonics, i.e. the
-harmonic orders normalized to a single pole pair. The corresponding
-mechanical orders are obtained by multiplying the electrical orders by the
-number of pole pairs.
-
-The orderss are calculated by [\[1\]](#SlottingOrders_1), eq. (8):
-`o = k * N / p`
-where
-`k = 0, 1, 2, ...`
-`N`: Number of slots
-`p`: Number of pole pairs
-
-Since `k` goes from 0 to infinity, the number of orderss and therefore this
-iterator are also infinite (although it will panic / overflow when
-[`usize::MAX`] items have been requested).
-
-The returned iterator items are [`Ratio`](num::rational::Ratio)s instead of
-floating point numbers so the underlying physical meaning is clearly visible.
-To convert the ratio into a floating point number, use:
-`*ratio.numer() as f64 / *ratio.denom() as f64`
-
-# Literature
-<a id="SlottingOrders_1">\[1\]</a>
-Huth, Gerhard: Nutrastung von permanenterregten AC-Servomotoren mit gestaffelter
-Rotoranordnung, Electrical Engineering 78 (1995), p. 391-397, Springer-Verlag
-
-# Examples
-
-```
-use stem_core::core::SlottingOrders;
-use num::rational::Ratio;
-
-// Unslotted core
-let mut iter = SlottingOrders::new(0, 1.try_into().expect("not zero"));
-assert_eq!(iter.next(), None);
-
-// 12 slots and 4 pole pairs => Number of slots per pole pair is 3
-let mut iter = SlottingOrders::new(12, 4.try_into().expect("not zero"));
-assert_eq!(iter.next(), Some(Ratio::new(3, 1)));
-assert_eq!(iter.next(), Some(Ratio::new(6, 1)));
-assert_eq!(iter.next(), Some(Ratio::new(9, 1)));
-assert_eq!(iter.next(), Some(Ratio::new(12, 1)));
-
-// 12 slots and 5 pole pairs => Number of slots per pole pair is 12 / 5 = 2.4
-let mut iter = SlottingOrders::new(12, 5.try_into().expect("not zero"));
-assert_eq!(iter.next(), Some(Ratio::new(12, 5)));
-assert_eq!(iter.next(), Some(Ratio::new(24, 5)));
-assert_eq!(iter.next(), Some(Ratio::new(36, 5)));
-assert_eq!(iter.next(), Some(Ratio::new(48, 5)));
-
-// 24 slots and 10 pole pairs => Number of slots per pole pair is 24 / 10 = 2.4
-let mut iter = SlottingOrders::new(24, 10.try_into().expect("not zero"));
-assert_eq!(iter.next(), Some(Ratio::new(12, 5)));
-assert_eq!(iter.next(), Some(Ratio::new(24, 5)));
-assert_eq!(iter.next(), Some(Ratio::new(36, 5)));
-assert_eq!(iter.next(), Some(Ratio::new(48, 5)));
-```
- */
-#[derive(Debug, Clone, Copy)]
-pub struct SlottingOrders {
-    slots: u16,
-    pole_pairs: u16,
-    counter: usize,
-}
-
-impl SlottingOrders {
-    /// Creates a new instance of the [`SlottingOrders`] iterator.
-    pub fn new(slots: u16, pole_pairs: NonZeroU16) -> Self {
-        /*
-        Calculate the least common multiple between slots and pole pairs ->
-        This is the "base" configuration of the stator after which it simply repeats itself.
-         */
-        let pole_pairs = pole_pairs.get();
-        let gcd = num::integer::gcd(slots, pole_pairs);
-        let slots = slots / gcd;
-        let pole_pairs = pole_pairs / gcd;
-        return SlottingOrders {
-            slots,
-            pole_pairs,
-            counter: 0,
-        };
-    }
-}
-
-impl Iterator for SlottingOrders {
-    type Item = num::rational::Ratio<usize>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.slots == 0 {
-            // Unslotted core
-            return None;
-        } else {
-            let order = self.nth(self.counter);
-            self.counter += 1;
-            return order;
-        }
-    }
-
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        return Some(num::rational::Ratio::new(
-            (n + 1) * usize::from(self.slots),
-            usize::from(self.pole_pairs),
-        ));
-    }
 }

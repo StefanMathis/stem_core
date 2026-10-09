@@ -423,7 +423,11 @@ fn test_plot_outer_core() {
         };
         assert!(compare_or_create(path, &callback, 0.98).is_ok());
 
-        approxim::assert_abs_diff_eq!(core.slot_opening_factor(1), 0.999069, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(
+            core.slot_opening_factor(SpatialOrder::Mechanical(1)),
+            0.999069,
+            epsilon = 1e-6
+        );
     }
 }
 
@@ -974,11 +978,22 @@ fn test_slotting_orders() {
             true,
             true,
         );
-        let mut iter = core.slotting_orders();
-        assert_eq!(iter.next(), Some(num::rational::Ratio::new(3, 1)));
-        assert_eq!(iter.next(), Some(num::rational::Ratio::new(6, 1)));
-        assert_eq!(iter.next(), Some(num::rational::Ratio::new(9, 1)));
-        assert_eq!(iter.next(), Some(num::rational::Ratio::new(12, 1)));
+        assert_eq!(
+            core.slotting_order(1.try_into().unwrap()),
+            SpatialOrder::Mechanical(12)
+        );
+        assert_eq!(
+            core.slotting_order(2.try_into().unwrap()),
+            SpatialOrder::Mechanical(24)
+        );
+        assert_eq!(
+            core.slotting_order(3.try_into().unwrap()),
+            SpatialOrder::Mechanical(36)
+        );
+        assert_eq!(
+            core.slotting_order(4.try_into().unwrap()),
+            SpatialOrder::Mechanical(48)
+        );
     }
 
     {
@@ -988,11 +1003,22 @@ fn test_slotting_orders() {
             true,
             true,
         );
-        let mut iter = core.slotting_orders();
-        assert_eq!(iter.next(), Some(num::rational::Ratio::new(12, 5)));
-        assert_eq!(iter.next(), Some(num::rational::Ratio::new(24, 5)));
-        assert_eq!(iter.next(), Some(num::rational::Ratio::new(36, 5)));
-        assert_eq!(iter.next(), Some(num::rational::Ratio::new(48, 5)));
+        assert_eq!(
+            core.slotting_order(1.try_into().unwrap()),
+            SpatialOrder::Mechanical(12)
+        );
+        assert_eq!(
+            core.slotting_order(2.try_into().unwrap()),
+            SpatialOrder::Mechanical(24)
+        );
+        assert_eq!(
+            core.slotting_order(3.try_into().unwrap()),
+            SpatialOrder::Mechanical(36)
+        );
+        assert_eq!(
+            core.slotting_order(4.try_into().unwrap()),
+            SpatialOrder::Mechanical(48)
+        );
     }
 }
 
