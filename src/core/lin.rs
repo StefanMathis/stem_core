@@ -417,6 +417,14 @@ impl CoreExt for LinCore {
             None => return Mass::new::<kilogram>(0.0),
         }
     }
+
+    fn air_gap_curvature_factor(
+        &self,
+        _effective_air_gap: Length,
+        _spatial_order: stem_slot::stem_types::SpatialOrder,
+    ) -> f64 {
+        1.0
+    }
 }
 
 /**

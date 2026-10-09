@@ -418,7 +418,7 @@ impl AirGap for PlainAirGap {
         );
     }
 
-    fn carter_factor(&self, _core: CoreRef<'_>, _air_gap_width: Length) -> f64 {
+    fn carter_factor(&self, _core: CoreRef<'_>, _geometrical_air_gap: Length) -> f64 {
         return 1.0;
     }
 

@@ -107,18 +107,9 @@ assert_abs_diff_eq!(core.carter_factor(Length::new::<millimeter>(0.5)), 1.0478, 
 // The core has a slot -> Retrieve the "Slot" trait object
 assert!(core.slot().is_some());
 
-// Evaluate the slotting orders (infinite iterator)
-use num::rational::Ratio;
-let mut orders = core.slotting_orders();
-assert_eq!(orders.next(), Some(Ratio::new(14, 1)));
-assert_eq!(orders.next(), Some(Ratio::new(28, 1)));
-assert_eq!(orders.next(), Some(Ratio::new(42, 1)));
-assert_eq!(orders.next(), Some(Ratio::new(56, 1)));
-// ...
-
-// Calculate the skew factor for different mechanical harmonic orders
-assert_abs_diff_eq!(core.skew_factor(1), 0.9979, epsilon=1e-3);
-assert_abs_diff_eq!(core.skew_factor(7), 0.9003, epsilon=1e-3);
+// Calculate the skew factor for different mechanical spatial orders
+assert_abs_diff_eq!(core.skew_factor(SpatialOrder::Mechanical(1)), 0.9979, epsilon=1e-3);
+assert_abs_diff_eq!(core.skew_factor(SpatialOrder::Mechanical(7)), 0.9003, epsilon=1e-3);
 
 // Iterate over all the orange coils shown in the image (should be 28 * 2 = 56)
 assert_eq!(core.winding_zones(&CoilLayout::DoubleHorizontal).count(), 56);

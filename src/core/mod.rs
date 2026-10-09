@@ -345,6 +345,17 @@ impl CoreExt for Core {
             Self::Rot(c) => c.tooth_mass(),
         }
     }
+
+    fn air_gap_curvature_factor(
+        &self,
+        effective_air_gap: Length,
+        spatial_order: stem_slot::stem_types::SpatialOrder,
+    ) -> f64 {
+        match self {
+            Self::Lin(c) => c.air_gap_curvature_factor(effective_air_gap, spatial_order),
+            Self::Rot(c) => c.air_gap_curvature_factor(effective_air_gap, spatial_order),
+        }
+    }
 }
 
 impl From<LinCore> for Core {
@@ -540,6 +551,17 @@ impl<'a> CoreExt for CoreRef<'a> {
         match self {
             Self::Lin(c) => c.tooth_mass(),
             Self::Rot(c) => c.tooth_mass(),
+        }
+    }
+
+    fn air_gap_curvature_factor(
+        &self,
+        effective_air_gap: Length,
+        spatial_order: stem_slot::stem_types::SpatialOrder,
+    ) -> f64 {
+        match self {
+            Self::Lin(c) => c.air_gap_curvature_factor(effective_air_gap, spatial_order),
+            Self::Rot(c) => c.air_gap_curvature_factor(effective_air_gap, spatial_order),
         }
     }
 }

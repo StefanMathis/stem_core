@@ -304,8 +304,8 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// any input. Otherwise, the returned value can depend on core geometry
     /// and air gap width, see for example [`CarterFactorModel`]. It should
     /// be equal to or larger than 1 to represent the virtual "increase" of
-    /// the `air_gap_width` due to the non-smooth surface.
-    fn carter_factor(&self, core: CoreRef<'_>, air_gap_width: Length) -> f64;
+    /// the `geometrical_air_gap` due to the non-smooth surface.
+    fn carter_factor(&self, core: CoreRef<'_>, geometrical_air_gap: Length) -> f64;
 
     /// Returns a reference to the [`Slot`] of the air gap, if it has one.
     ///

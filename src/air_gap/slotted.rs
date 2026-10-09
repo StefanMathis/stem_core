@@ -131,18 +131,18 @@ impl CarterFactorModel {
     /// ```
     pub fn eval(
         &self,
-        air_gap_width: Length,
+        geometrical_air_gap: Length,
         slot_opening_width: Length,
         slot_pitch: Length,
     ) -> f64 {
         match self {
             Self::Bin12 => {
-                let h = f64::from(slot_opening_width / air_gap_width);
+                let h = f64::from(slot_opening_width / geometrical_air_gap);
                 let zeta = FRAC_2_PI * (h * (0.5 * h).atan() - (1.0 + 0.25 * h.powi(2)).ln());
-                return f64::from(slot_pitch / (slot_pitch - zeta * air_gap_width));
+                return f64::from(slot_pitch / (slot_pitch - zeta * geometrical_air_gap));
             }
             Self::MVP08 => {
-                let gamma = slot_opening_width / (slot_opening_width + 5.0 * air_gap_width);
+                let gamma = slot_opening_width / (slot_opening_width + 5.0 * geometrical_air_gap);
                 return f64::from(slot_pitch / (slot_pitch - gamma * slot_opening_width));
             }
         }
@@ -564,9 +564,9 @@ impl AirGap for SlottedAirGap {
         return self.slot.current_displacement_coefficients(50);
     }
 
-    fn carter_factor(&self, core: CoreRef<'_>, air_gap_length: Length) -> f64 {
+    fn carter_factor(&self, core: CoreRef<'_>, geometrical_air_gap: Length) -> f64 {
         return self.carter_factor_model.eval(
-            air_gap_length,
+            geometrical_air_gap,
             self.slot().opening_width(),
             core.slot_pitch(),
         );

@@ -832,17 +832,17 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     The _Carter factor_ `kc` describes the effect of non-smooth (e.g., slotted)
     air gaps contours on the magnetic resistance / reluctance of the air gap.
     The magnetically effective air gap width can be calculated as
-    `kc_stator_core * kc_rotor_core * geometric_air_gap_width` with both factors
+    `kc_stator_core * kc_rotor_core * geometrical_air_gap` with both factors
     being equal to or larger than 1.
 
     The exact implementation of the Carter factor calculation depends on the
     [`AirGap`] itself, hence this method forwards to [`AirGap::carter_factor`],
-    using `self` as the second argument and `air_gap_width` as the third. See
+    using `self` as the second argument and `geometrical_air_gap` as the third. See
     the docstring of [`AirGap::carter_factor`] for details and examples.
      */
-    fn carter_factor(&self, air_gap_width: Length) -> f64 {
+    fn carter_factor(&self, geometrical_air_gap: Length) -> f64 {
         self.air_gap()
-            .carter_factor(self.as_core_ref(), air_gap_width)
+            .carter_factor(self.as_core_ref(), geometrical_air_gap)
     }
 
     /// Returns the discretization / number of segments of the core.
@@ -1528,6 +1528,101 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
             .air_gap()
             .slot_opening_factor(self.as_core_ref(), spatial_order);
     }
+
+    /**
+    Returns the curvature factor for the specified spatial order.
+
+    The analytical analysis of the air gap field usually assumes a flat air gap.
+    While this matches the actual conditions for a
+    [`LinCore`](crate::core::LinCore), it will obviously result in incorrect
+    values for a [`RotCore`](crate::core::RotCore), with the deviation becoming
+    larger for smaller air gap radii (larger curvature) and larger air gaps.
+    Multiplying the air gap field amplitude of the given spatial order by this
+    factor corrects this difference. Usually, this is already done earlier in
+    the analysis workflow by multiplying the winding factor with the curvature
+    factor. Note that for an inner core, this value will be larger than 1, while
+    it will be smaller than 1 for an outer core.
+
+    For a [`LinCore`](crate::core::LinCore), this value is always 1. For a
+    [`RotCore`](crate::core::RotCore), it is calculated using the
+    [`air_gap_curvature_factor`](crate::core::air_gap_curvature_factor)
+    function. The documentation of that function contains the mathematical
+    details. The needed radii are derived from the
+    [`RotCore::air_gap_radius`](crate::core::RotCore::air_gap_radius) and the
+    provided `effective_air_gap`. The effective air gap results from the
+    geometrical air gap by mulitplication with the [`CoreExt::carter_factor`].
+
+    # Examples
+
+    ```
+    use std::sync::Arc;
+
+    use approxim::assert_abs_diff_eq;
+
+    use stem_core::prelude::*;
+
+    // Outer core with larger radius
+    let core: RotCore = RotCoreBuilder {
+        air_gap_radius: Length::new::<millimeter>(50.0),
+        yoke_radius: Length::new::<millimeter>(70.0),
+        axial_length: Length::new::<millimeter>(165.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 2.try_into().expect("not zero"),
+        skew_angle: 0.0,
+        air_gap: Box::new(PlainAirGap::default()),
+        flux_barrier: None,
+    }
+    .try_into()
+    .unwrap();
+
+    // Effect of the air gap on the electrical fundamental
+    assert_abs_diff_eq!(
+        core.air_gap_curvature_factor(Length::new::<millimeter>(1.0), SpatialOrder::Electrical(1)),
+        0.990505,
+        epsilon = 1e-6
+    );
+    assert_abs_diff_eq!(
+        core.air_gap_curvature_factor(Length::new::<millimeter>(2.0), SpatialOrder::Electrical(1)),
+        0.982040,
+        epsilon = 1e-6
+    );
+
+    // Inner core with small radius
+    let core: RotCore = RotCoreBuilder {
+        air_gap_radius: Length::new::<millimeter>(20.0),
+        yoke_radius: Length::new::<millimeter>(5.0),
+        axial_length: Length::new::<millimeter>(165.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 2.try_into().expect("not zero"),
+        skew_angle: 0.0,
+        air_gap: Box::new(PlainAirGap::default()),
+        flux_barrier: None,
+    }
+    .try_into()
+    .unwrap();
+
+    // Effect of the air gap on the electrical fundamental
+    assert_abs_diff_eq!(
+        core.air_gap_curvature_factor(Length::new::<millimeter>(1.0), SpatialOrder::Electrical(1)),
+        1.028047,
+        epsilon = 1e-6
+    );
+    assert_abs_diff_eq!(
+        core.air_gap_curvature_factor(Length::new::<millimeter>(2.0), SpatialOrder::Electrical(1)),
+        1.061883,
+        epsilon = 1e-6
+    );
+    ```
+     */
+    fn air_gap_curvature_factor(
+        &self,
+        effective_air_gap: Length,
+        spatial_order: SpatialOrder,
+    ) -> f64;
 
     /// Returns the current displacement coefficients for a winding mounted on
     /// `self`.

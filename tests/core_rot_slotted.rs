@@ -2,6 +2,7 @@ use std::f64::consts::{PI, TAU};
 use std::num::NonZeroU16;
 use std::sync::Arc;
 
+use approxim::assert_abs_diff_eq;
 use cairo_viewport::bounding_box::ToBoundingBox;
 use cairo_viewport::{SideLength, Viewport, compare_or_create};
 use stem_core::magnets::PositionedMagnetShape;
@@ -1020,6 +1021,61 @@ fn test_slotting_orders() {
             SpatialOrder::Mechanical(48)
         );
     }
+}
+
+#[test]
+fn test_air_gap_curvature_factor() {
+    assert_abs_diff_eq!(
+        air_gap_curvature_factor(
+            NonZeroU16::new(2).expect("not zero"),
+            Length::new::<millimeter>(55.0),
+            Length::new::<millimeter>(55.0 - 0.6),
+            SpatialOrder::Electrical(1),
+        ),
+        0.994695,
+        epsilon = 0.001
+    );
+    assert_abs_diff_eq!(
+        air_gap_curvature_factor(
+            NonZeroU16::new(2).expect("not zero"),
+            Length::new::<millimeter>(55.0),
+            Length::new::<millimeter>(55.0 - 2.0),
+            SpatialOrder::Electrical(1),
+        ),
+        0.983501,
+        epsilon = 0.001
+    );
+    assert_abs_diff_eq!(
+        air_gap_curvature_factor(
+            NonZeroU16::new(2).expect("not zero"),
+            Length::new::<millimeter>(55.0),
+            Length::new::<millimeter>(55.0 - 0.6),
+            SpatialOrder::Electrical(7),
+        ),
+        1.002341,
+        epsilon = 0.001
+    );
+    assert_abs_diff_eq!(
+        air_gap_curvature_factor(
+            NonZeroU16::new(10).expect("not zero"),
+            Length::new::<millimeter>(55.0),
+            Length::new::<millimeter>(55.0 - 0.6),
+            SpatialOrder::Electrical(1),
+        ),
+        0.998521,
+        epsilon = 0.001
+    );
+
+    assert_abs_diff_eq!(
+        air_gap_curvature_factor(
+            NonZeroU16::new(5).expect("not zero"),
+            Length::new::<millimeter>(37.5),
+            Length::new::<millimeter>(37.5 - 0.6),
+            SpatialOrder::Electrical(1),
+        ),
+        0.9941281,
+        epsilon = 1e-6
+    );
 }
 
 #[test]

@@ -633,6 +633,27 @@ impl CoreExt for RotCore {
             None => return Mass::new::<kilogram>(0.0),
         }
     }
+
+    fn air_gap_curvature_factor(
+        &self,
+        effective_air_gap: Length,
+        spatial_order: stem_slot::stem_types::SpatialOrder,
+    ) -> f64 {
+        {
+            let opposite_air_gap_surface_radius = if self.is_outer() {
+                self.air_gap_radius() - effective_air_gap
+            } else {
+                self.air_gap_radius() + effective_air_gap
+            };
+            air_gap_curvature_factor(
+                self.pole_pairs(),
+                self.air_gap_radius(),
+                opposite_air_gap_surface_radius,
+                spatial_order,
+            )
+            .abs()
+        }
+    }
 }
 
 /**
@@ -747,4 +768,55 @@ impl TryFrom<RotCoreBuilder> for RotCore {
 
         return Ok(this);
     }
+}
+
+/// Returns the curvature factor of a cylindrical air gap for the spatial order
+/// of a field harmonic.
+///
+/// The curvature factor accounts for the difference between the cylindrical
+/// air-gap field and the corresponding field in a flat air gap. It is evaluated
+/// at `air_gap_surface_radius`; `opposite_air_gap_surface_radius` is the radius
+/// of the opposite air-gap surface.
+///
+/// The factor is obtained from the analytical solution of Laplace's equation
+/// in cylindrical coordinates [\(1\)](#air_gap_curvature_factor_1). For a
+/// harmonic of spatial order `v`, the radial dependence of the magnetic scalar
+/// potential has the form
+///
+/// `Phi(r) = A * r^v + B * r^(-v)`.
+///
+/// Applying the boundary conditions at the two cylindrical air-gap surfaces
+/// results in the curvature factor
+///
+/// `k = g * v / r1 * ((r1 / r2)^(2 * v) + 1) / ((r1 / r2)^(2 * v) - 1)`,
+///
+/// where `g` is the air-gap width, `r1` is the `air_gap_surface_radius` and
+/// `r2` is the `opposite_air_gap_surface_radius`.
+///
+/// In the limit of a small air gap relative to the radius, the cylindrical
+/// air gap approaches a flat air gap and the magnitude of the curvature
+/// factor approaches `1`.
+///
+/// The sign of the returned factor follows the radial direction implied by
+/// `r1` and `r2`.
+///
+/// # Literature
+///
+/// <a id="air_gap_curvature_factor_1">\(1\)</a>
+/// Andresen, J., Ponick, B. and Mertens, A.: Direct Radial and Circumferential
+/// Analytical Air-Gap Field Calculation for Electrical Machines,
+/// 2019 International Aegean Conference on Electrical Machines and Power
+/// Electronics, pp. 191–198, 2019.
+pub fn air_gap_curvature_factor(
+    pole_pairs: NonZeroU16,
+    air_gap_surface_radius: Length,
+    opposite_air_gap_surface_radius: Length,
+    spatial_order: stem_slot::stem_types::SpatialOrder,
+) -> f64 {
+    let air_gap_width = (air_gap_surface_radius - opposite_air_gap_surface_radius).abs();
+    let v = spatial_order.to_mechanical(pole_pairs);
+    let a = f64::from(air_gap_surface_radius / opposite_air_gap_surface_radius).powi(2 * v as i32);
+    return f64::from(
+        air_gap_width * f64::from(v) / air_gap_surface_radius * (a + 1.0) / (a - 1.0),
+    );
 }
