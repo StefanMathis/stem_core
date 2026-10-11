@@ -82,11 +82,11 @@ _This image was produced with `examples/air_gap_plots.rs`._
 A [`StraightIndentsAirGap`] cannot be wound, so [`AirGap::slots`] always
 returns zero.
 
-When used in a linear motor, [`CoreExt::d_axis_offset`] must be `pi/2`, which it
+When used in a linear motor, [`CoreExt::d_axis_offset`] must be `π/2`, which it
 is by default if the core has no flux barrier. If the core does have a flux
 barrier, that value depends on the implementation of
 [`FluxBarrier::d_axis_offset`](crate::flux_barrier::FluxBarrier::d_axis_offset).
-If the d-axis offset isn't `pi/2`, trying to [`combine`](AirGap::combine) the
+If the d-axis offset isn't `π/2`, trying to [`combine`](AirGap::combine) the
 core and the air gap will return an error.
 
 The effect of the indents on the air gap field is neglected in the analytical
@@ -414,7 +414,7 @@ impl StraightIndentsAirGap {
         let zero_length = Length::new::<meter>(0.0);
         compare_variables!(self.indent_width > zero_length)?;
 
-        // A linear core can only be built if the d-axis offset is pi/2
+        // A linear core can only be built if the d-axis offset is π/2
         if approxim::relative_ne!(core.d_axis_offset(), FRAC_PI_2) {
             return Err(Comparison::new(
                 ComparisonValue::new(core.d_axis_offset(), Some("core.d_axis_offset")),

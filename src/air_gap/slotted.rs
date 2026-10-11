@@ -80,7 +80,7 @@ pub enum CarterFactorModel {
     ///
     /// `kc = slot_pitch / (slot_pitch - air_gap_width * zeta)` (3.6-1)
     ///
-    /// with `zeta = 2 / pi * (h * arctan(h/2) - ln(1+(h/2)²))` (3.6-2)
+    /// with `zeta = 2 / π * (h * arctan(h/2) - ln(1+(h/2)²))` (3.6-2)
     /// and `h = slot_opening_width / air_gap_width`.
     Bin12,
     /// Carter factor model from Müller, G., Vogt, K. and Ponick, B.: Berechnung

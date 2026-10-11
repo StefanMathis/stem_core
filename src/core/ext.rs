@@ -265,11 +265,11 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///
     /// One way to suppress the harmonics is to "skew" the motor by the
     /// so-called skew angle. In the case of a linear motor, this means shifting
-    /// one end by `skew_angle / (2*pi) * core.width()` against the other. A
+    /// one end by `skew_angle / (2*π) * core.width()` against the other. A
     /// rotary motor is twisted along its rotational axis by the skew angle.
     /// Depending on the skew angle, this leads to destructive interference of
     /// undesired harmonics. For example, to suppress the aforementioned slot
-    /// harmonics, the core needs to be skewed by `2 * pi / core.slots()`. See
+    /// harmonics, the core needs to be skewed by `2 * π / core.slots()`. See
     /// [\[1\]](#core_ext_skew_angle_1), section 6.5 for more. Be aware that
     /// skewing affects all harmonics, including the useful (force-producing)
     /// first stator harmonic. The general goal is therefore to find an angle
@@ -297,8 +297,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
 
     For a linear core, this is [`LinCore::width`](crate::core::LinCore::width).
     For a rotary core, this is the circumference of the air gap
-    ([`RotCore::air_gap_radius`](crate::core::RotCore::air_gap_radius) times 2
-    pi).
+    ([`RotCore::air_gap_radius`](crate::core::RotCore::air_gap_radius) times 2π).
 
     # Examples
 
@@ -2193,7 +2192,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// barrier, this value defaults to [`FRAC_PI_2`] (meaning that the
     /// start coincidences with a negative q-axis). If the core has a flux
     /// barrier, this method forwards to [`FluxBarrier::d_axis_offset`] and
-    /// normalizes the returned value to be between 0 and 2 pi.
+    /// normalizes the returned value to be between 0 and 2 π.
     ///
     /// The following image shows why this factor is needed using the examples
     /// of a [`Spoke1FluxBarrier`](crate::flux_barrier::Spoke1FluxBarrier) and a

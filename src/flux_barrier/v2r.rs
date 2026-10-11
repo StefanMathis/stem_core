@@ -206,7 +206,7 @@ pub struct V2rFluxBarrier {
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub relief_path_width: Length,
-    /// Opening angle between the sides of the V. Must be between zero and pi
+    /// Opening angle between the sides of the V. Must be between zero and π
     /// (`0 <= opening_angle <= PI`).
     #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_angle"))]

@@ -245,9 +245,9 @@ impl<const LIN: bool> MagnetsPeriodic<LIN> {
     ///   core, see image below.
     ///
     /// In the following example, `magnets` consists of four individual
-    /// [`PositionedMagnetShape`]s, `poles` is 2 and `d_axis_offset` is pi/2. In
-    /// this particular case, the mechanical offset angle is therefore also pi/2
-    /// (in the general case, it would be `pi/poles`).
+    /// [`PositionedMagnetShape`]s, `poles` is 2 and `d_axis_offset` is π/2. In
+    /// this particular case, the mechanical offset angle is therefore also π/2
+    /// (in the general case, it would be `π/poles`).
     #[doc = ""]
     #[cfg_attr(
         feature = "doc-images",
