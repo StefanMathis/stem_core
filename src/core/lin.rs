@@ -150,24 +150,18 @@ assert_eq!(core.width().get::<millimeter>(), 100.0);
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(try_from = "LinCoreBuilder"))]
+#[cfg_attr(feature = "serde", serde(into = "LinCoreBuilder"))]
 pub struct LinCore {
-    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     height: Length,
-    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     width: Length,
-    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     axial_length: Length,
-    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     axial_coil_overhang: Length,
-    #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_angle"))]
     skew_angle: f64,
     iron_fill_factor: f64,
-    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_arc_link",))]
     material: Arc<Material>,
     pole_pairs: NonZeroU16,
     air_gap: Box<dyn AirGap>,
     flux_barrier: Option<Box<dyn FluxBarrier>>,
-    #[cfg_attr(feature = "serde", serde(skip))]
     shape: Shape,
 }
 
@@ -441,24 +435,28 @@ deserialized into a [`LinCoreBuilder`] which is then converted via [`TryFrom`].
 
 See the docstring of [`LinCore`] for examples.
  */
-#[cfg_attr(feature = "serde", derive(Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct LinCoreBuilder {
     /// Height (vertical extents) of the core. Must be positive (`height >= 0
     /// m`).
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub height: Length,
     /// Width (horizontal extents) of the core. Must be positive (`width >= 0
     /// m`).
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub width: Length,
     /// Axial length of the core. This dimension is invisible when using the
     /// typical cross-section view of a core because it goes into the image
     /// plane. Must be positive (`axial_length >= 0 m`).
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub axial_length: Length,
     /// If the core holds a winding, this specifies the axial overhang of both
     /// sides. See [`CoreExt::axial_coil_overhang`] for details. Must be
     /// positive (`axial_coil_overhang >= 0 m`).
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(default))]
     pub axial_coil_overhang: Length,
@@ -472,6 +470,7 @@ pub struct LinCoreBuilder {
     /// factor somewhere between 0 and 1 (`0 <= iron_fill_factor <= 1`). Typical
     /// values are usually between 0.9 and 1.
     pub iron_fill_factor: f64,
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_arc_link"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_arc_link"))]
     /// Material used for the core.
     pub material: Arc<Material>,
@@ -488,6 +487,23 @@ pub struct LinCoreBuilder {
     /// `None`.
     #[cfg_attr(feature = "serde", serde(default))]
     pub flux_barrier: Option<Box<dyn FluxBarrier>>,
+}
+
+impl From<LinCore> for LinCoreBuilder {
+    fn from(value: LinCore) -> Self {
+        LinCoreBuilder {
+            height: value.height,
+            width: value.width,
+            axial_length: value.axial_length,
+            axial_coil_overhang: value.axial_coil_overhang,
+            skew_angle: value.skew_angle,
+            iron_fill_factor: value.iron_fill_factor,
+            material: value.material,
+            pole_pairs: value.pole_pairs,
+            air_gap: value.air_gap,
+            flux_barrier: value.flux_barrier,
+        }
+    }
 }
 
 impl TryFrom<LinCoreBuilder> for LinCore {

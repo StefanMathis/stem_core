@@ -153,23 +153,18 @@ assert_eq!(core.air_gap_radius().get::<millimeter>(), 55.0);
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(try_from = "RotCoreBuilder"))]
+#[cfg_attr(feature = "serde", serde(into = "RotCoreBuilder"))]
 pub struct RotCore {
-    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     air_gap_radius: Length,
-    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     yoke_radius: Length,
-    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     axial_length: Length,
-    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     axial_coil_overhang: Length,
     iron_fill_factor: f64,
-    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_arc_link",))]
     material: Arc<Material>,
     pole_pairs: NonZeroU16,
     skew_angle: f64,
     air_gap: Box<dyn AirGap>,
     flux_barrier: Option<Box<dyn FluxBarrier>>,
-    #[cfg_attr(feature = "serde", serde(skip))]
     shape: Shape,
 }
 
@@ -670,26 +665,30 @@ deserialized into a [`RotCoreBuilder`] which is then converted via [`TryFrom`].
 
 See the docstring of [`RotCore`] for examples.
  */
-#[cfg_attr(feature = "serde", derive(Deserialize))]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct RotCoreBuilder {
     /// Air gap radius of the core. Must be positive and not equal to
     /// [`RotCoreBuilder::yoke_radius`] (`0 m <= air_gap_radius !=
     /// yoke_radius`).
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub air_gap_radius: Length,
     /// Yoke radius of the core. Must be positive and not equal to
     /// [`RotCoreBuilder::air_gap_radius`] (`0 m <= yoke_radius !=
     /// air_gap_radius`).
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub yoke_radius: Length,
     /// Axial length of the core. This dimension is invisible when using the
     /// typical cross-section view of a core because it goes into the image
     /// plane. Must be positive (`axial_length >= 0 m`).
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     pub axial_length: Length,
     /// If the core holds a winding, this specifies the axial overhang of both
     /// sides. See [`CoreExt::axial_coil_overhang`] for details. Must be
     /// positive (`axial_coil_overhang >= 0 m`).
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_quantity"))]
     #[cfg_attr(feature = "serde", serde(default))]
     pub axial_coil_overhang: Length,
@@ -704,6 +703,7 @@ pub struct RotCoreBuilder {
     /// values are usually between 0.9 and 1.
     pub iron_fill_factor: f64,
     /// Material used for the core.
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_arc_link"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_arc_link"))]
     pub material: Arc<Material>,
     /// Number of pole pairs of the core.
@@ -719,6 +719,23 @@ pub struct RotCoreBuilder {
     /// `None`.
     #[cfg_attr(feature = "serde", serde(default))]
     pub flux_barrier: Option<Box<dyn FluxBarrier>>,
+}
+
+impl From<RotCore> for RotCoreBuilder {
+    fn from(value: RotCore) -> Self {
+        RotCoreBuilder {
+            air_gap_radius: value.air_gap_radius,
+            yoke_radius: value.yoke_radius,
+            axial_length: value.axial_length,
+            axial_coil_overhang: value.axial_coil_overhang,
+            skew_angle: value.skew_angle,
+            iron_fill_factor: value.iron_fill_factor,
+            material: value.material,
+            pole_pairs: value.pole_pairs,
+            air_gap: value.air_gap,
+            flux_barrier: value.flux_barrier,
+        }
+    }
 }
 
 impl TryFrom<RotCoreBuilder> for RotCore {
