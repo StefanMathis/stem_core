@@ -149,7 +149,7 @@ assert_abs_diff_eq!(core.skew_factor(SpatialOrder::Mechanical(7)), 0.9003, epsil
 assert_eq!(core.winding_zones(&CoilLayout::DoubleHorizontal).count(), 56);
 
 // Return the mass of all interior magnets shown in the image
-assert_abs_diff_eq!(core.mass_interior_magnets().get::<kilogram>(), 0.182, epsilon=1e-3);
+assert_abs_diff_eq!(core.mass_interior_magnets(&[]).get::<kilogram>(), 0.182, epsilon=1e-3);
 
 // Return the mass of all surface magnets shown in the image
 let magnet = ArcParallelMagnet::with_const_thickness(
@@ -160,7 +160,7 @@ let magnet = ArcParallelMagnet::with_const_thickness(
     Arc::new(Material::default()),
 ).expect("valid magnet");
 let surface_magnets = MagnetAssembly::new(magnet, 1.try_into().expect("not zero"), 2.try_into().expect("not zero"));
-assert_abs_diff_eq!(core.mass_surface_magnets(&surface_magnets).get::<kilogram>(), 0.114, epsilon=1e-3);
+assert_abs_diff_eq!(core.mass_surface_magnets(&surface_magnets, &[]).get::<kilogram>(), 0.114, epsilon=1e-3);
 ```
 
 # Serialization and deserialization

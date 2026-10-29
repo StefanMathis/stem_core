@@ -1360,11 +1360,15 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// ).unwrap();
     /// let surface_magnets = MagnetAssembly::new(magnet, 3.try_into().unwrap(), 2.try_into().unwrap());
     ///
-    /// assert_eq!(core.mass_surface_magnets(&surface_magnets), core.poles().get() as f64 * surface_magnets.mass());
-    /// assert_abs_diff_eq!(core.mass_surface_magnets(&surface_magnets).get::<kilogram>(), 0.478546, epsilon=1e-6);
+    /// assert_eq!(core.mass_surface_magnets(&surface_magnets, &[]), core.poles().get() as f64 * surface_magnets.mass().get(&[]));
+    /// assert_abs_diff_eq!(core.mass_surface_magnets(&surface_magnets, &[]).get::<kilogram>(), 0.478546, epsilon=1e-6);
     /// ```
-    fn mass_surface_magnets(&self, magnet_assembly: &MagnetAssembly) -> Mass {
-        return self.poles().get() as f64 * magnet_assembly.mass();
+    fn mass_surface_magnets(
+        &self,
+        magnet_assembly: &MagnetAssembly,
+        conditions: &[DynQuantity<f64>],
+    ) -> Mass {
+        return f64::from(self.poles().get()) * magnet_assembly.mass().get(conditions);
     }
 
     /// Returns the total mass of all interior magnets mounted in the flux
@@ -1414,15 +1418,15 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// .try_into()
     /// .unwrap();
     ///
-    /// assert_abs_diff_eq!(core.mass_interior_magnets().get::<kilogram>(), 0.264, epsilon=1e-6);
+    /// assert_abs_diff_eq!(core.mass_interior_magnets(&[]).get::<kilogram>(), 0.264, epsilon=1e-6);
     /// ```
-    fn mass_interior_magnets(&self) -> Mass {
+    fn mass_interior_magnets(&self, conditions: &[DynQuantity<f64>]) -> Mass {
         let mass_per_pole: Mass = self
             .interior_magnet_assemblies()
             .iter()
-            .map(|m| m.mass())
+            .map(|m| m.mass().get(conditions))
             .sum();
-        return mass_per_pole * self.poles().get() as f64;
+        return mass_per_pole * f64::from(self.poles().get());
     }
 
     /// Returns the number of "slots" for a winding.
