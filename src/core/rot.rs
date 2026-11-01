@@ -124,7 +124,7 @@ converted via [`TryFrom`].
 ```
 use approxim;
 use stem_core::prelude::*;
-use yaml_serde;
+use serde_yaml;
 
 let str = indoc::indoc! {"
 air_gap_radius: 55 mm
@@ -146,7 +146,7 @@ air_gap:
         slots: 0
 "};
 
-let core: RotCore = yaml_serde::from_str(&str).expect("valid dimensions");
+let core: RotCore = serde_yaml::from_str(&str).expect("valid dimensions");
 assert_eq!(core.air_gap_radius().get::<millimeter>(), 55.0);
 ```
  */
@@ -610,7 +610,7 @@ impl CoreExt for RotCore {
         }
     }
 
-    fn tooth_mass(&self) -> Mass {
+    fn tooth_mass(&self) -> VarQuantity<Mass> {
         match self.slot() {
             Some(slot) => {
                 use uom::typenum::P2;
@@ -620,12 +620,11 @@ impl CoreExt for RotCore {
                     * ((self.air_gap_radius() + m * self.tooth_height()).powi(P2::new())
                         - self.air_gap_radius().powi(P2::new()))
                     .abs();
-                let mass_density = self.material().mass_density().get(&[]);
-                return (total_slot_area / f64::from(self.slots()) - slot.area())
-                    * self.iron_length()
-                    * mass_density;
+                return VarQuantity::from(
+                    (total_slot_area / f64::from(self.slots()) - slot.area()) * self.iron_length(),
+                ) * self.material().mass_density();
             }
-            None => return Mass::new::<kilogram>(0.0),
+            None => return Default::default(),
         }
     }
 

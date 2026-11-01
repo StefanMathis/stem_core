@@ -1109,16 +1109,20 @@ fn test_dimensions_and_mass() {
 
     // Check the mass of yoke and teeth
     approxim::assert_abs_diff_eq!(
-        core.tooth_mass().get::<kilogram>(),
+        core.tooth_mass().eval(&[]).get::<kilogram>(),
         0.012170,
         epsilon = 1e-6
     );
     approxim::assert_abs_diff_eq!(
-        core.teeth_mass().get::<kilogram>(),
-        core.tooth_mass().get::<kilogram>() * core.slots() as f64,
+        core.teeth_mass().eval(&[]).get::<kilogram>(),
+        core.tooth_mass().eval(&[]).get::<kilogram>() * core.slots() as f64,
         epsilon = 1e-6
     );
-    approxim::assert_abs_diff_eq!(core.yoke_mass().get::<kilogram>(), 1.00177, epsilon = 1e-5);
+    approxim::assert_abs_diff_eq!(
+        core.yoke_mass().eval(&[]).get::<kilogram>(),
+        1.00177,
+        epsilon = 1e-5
+    );
 }
 
 #[test]

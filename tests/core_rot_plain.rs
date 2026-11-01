@@ -637,7 +637,7 @@ fn serialize_and_deserialize() {
     };
 
     let core = RotCore::new(builder).expect("valid inputs");
-    let serialized = yaml_serde::to_string(&core).expect("can be serialized");
-    let de_core: RotCore = yaml_serde::from_str(&serialized).expect("can be deserialized");
+    let serialized = serde_yaml::to_string(&core).expect("can be serialized");
+    let de_core: RotCore = serde_yaml::from_str(&serialized).expect("can be deserialized");
     assert_eq!(core.air_gap_radius(), de_core.air_gap_radius());
 }

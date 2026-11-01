@@ -546,9 +546,9 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// .try_into()
     /// .unwrap();
     ///
-    /// assert_abs_diff_eq!(core.tooth_mass().get::<kilogram>(), 0.015, epsilon = 1e-3);
+    /// assert_abs_diff_eq!(core.tooth_mass().eval(&[]).get::<kilogram>(), 0.015, epsilon = 1e-3);
     /// ```
-    fn tooth_mass(&self) -> Mass;
+    fn tooth_mass(&self) -> VarQuantity<Mass>;
 
     // =========================================================================
 
@@ -1360,15 +1360,14 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// ).unwrap();
     /// let surface_magnets = MagnetAssembly::new(magnet, 3.try_into().unwrap(), 2.try_into().unwrap());
     ///
-    /// assert_eq!(core.mass_surface_magnets(&surface_magnets, &[]), core.poles().get() as f64 * surface_magnets.mass().get(&[]));
-    /// assert_abs_diff_eq!(core.mass_surface_magnets(&surface_magnets, &[]).get::<kilogram>(), 0.478546, epsilon=1e-6);
+    /// assert_eq!(
+    ///     core.mass_surface_magnets(&surface_magnets).eval(&[]),
+    ///     core.poles().get() as f64 * surface_magnets.mass().eval(&[])
+    /// );
+    /// assert_abs_diff_eq!(core.mass_surface_magnets(&surface_magnets).eval(&[]).get::<kilogram>(), 0.478546, epsilon=1e-6);
     /// ```
-    fn mass_surface_magnets(
-        &self,
-        magnet_assembly: &MagnetAssembly,
-        conditions: &[DynQuantity<f64>],
-    ) -> Mass {
-        return f64::from(self.poles().get()) * magnet_assembly.mass().get(conditions);
+    fn mass_surface_magnets(&self, magnet_assembly: &MagnetAssembly) -> VarQuantity<Mass> {
+        return VarQuantity::from(f64::from(self.poles().get())) * magnet_assembly.mass();
     }
 
     /// Returns the total mass of all interior magnets mounted in the flux
@@ -1418,15 +1417,15 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// .try_into()
     /// .unwrap();
     ///
-    /// assert_abs_diff_eq!(core.mass_interior_magnets(&[]).get::<kilogram>(), 0.264, epsilon=1e-6);
+    /// assert_abs_diff_eq!(core.mass_interior_magnets().eval(&[]).get::<kilogram>(), 0.264, epsilon=1e-6);
     /// ```
-    fn mass_interior_magnets(&self, conditions: &[DynQuantity<f64>]) -> Mass {
-        let mass_per_pole: Mass = self
+    fn mass_interior_magnets(&self) -> VarQuantity<Mass> {
+        let mass_per_pole: VarQuantity<Mass> = self
             .interior_magnet_assemblies()
             .iter()
-            .map(|m| m.mass().get(conditions))
+            .map(|m| m.mass())
             .sum();
-        return mass_per_pole * f64::from(self.poles().get());
+        return mass_per_pole * VarQuantity::from(f64::from(self.poles().get()));
     }
 
     /// Returns the number of "slots" for a winding.
@@ -1991,12 +1990,11 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// .try_into()
     /// .unwrap();
     ///
-    /// assert_abs_diff_eq!(core.mass().get::<kilogram>(), 1.4349224, epsilon = 1e-6);
+    /// assert_abs_diff_eq!(core.mass().eval(&[]).get::<kilogram>(), 1.4349224, epsilon = 1e-6);
     /// ```
-    fn mass(&self) -> Mass {
-        return self.cross_section_area()
-            * self.iron_length()
-            * self.material().mass_density().get(&[]);
+    fn mass(&self) -> VarQuantity<Mass> {
+        VarQuantity::from(self.cross_section_area() * self.iron_length())
+            * self.material().mass_density()
     }
 
     /// Returns the mass of all teeth.
@@ -2046,11 +2044,11 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// .try_into()
     /// .unwrap();
     ///
-    /// assert_abs_diff_eq!(core.teeth_mass().get::<kilogram>(), core.tooth_mass().get::<kilogram>() * core.slots() as f64, epsilon = 1e-3);
-    /// assert_abs_diff_eq!(core.teeth_mass().get::<kilogram>(), 0.5446, epsilon = 1e-3);
+    /// assert_abs_diff_eq!(core.teeth_mass().eval(&[]).get::<kilogram>(), core.tooth_mass().eval(&[]).get::<kilogram>() * core.slots() as f64, epsilon = 1e-3);
+    /// assert_abs_diff_eq!(core.teeth_mass().eval(&[]).get::<kilogram>(), 0.5446, epsilon = 1e-3);
     /// ```
-    fn teeth_mass(&self) -> Mass {
-        return self.tooth_mass() * self.slots() as f64;
+    fn teeth_mass(&self) -> VarQuantity<Mass> {
+        return self.tooth_mass() * VarQuantity::from(self.slots() as f64);
     }
 
     /// Returns the mass of the yoke area.
@@ -2098,10 +2096,10 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// .try_into()
     /// .unwrap();
     ///
-    /// assert_abs_diff_eq!(core.yoke_mass().get::<kilogram>(), 1.283, epsilon = 1e-3);
+    /// assert_abs_diff_eq!(core.yoke_mass().eval(&[]).get::<kilogram>(), 1.283, epsilon = 1e-3);
     /// ```
-    fn yoke_mass(&self) -> Mass {
-        return self.mass() - self.teeth_mass();
+    fn yoke_mass(&self) -> VarQuantity<Mass> {
+        return self.mass() - VarQuantity::from(self.teeth_mass());
     }
 
     /// Returns the skew factor of the core for the given `spatial_order`.`

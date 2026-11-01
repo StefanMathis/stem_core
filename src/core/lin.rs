@@ -121,7 +121,7 @@ converted via [`TryFrom`].
 ```
 use approxim;
 use stem_core::prelude::*;
-use yaml_serde;
+use serde_yaml;
 
 let str = indoc::indoc! {"
 height: 20 mm
@@ -143,7 +143,7 @@ air_gap:
         slots: 0
 "};
 
-let core: LinCore = yaml_serde::from_str(&str).expect("valid dimensions");
+let core: LinCore = serde_yaml::from_str(&str).expect("valid dimensions");
 assert_eq!(core.width().get::<millimeter>(), 100.0);
 ```
  */
@@ -399,16 +399,15 @@ impl CoreExt for LinCore {
         }
     }
 
-    fn tooth_mass(&self) -> Mass {
+    fn tooth_mass(&self) -> VarQuantity<Mass> {
         match self.slot() {
             Some(slot) => {
                 let total_slot_area = self.width() * (self.height() - self.yoke_height());
-                let mass_density = self.material().mass_density().get(&[]);
-                return (total_slot_area / f64::from(self.slots()) - slot.area())
-                    * self.iron_length()
-                    * mass_density;
+                return VarQuantity::from(
+                    (total_slot_area / f64::from(self.slots()) - slot.area()) * self.iron_length(),
+                ) * self.material().mass_density();
             }
-            None => return Mass::new::<kilogram>(0.0),
+            None => return Mass::new::<kilogram>(0.0).into(),
         }
     }
 

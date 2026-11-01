@@ -339,7 +339,7 @@ impl CoreExt for Core {
         }
     }
 
-    fn tooth_mass(&self) -> Mass {
+    fn tooth_mass(&self) -> VarQuantity<Mass> {
         match self {
             Self::Lin(c) => c.tooth_mass(),
             Self::Rot(c) => c.tooth_mass(),
@@ -547,7 +547,7 @@ impl<'a> CoreExt for CoreRef<'a> {
         }
     }
 
-    fn tooth_mass(&self) -> Mass {
+    fn tooth_mass(&self) -> VarQuantity<Mass> {
         match self {
             Self::Lin(c) => c.tooth_mass(),
             Self::Rot(c) => c.tooth_mass(),

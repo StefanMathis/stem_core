@@ -139,7 +139,7 @@ alternatively from a [`PolygonAirGapBuilder`].
 
 ```
 use stem_core::prelude::*;
-use yaml_serde;
+use serde_yaml;
 
 let str = indoc::indoc! {"
 num_segments: 2
@@ -147,7 +147,7 @@ indent_width: 10 mm
 indent_depth: -2 mm
 indents_per_pole: 2
 "};
-assert!(yaml_serde::from_str::<StraightIndentsAirGap>(&str).is_ok());
+assert!(serde_yaml::from_str::<StraightIndentsAirGap>(&str).is_ok());
 
 // Deserialize from PolygonAirGapBuilder
 let str = indoc::indoc! {"
@@ -156,7 +156,7 @@ indents_per_pole: 2
 pole_pairs: 3
 air_gap_radius: 100 mm
 "};
-assert!(yaml_serde::from_str::<StraightIndentsAirGap>(&str).is_ok());
+assert!(serde_yaml::from_str::<StraightIndentsAirGap>(&str).is_ok());
 ```
  */
 #[derive(Debug, Clone)]

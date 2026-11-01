@@ -787,7 +787,7 @@ fn test_deserialize() {
             leakage_path_width: 1 mm
             magnet_material:
     "};
-    let core: RotCore = yaml_serde::from_str(&yaml).unwrap();
+    let core: RotCore = serde_yaml::from_str(&yaml).unwrap();
 
     let drawable = core.drawable();
     let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));

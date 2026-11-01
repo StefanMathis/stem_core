@@ -168,7 +168,7 @@ and [`PlainAirGap::winding_coverage`] will be clamped to be between 0 and 1.
 
 ```
 use stem_core::prelude::*;
-use yaml_serde;
+use serde_yaml;
 
 let str = indoc::indoc! {"
 air_gap_winding_height: 10 mm
@@ -178,7 +178,7 @@ starts_in_slot_middle: true
 slots: 12
 "};
 
-let ag: PlainAirGap = yaml_serde::from_str(&str).expect("valid dimensions");
+let ag: PlainAirGap = serde_yaml::from_str(&str).expect("valid dimensions");
 assert_eq!(ag.winding_coverage, 1.0);
 ```
 
@@ -187,13 +187,13 @@ Any of these fields can be omitted, in which case the value from the
 
 ```
 use stem_core::prelude::*;
-use yaml_serde;
+use serde_yaml;
 
 let str = indoc::indoc! {"
 air_gap_winding_height: 10 mm
 "};
 
-let ag: PlainAirGap = yaml_serde::from_str(&str).expect("valid dimensions");
+let ag: PlainAirGap = serde_yaml::from_str(&str).expect("valid dimensions");
 assert_eq!(ag.winding_coverage, 0.0);
 ```
  */

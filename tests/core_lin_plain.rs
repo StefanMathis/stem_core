@@ -30,15 +30,15 @@ fn test_properties() {
 
     approxim::assert_abs_diff_eq!(core.height().get::<meter>(), 0.025);
     approxim::assert_abs_diff_eq!(core.width().get::<meter>(), 0.15);
-    approxim::assert_abs_diff_eq!(core.mass().get::<gram>(), 375.0);
+    approxim::assert_abs_diff_eq!(core.mass().eval(&[]).get::<gram>(), 375.0);
     approxim::assert_abs_diff_eq!(
         core.tooth_width_at(Length::new::<millimeter>(0.0))
             .get::<meter>(),
         0.0
     );
     approxim::assert_abs_diff_eq!(core.tooth_height().get::<meter>(), 0.0);
-    approxim::assert_abs_diff_eq!(core.teeth_mass().get::<gram>(), 0.0);
-    approxim::assert_abs_diff_eq!(core.tooth_mass().get::<gram>(), 0.0);
+    approxim::assert_abs_diff_eq!(core.teeth_mass().eval(&[]).get::<gram>(), 0.0);
+    approxim::assert_abs_diff_eq!(core.tooth_mass().eval(&[]).get::<gram>(), 0.0);
     approxim::assert_abs_diff_eq!(
         core.slot_opening_factor(SpatialOrder::Mechanical(1)),
         0.994412,
@@ -507,7 +507,7 @@ fn serialize_and_deserialize() {
     };
 
     let core = LinCore::new(builder).expect("valid inputs");
-    let serialized = yaml_serde::to_string(&core).expect("can be serialized");
-    let de_core: LinCore = yaml_serde::from_str(&serialized).expect("can be deserialized");
+    let serialized = serde_yaml::to_string(&core).expect("can be serialized");
+    let de_core: LinCore = serde_yaml::from_str(&serialized).expect("can be deserialized");
     assert_eq!(core.width(), de_core.width());
 }

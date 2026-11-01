@@ -498,7 +498,7 @@ fn test_deserialize() {
                 2 mm
     "};
 
-    let core: LinCore = yaml_serde::from_str(&yaml).unwrap();
+    let core: LinCore = serde_yaml::from_str(&yaml).unwrap();
 
     let drawable = core.drawable();
     let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));

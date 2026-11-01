@@ -151,7 +151,7 @@ fn test_polygon_air_gap_builder() {
             pole_pairs: 3
             air_gap_radius: 60 mm
         "};
-        let air_gap: StraightIndentsAirGap = yaml_serde::from_str(&str).expect("valid inputs");
+        let air_gap: StraightIndentsAirGap = serde_yaml::from_str(&str).expect("valid inputs");
 
         let core: RotCore = RotCoreBuilder {
             air_gap_radius: Length::new::<millimeter>(60.0),
@@ -191,7 +191,7 @@ fn test_polygon_air_gap_builder() {
         pole_pairs: 3
         air_gap_radius: 80 mm
     "};
-        let air_gap: StraightIndentsAirGap = yaml_serde::from_str(&str).expect("valid inputs");
+        let air_gap: StraightIndentsAirGap = serde_yaml::from_str(&str).expect("valid inputs");
 
         let core: RotCore = RotCoreBuilder {
             air_gap_radius: Length::new::<millimeter>(80.0),

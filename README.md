@@ -132,8 +132,8 @@ let core: RotCore = RotCoreBuilder {
 
 // Calculate some properties of the core
 assert_abs_diff_eq!(core.volume().get::<cubic_centimeter>(), 962.446, epsilon=1e-3);
-assert_abs_diff_eq!(core.mass().get::<kilogram>(), 0.962, epsilon=1e-3);
-assert_abs_diff_eq!(core.teeth_mass().get::<kilogram>(), 0.158, epsilon=1e-3);
+assert_abs_diff_eq!(core.mass().eval(&[]).get::<kilogram>(), 0.962, epsilon=1e-3);
+assert_abs_diff_eq!(core.teeth_mass().eval(&[]).get::<kilogram>(), 0.158, epsilon=1e-3);
 
 // Carter factor for a given air gap
 assert_abs_diff_eq!(core.carter_factor(Length::new::<millimeter>(0.5)), 1.0478, epsilon=1e-3);
@@ -149,7 +149,7 @@ assert_abs_diff_eq!(core.skew_factor(SpatialOrder::Mechanical(7)), 0.9003, epsil
 assert_eq!(core.winding_zones(&CoilLayout::DoubleHorizontal).count(), 56);
 
 // Return the mass of all interior magnets shown in the image
-assert_abs_diff_eq!(core.mass_interior_magnets(&[]).get::<kilogram>(), 0.182, epsilon=1e-3);
+assert_abs_diff_eq!(core.mass_interior_magnets().eval(&[]).get::<kilogram>(), 0.182, epsilon=1e-3);
 
 // Return the mass of all surface magnets shown in the image
 let magnet = ArcParallelMagnet::with_const_thickness(
@@ -160,7 +160,7 @@ let magnet = ArcParallelMagnet::with_const_thickness(
     Arc::new(Material::default()),
 ).expect("valid magnet");
 let surface_magnets = MagnetAssembly::new(magnet, 1.try_into().expect("not zero"), 2.try_into().expect("not zero"));
-assert_abs_diff_eq!(core.mass_surface_magnets(&surface_magnets, &[]).get::<kilogram>(), 0.114, epsilon=1e-3);
+assert_abs_diff_eq!(core.mass_surface_magnets(&surface_magnets).eval(&[]).get::<kilogram>(), 0.114, epsilon=1e-3);
 ```
 
 # Serialization and deserialization
