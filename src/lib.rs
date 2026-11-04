@@ -16,7 +16,9 @@
 [`V1rFluxBarrier`]: crate::flux_barrier::V1rFluxBarrier
 [`V2rFluxBarrier`]: crate::flux_barrier::V2rFluxBarrier
 
-Magnetic core definition for stem - a Simulation Toolbox for Electric Motors.
+Magnetic core definition for stem – a Simulation Toolbox for Electric Motors. The
+[stem book](https://stefanmathis.github.io/stem_book/) provides a comprehensive
+guide to the framework, while this crate's documentation describes its API.
 
  */
 #![cfg_attr(feature = "doc-images",

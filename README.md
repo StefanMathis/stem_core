@@ -28,16 +28,15 @@ modify the components. -->
 
 [![Documentation](https://docs.rs/stem_core/badge.svg)](https://docs.rs/stem_core)
 
-Magnetic core definition for stem - a Simulation Toolbox for Electric Motors.
+Magnetic core definition for stem – a Simulation Toolbox for Electric Motors. The
+[stem book](https://stefanmathis.github.io/stem_book/) provides a comprehensive
+guide to the framework, while this crate's documentation describes its API.
 
 The full API documentation is available at <https://docs.rs/stem_core/0.2.0/stem_core>.
 
 > **Feedback welcome!**  
 > Found a bug, missing docs, or have a feature request?  
 > Please open an issue on [GitHub](https://github.com/StefanMathis/stem_core.git).
-
-This crate is part of the stem (Simulation Toolbox for Electric Motors)
-framework. See the [stem book] for an introduction.
 
 stem_core builds upon the [stem_magnet] and [stem_slot] crates and provides the
 [`LinCore`] and [`RotCore`] types for defining linear and rotary magnetic cores
