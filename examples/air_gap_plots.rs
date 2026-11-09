@@ -55,7 +55,7 @@ fn plot_comparison_rot() -> Result<(), Box<dyn std::error::Error>> {
         15.try_into()?,
         false,
         CarterFactorModel::Bin12,
-        Box::new(slot),
+        Arc::new(slot),
     );
     let slotted_air_pap: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(40.0),
@@ -162,7 +162,7 @@ fn plot_comparison_lin() -> Result<(), Box<dyn std::error::Error>> {
         9.try_into()?,
         false,
         CarterFactorModel::Bin12,
-        Box::new(slot),
+        Arc::new(slot),
     );
     let slotted_air_pap: LinCore = LinCoreBuilder {
         width: Length::new::<millimeter>(100.0),
@@ -390,7 +390,7 @@ fn plot_slotted() -> Result<(), Box<dyn std::error::Error>> {
         12.try_into()?,
         false,
         CarterFactorModel::Bin12,
-        Box::new(slot),
+        Arc::new(slot),
     );
 
     let lin_core: LinCore = LinCoreBuilder {
@@ -431,7 +431,7 @@ fn plot_slotted() -> Result<(), Box<dyn std::error::Error>> {
         15.try_into()?,
         false,
         CarterFactorModel::Bin12,
-        Box::new(slot),
+        Arc::new(slot),
     );
     let rot_core: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(40.0),
@@ -512,7 +512,7 @@ fn plot_slotted() -> Result<(), Box<dyn std::error::Error>> {
         9.try_into()?,
         false,
         CarterFactorModel::Bin12,
-        Box::new(slot.clone()),
+        Arc::new(slot.clone()),
     );
     let lin_core_tooth_middle: LinCore = LinCoreBuilder {
         height: Length::new::<millimeter>(20.0),
@@ -532,7 +532,7 @@ fn plot_slotted() -> Result<(), Box<dyn std::error::Error>> {
         9.try_into()?,
         true,
         CarterFactorModel::Bin12,
-        Box::new(slot.clone()),
+        Arc::new(slot.clone()),
     );
     let lin_core_slot_middle: LinCore = LinCoreBuilder {
         height: Length::new::<millimeter>(20.0),

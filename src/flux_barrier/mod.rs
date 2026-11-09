@@ -559,7 +559,7 @@ mod tests {
             28.try_into().expect("not zero"),
             false,
             CarterFactorModel::Bin12,
-            Box::new(slot),
+            Arc::new(slot),
         );
         let core = RotCoreBuilder {
             air_gap_radius: Length::new::<millimeter>(54.4),

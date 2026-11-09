@@ -44,7 +44,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         28.try_into()?,
         false,
         CarterFactorModel::Bin12,
-        Box::new(slot),
+        Arc::new(slot),
     );
     let core: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(54.4),

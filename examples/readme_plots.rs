@@ -33,7 +33,7 @@ fn full_core_assembly_plot() -> Result<(), Box<dyn std::error::Error>> {
         28.try_into()?,
         false,
         CarterFactorModel::Bin12,
-        Box::new(slot),
+        Arc::new(slot),
     );
 
     let fb = V1rFluxBarrier {

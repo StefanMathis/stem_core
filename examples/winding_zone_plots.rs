@@ -55,7 +55,7 @@ fn plot_slotted_and_air_gap_lin_with_zone_pos() -> Result<(), Box<dyn std::error
             slots: 3.try_into()?,
             starts_in_slot_middle: false,
             carter_factor_model: CarterFactorModel::Bin12,
-            slot: Box::new(slot),
+            slot: Arc::new(slot),
         }),
         flux_barrier: None,
     }
@@ -195,7 +195,7 @@ fn plot_slotted_and_air_gap_rot() -> Result<(), Box<dyn std::error::Error>> {
         24.try_into()?,
         false,
         CarterFactorModel::Bin12,
-        Box::new(slot),
+        Arc::new(slot),
     );
     let core_slotted: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(55.0),

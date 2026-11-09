@@ -436,7 +436,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// }
     /// .try_into().expect("valid slot");
     ///
-    /// let air_gap = SlottedAirGap::new(28.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Box::new(slot));
+    /// let air_gap = SlottedAirGap::new(28.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Arc::new(slot));
     /// let mut core: RotCore = RotCoreBuilder {
     ///     air_gap_radius: Length::new::<millimeter>(54.4),
     ///     yoke_radius: Length::new::<millimeter>(19.0),
@@ -529,7 +529,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// .try_into()
     /// .unwrap();
     ///
-    /// let air_gap_slotted = SlottedAirGap::new(36.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Box::new(slot));
+    /// let air_gap_slotted = SlottedAirGap::new(36.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Arc::new(slot));
     ///
     /// let core: RotCore = RotCoreBuilder {
     ///     air_gap_radius: Length::new::<millimeter>(55.0),
@@ -988,7 +988,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// .try_into()
     /// .unwrap();
     ///
-    /// let air_gap_slotted = SlottedAirGap::new(36.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Box::new(slot));
+    /// let air_gap_slotted = SlottedAirGap::new(36.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Arc::new(slot));
     ///
     /// let core: RotCore = RotCoreBuilder {
     ///     air_gap_radius: Length::new::<millimeter>(55.0),
@@ -1704,7 +1704,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// .try_into()
     /// .unwrap();
     ///
-    /// let air_gap_slotted = SlottedAirGap::new(36.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Box::new(slot));
+    /// let air_gap_slotted = SlottedAirGap::new(36.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Arc::new(slot));
     ///
     /// let core: RotCore = RotCoreBuilder {
     ///     air_gap_radius: Length::new::<millimeter>(55.0),
@@ -1760,7 +1760,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// .try_into()
     /// .unwrap();
     ///
-    /// let air_gap_slotted = SlottedAirGap::new(36.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Box::new(slot));
+    /// let air_gap_slotted = SlottedAirGap::new(36.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Arc::new(slot));
     ///
     /// let core: RotCore = RotCoreBuilder {
     ///     air_gap_radius: Length::new::<millimeter>(55.0),
@@ -2027,7 +2027,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// .try_into()
     /// .unwrap();
     ///
-    /// let air_gap_slotted = SlottedAirGap::new(36.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Box::new(slot));
+    /// let air_gap_slotted = SlottedAirGap::new(36.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Arc::new(slot));
     ///
     /// let core: RotCore = RotCoreBuilder {
     ///     air_gap_radius: Length::new::<millimeter>(55.0),
@@ -2079,7 +2079,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// .try_into()
     /// .unwrap();
     ///
-    /// let air_gap_slotted = SlottedAirGap::new(36.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Box::new(slot));
+    /// let air_gap_slotted = SlottedAirGap::new(36.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Arc::new(slot));
     ///
     /// let core: RotCore = RotCoreBuilder {
     ///     air_gap_radius: Length::new::<millimeter>(55.0),

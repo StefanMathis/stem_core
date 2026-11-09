@@ -25,7 +25,7 @@ calculating the [`carter_factor`](AirGap::carter_factor) of a core. It is used
 as an argument when creating a [`SlottedAirGap`].
 */
 
-use std::{f64::consts::FRAC_2_PI, num::NonZeroU16};
+use std::{f64::consts::FRAC_2_PI, num::NonZeroU16, sync::Arc};
 
 use crate::{
     magnets::{surface_magnet_assembly_shapes_lin, surface_magnet_assembly_shapes_rot},
@@ -262,7 +262,7 @@ pub struct SlottedAirGap {
     pub carter_factor_model: CarterFactorModel,
     /// The [`Slot`] of the slotted air gap. Its [`outline`](Slot::outline) is
     /// used to create the core shape.
-    pub slot: Box<dyn Slot>,
+    pub slot: Arc<dyn Slot>,
 }
 
 impl SlottedAirGap {
@@ -274,7 +274,7 @@ impl SlottedAirGap {
         slots: NonZeroU16,
         starts_in_slot_middle: bool,
         carter_factor_model: CarterFactorModel,
-        slot: Box<dyn Slot>,
+        slot: Arc<dyn Slot>,
     ) -> Self {
         return Self {
             slots,
@@ -290,8 +290,8 @@ impl SlottedAirGap {
     ///
     /// This is a convenience method to get a reference to the [`Slot`] trait
     /// object.
-    pub fn slot(&self) -> &dyn Slot {
-        return &*self.slot;
+    pub fn slot(&self) -> &Arc<dyn Slot> {
+        return &self.slot;
     }
 
     /// Returns the core shape for a linear core, if the combination of `self`

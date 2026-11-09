@@ -40,7 +40,7 @@ fn plot_lin_core() -> Result<(), Box<dyn std::error::Error>> {
         12.try_into()?,
         false,
         CarterFactorModel::Bin12,
-        Box::new(slot.clone()),
+        Arc::new(slot.clone()),
     );
     let flux_barrier = Spoke1FluxBarrier {
         air_gap_leakage_path_width: Length::new::<millimeter>(1.0),
@@ -129,7 +129,7 @@ fn plot_rot_core() -> Result<(), Box<dyn std::error::Error>> {
         36.try_into()?,
         false,
         CarterFactorModel::Bin12,
-        Box::new(slot),
+        Arc::new(slot),
     );
 
     let outer_core: RotCore = RotCoreBuilder {
@@ -214,7 +214,7 @@ fn plot_lin_core_air_gap_and_slotted_winding() -> Result<(), Box<dyn std::error:
         12.try_into()?,
         false,
         CarterFactorModel::Bin12,
-        Box::new(slot.clone()),
+        Arc::new(slot.clone()),
     );
 
     let slotted_lin_core: LinCore = LinCoreBuilder {

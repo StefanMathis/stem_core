@@ -41,7 +41,7 @@ fn create_slotted_core(flux_barrier: Option<V2rFluxBarrier>) -> RotCore {
         28.try_into().expect("not zero"),
         true,
         CarterFactorModel::Bin12,
-        Box::new(slot),
+        Arc::new(slot),
     );
     let core = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(54.4),

@@ -216,7 +216,7 @@ fn plot_slotted_with_and_without_flux_barrier() -> Result<(), Box<dyn std::error
         28.try_into()?,
         false,
         CarterFactorModel::Bin12,
-        Box::new(slot),
+        Arc::new(slot),
     );
     let core: RotCore = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(54.4),

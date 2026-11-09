@@ -99,7 +99,7 @@ let slot: SemiTrapezoidSlot = SemiTrapezoidWidthsAndHeightsBuilder {
 .try_into()
 .expect("valid slot geometry");
 
-let air_gap = SlottedAirGap::new(28.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Box::new(slot));
+let air_gap = SlottedAirGap::new(28.try_into().expect("not zero"), false, CarterFactorModel::Bin12, Arc::new(slot));
 
 let fb = V1rFluxBarrier {
     yoke_distance: Length::new::<millimeter>(4.0),

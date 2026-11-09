@@ -79,7 +79,7 @@ fn create_outer_core(
             slots,
             starts_in_slot_middle,
             CarterFactorModel::Bin12,
-            Box::new(slot),
+            Arc::new(slot),
         )),
         flux_barrier: None,
     }
@@ -137,7 +137,7 @@ fn create_inner_core(
             slots,
             starts_in_slot_middle,
             CarterFactorModel::Bin12,
-            Box::new(slot),
+            Arc::new(slot),
         )),
         flux_barrier: None,
     }
@@ -173,7 +173,7 @@ fn create_outer_core_from_phd(model: CarterFactorModel) -> RotCore {
             36.try_into().expect("not zero"),
             false,
             model,
-            Box::new(slot.clone()),
+            Arc::new(slot.clone()),
         )),
         flux_barrier: None,
     }
@@ -901,7 +901,7 @@ fn test_odd_number_of_slots() {
             15.try_into().expect("not zero"),
             true,
             CarterFactorModel::Bin12,
-            Box::new(slot.clone()),
+            Arc::new(slot.clone()),
         );
         let core: RotCore = RotCoreBuilder {
             air_gap_radius: Length::new::<millimeter>(40.0),
@@ -937,7 +937,7 @@ fn test_odd_number_of_slots() {
             15.try_into().expect("not zero"),
             false,
             CarterFactorModel::Bin12,
-            Box::new(slot),
+            Arc::new(slot),
         );
         let core: RotCore = RotCoreBuilder {
             air_gap_radius: Length::new::<millimeter>(40.0),

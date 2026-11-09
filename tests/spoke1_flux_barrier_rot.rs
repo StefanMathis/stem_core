@@ -91,7 +91,7 @@ fn create_slotted_inner_core(flux_barrier: Option<Spoke1FluxBarrier>) -> RotCore
         28.try_into().expect("not zero"),
         true,
         CarterFactorModel::Bin12,
-        Box::new(slot),
+        Arc::new(slot),
     );
     let core = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(54.4),
@@ -138,7 +138,7 @@ fn create_slotted_outer_core(flux_barrier: Option<Spoke1FluxBarrier>) -> RotCore
         8.try_into().expect("not zero"),
         true,
         CarterFactorModel::Bin12,
-        Box::new(slot),
+        Arc::new(slot),
     );
     let core = RotCoreBuilder {
         air_gap_radius: Length::new::<millimeter>(19.0),

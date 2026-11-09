@@ -51,7 +51,7 @@ fn create_slotted_core(flux_barrier: Option<Spoke1FluxBarrier>) -> LinCore {
         12.try_into().expect("not zero"),
         false,
         CarterFactorModel::Bin12,
-        Box::new(slot),
+        Arc::new(slot),
     );
 
     let flux_barrier: Option<Box<dyn FluxBarrier>> = flux_barrier

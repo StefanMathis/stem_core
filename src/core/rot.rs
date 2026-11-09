@@ -274,7 +274,7 @@ impl RotCore {
     ///     12.try_into().expect("not zero"),
     ///     true,
     ///     CarterFactorModel::Bin12,
-    ///     Box::new(slot),
+    ///     Arc::new(slot),
     /// );
     /// let slotted_core: RotCore = RotCoreBuilder {
     ///     air_gap_radius: Length::new::<millimeter>(40.0),
@@ -372,7 +372,7 @@ impl RotCore {
     ///     12.try_into().expect("not zero"),
     ///     true,
     ///     CarterFactorModel::Bin12,
-    ///     Box::new(slot),
+    ///     Arc::new(slot),
     /// );
     /// let slotted_core: RotCore = RotCoreBuilder {
     ///     air_gap_radius: Length::new::<millimeter>(40.0),

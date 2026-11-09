@@ -31,7 +31,7 @@ fn create_core(starts_in_slot_middle: bool, open_slot: bool) -> LinCore {
         12.try_into().expect("not zero"),
         starts_in_slot_middle,
         CarterFactorModel::Bin12,
-        Box::new(slot),
+        Arc::new(slot),
     );
 
     return LinCoreBuilder {
