@@ -1,316 +1,52 @@
-use std::{
-    any::Any,
-    f64::consts::{FRAC_PI_2, PI},
-    sync::Arc,
-};
+#[cfg(feature = "cairo")]
+mod cairo_tests {
 
-use cairo_viewport::{SideLength, Viewport, bounding_box::ToBoundingBox, compare_or_create};
-use planar_geo::draw::{Color, Style};
-use stem_core::prelude::*;
-use stem_slot::{
-    planar_geo::{DEFAULT_EPSILON, DEFAULT_MAX_RELATIVE},
-    semi_trapezoid::SemiTrapezoidWidthsAndHeightsBuilder,
-};
-
-fn create_slotted_core(flux_barrier: Option<V2rFluxBarrier>) -> RotCore {
-    let slot: SemiTrapezoidSlot = SemiTrapezoidWidthsAndHeightsBuilder {
-        bottom_width: Length::new::<millimeter>(6.76),
-        bottom_side_width: Length::new::<millimeter>(6.76),
-        top_side_width: Length::new::<millimeter>(8.0),
-        top_width: Length::new::<millimeter>(1.5),
-        opening_width: Length::new::<millimeter>(1.5),
-        bottom_height: Length::new::<millimeter>(0.0),
-        side_height: Length::new::<millimeter>(6.79 - 0.75 - 0.5),
-        top_height: Length::new::<millimeter>(0.5),
-        opening_height: Length::new::<millimeter>(0.75),
-        bottom_radius: Length::new::<millimeter>(0.0),
-        bottom_side_radius: Length::new::<millimeter>(0.0),
-        top_radius: Length::new::<millimeter>(0.0),
-        top_side_radius: Length::new::<millimeter>(0.0),
-        opening_radius: Length::new::<millimeter>(0.0),
-        consider_tooth_tip_leakage: true,
-    }
-    .try_into()
-    .unwrap();
-
-    let flux_barrier: Option<Box<dyn FluxBarrier>> = flux_barrier
-        .map(Box::new)
-        .map(|fb| fb as Box<dyn FluxBarrier>);
-
-    let air_gap = SlottedAirGap::new(
-        28.try_into().expect("not zero"),
-        true,
-        CarterFactorModel::Bin12,
-        Arc::new(slot),
-    );
-    let core = RotCoreBuilder {
-        air_gap_radius: Length::new::<millimeter>(54.4),
-        yoke_radius: Length::new::<millimeter>(19.0),
-        axial_length: Length::new::<millimeter>(165.0),
-        axial_coil_overhang: Length::new::<millimeter>(0.0),
-        iron_fill_factor: 1.0,
-        material: Arc::new(Material::default()),
-        pole_pairs: 2.try_into().expect("not zero"),
-        skew_angle: 0.0,
-        air_gap: Box::new(air_gap),
-        flux_barrier,
+    use std::{
+        any::Any,
+        f64::consts::{FRAC_PI_2, PI},
+        sync::Arc,
     };
 
-    return core.try_into().unwrap();
-}
-
-#[test]
-fn test_slotted_core_180deg() {
-    let mut barrier = V2rFluxBarrier {
-        yoke_distance: Length::new::<millimeter>(8.4),
-        relief_path_air_gap_width: Length::new::<millimeter>(4.0),
-        relief_path_length: Length::new::<millimeter>(2.6),
-        relief_path_width: Length::new::<millimeter>(3.5),
-        opening_angle: PI,
-        magnet_space_width: Length::new::<millimeter>(10.0),
-        magnet_space_height: Length::new::<millimeter>(20.0),
-        glue_gap: Length::new::<millimeter>(0.2),
-        leakage_path_width: Length::new::<millimeter>(1.0),
-        magnet_material: Some(Arc::new(Material::default())),
-        cache: None,
-        q_axis_fillet: Some(Length::new::<millimeter>(3.0)),
+    use cairo_viewport::{SideLength, Viewport, bounding_box::ToBoundingBox, compare_or_create};
+    use planar_geo::draw::{Color, Style};
+    use stem_core::prelude::*;
+    use stem_slot::{
+        planar_geo::{DEFAULT_EPSILON, DEFAULT_MAX_RELATIVE},
+        semi_trapezoid::SemiTrapezoidWidthsAndHeightsBuilder,
     };
 
-    {
-        let core = create_slotted_core(None);
-        let contours = barrier.combine(core.as_core_ref()).expect("valid contours");
-        assert_eq!(contours.len(), 4);
+    fn create_slotted_core(flux_barrier: Option<V2rFluxBarrier>) -> RotCore {
+        let slot: SemiTrapezoidSlot = SemiTrapezoidWidthsAndHeightsBuilder {
+            bottom_width: Length::new::<millimeter>(6.76),
+            bottom_side_width: Length::new::<millimeter>(6.76),
+            top_side_width: Length::new::<millimeter>(8.0),
+            top_width: Length::new::<millimeter>(1.5),
+            opening_width: Length::new::<millimeter>(1.5),
+            bottom_height: Length::new::<millimeter>(0.0),
+            side_height: Length::new::<millimeter>(6.79 - 0.75 - 0.5),
+            top_height: Length::new::<millimeter>(0.5),
+            opening_height: Length::new::<millimeter>(0.75),
+            bottom_radius: Length::new::<millimeter>(0.0),
+            bottom_side_radius: Length::new::<millimeter>(0.0),
+            top_radius: Length::new::<millimeter>(0.0),
+            top_side_radius: Length::new::<millimeter>(0.0),
+            opening_radius: Length::new::<millimeter>(0.0),
+            consider_tooth_tip_leakage: true,
+        }
+        .try_into()
+        .unwrap();
 
-        let mut style = Style::default();
-        style.background_color = Color {
-            r: 0.0,
-            g: 0.0,
-            b: 0.0,
-            a: 0.0,
-        };
+        let flux_barrier: Option<Box<dyn FluxBarrier>> = flux_barrier
+            .map(Box::new)
+            .map(|fb| fb as Box<dyn FluxBarrier>);
 
-        let view = Viewport::from_bounded_entities(contours.iter(), SideLength::Long(1000))
-            .expect("contours is not empty");
-        let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/contours_1.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                for c in contours.iter() {
-                    c.draw(&style, cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-    {
-        let core = create_slotted_core(Some(barrier));
-        let flux_barrier = (core.flux_barrier().unwrap() as &dyn Any)
-            .downcast_ref::<V2rFluxBarrier>()
-            .unwrap();
-
-        // Geometry comparison
-        approxim::assert_abs_diff_eq!(core.pole_coverage(None), 10.0 / 14.0, epsilon = 0.0001);
-        approxim::assert_abs_diff_eq!(
-            flux_barrier
-                .cache
-                .as_ref()
-                .unwrap()
-                .leakage_segment
-                .length(),
-            4e-3,
-            epsilon = 0.0001
+        let air_gap = SlottedAirGap::new(
+            28.try_into().expect("not zero"),
+            true,
+            CarterFactorModel::Bin12,
+            Arc::new(slot),
         );
-
-        let drawable = core.drawable();
-        let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-        let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_1.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-
-        let magnets: Vec<PositionedMagnetShape> = core.interior_magnets(true).collect();
-        let view = Viewport::from_bounded_entities(
-            magnets.iter().map(|m| &(m.shape)),
-            SideLength::Long(1000),
-        )
-        .unwrap();
-        let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/magnets_1.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                for m in magnets.as_slice() {
-                    m.clone().into_drawable().draw(cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-
-        let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-        let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_with_magnets_1.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)?;
-                for m in magnets.as_slice() {
-                    m.clone().into_drawable().draw(cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-
-        assert_eq!(
-            2,
-            core.interior_magnet_assemblies()
-                .iter()
-                .map(|m| m.num_magnets().get())
-                .sum::<usize>()
-        );
-    }
-}
-
-#[test]
-fn test_slotted_core_90deg() {
-    let mut barrier = V2rFluxBarrier {
-        yoke_distance: Length::new::<millimeter>(6.0),
-        relief_path_air_gap_width: Length::new::<millimeter>(4.0),
-        relief_path_length: Length::new::<millimeter>(2.6),
-        relief_path_width: Length::new::<millimeter>(3.5),
-        opening_angle: FRAC_PI_2,
-        magnet_space_width: Length::new::<millimeter>(5.0),
-        magnet_space_height: Length::new::<millimeter>(15.0),
-        glue_gap: Length::new::<millimeter>(0.2),
-        leakage_path_width: Length::new::<millimeter>(1.0),
-        magnet_material: Some(Arc::new(Material::default())),
-        cache: None,
-        q_axis_fillet: Some(Length::new::<millimeter>(3.0)),
-    };
-
-    {
-        let core = create_slotted_core(None);
-        let contours = barrier.combine(core.as_core_ref()).expect("valid contours");
-        assert_eq!(contours.len(), 4);
-
-        let mut style = Style::default();
-        style.background_color = Color {
-            r: 0.0,
-            g: 0.0,
-            b: 0.0,
-            a: 0.0,
-        };
-
-        let view = Viewport::from_bounded_entities(contours.iter(), SideLength::Long(1000))
-            .expect("contours is not empty");
-        let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/contours_2.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                for c in contours.iter() {
-                    c.draw(&style, cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-    {
-        let core = create_slotted_core(Some(barrier));
-        let flux_barrier = (core.flux_barrier().unwrap() as &dyn Any)
-            .downcast_ref::<V2rFluxBarrier>()
-            .unwrap();
-
-        // Geometry comparison
-        approxim::assert_abs_diff_eq!(core.pole_coverage(None), 6.0 / 14.0, epsilon = 0.0001);
-        approxim::assert_abs_diff_eq!(
-            flux_barrier
-                .cache
-                .as_ref()
-                .unwrap()
-                .leakage_segment
-                .length(),
-            4e-3,
-            epsilon = 0.0001
-        );
-
-        let drawable = core.drawable();
-        let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-        let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_2.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-
-        let magnets: Vec<PositionedMagnetShape> = core.interior_magnets(true).collect();
-        let view = Viewport::from_bounded_entities(
-            magnets.iter().map(|m| &(m.shape)),
-            SideLength::Long(1000),
-        )
-        .unwrap();
-        let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/magnets_2.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                for m in magnets.as_slice() {
-                    m.clone().into_drawable().draw(cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-
-        let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-        let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_with_magnets_2.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)?;
-                for m in magnets.as_slice() {
-                    m.clone().into_drawable().draw(cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-}
-
-#[test]
-fn test_plain_core_180deg() {
-    let mut barrier = V2rFluxBarrier {
-        yoke_distance: Length::new::<millimeter>(18.0),
-        relief_path_air_gap_width: Length::new::<millimeter>(4.0),
-        relief_path_length: Length::new::<millimeter>(2.6),
-        relief_path_width: Length::new::<millimeter>(3.5),
-        opening_angle: PI,
-        magnet_space_width: Length::new::<millimeter>(8.0),
-        magnet_space_height: Length::new::<millimeter>(20.0),
-        glue_gap: Length::new::<millimeter>(0.2),
-        leakage_path_width: Length::new::<millimeter>(1.0),
-        magnet_material: Some(Arc::new(Material::default())),
-        cache: None,
-        q_axis_fillet: Some(Length::new::<millimeter>(3.0)),
-    };
-
-    {
-        let air_gap = PlainAirGap::default();
-        let core: RotCore = RotCoreBuilder {
+        let core = RotCoreBuilder {
             air_gap_radius: Length::new::<millimeter>(54.4),
             yoke_radius: Length::new::<millimeter>(19.0),
             axial_length: Length::new::<millimeter>(165.0),
@@ -320,419 +56,702 @@ fn test_plain_core_180deg() {
             pole_pairs: 2.try_into().expect("not zero"),
             skew_angle: 0.0,
             air_gap: Box::new(air_gap),
-            flux_barrier: None,
-        }
-        .try_into()
-        .unwrap();
-
-        let contours = barrier.combine(core.as_core_ref()).expect("valid contours");
-        assert_eq!(contours.len(), 4);
-
-        let mut style = Style::default();
-        style.background_color = Color {
-            r: 0.0,
-            g: 0.0,
-            b: 0.0,
-            a: 0.0,
+            flux_barrier,
         };
 
-        let view = Viewport::from_bounded_entities(contours.iter(), SideLength::Long(1000))
-            .expect("contours is not empty");
-        let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/contours_3.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                for c in contours.iter() {
-                    c.draw(&style, cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        return core.try_into().unwrap();
     }
-    {
-        let air_gap = PlainAirGap::default();
-        let core: RotCore = RotCoreBuilder {
-            air_gap_radius: Length::new::<millimeter>(54.4),
-            yoke_radius: Length::new::<millimeter>(19.0),
-            axial_length: Length::new::<millimeter>(165.0),
-            axial_coil_overhang: Length::new::<millimeter>(0.0),
-            iron_fill_factor: 1.0,
-            material: Arc::new(Material::default()),
-            pole_pairs: 2.try_into().expect("not zero"),
-            skew_angle: 0.0,
-            air_gap: Box::new(air_gap),
-            flux_barrier: Some(Box::new(barrier)),
+
+    #[test]
+    fn test_slotted_core_180deg() {
+        let mut barrier = V2rFluxBarrier {
+            yoke_distance: Length::new::<millimeter>(8.4),
+            relief_path_air_gap_width: Length::new::<millimeter>(4.0),
+            relief_path_length: Length::new::<millimeter>(2.6),
+            relief_path_width: Length::new::<millimeter>(3.5),
+            opening_angle: PI,
+            magnet_space_width: Length::new::<millimeter>(10.0),
+            magnet_space_height: Length::new::<millimeter>(20.0),
+            glue_gap: Length::new::<millimeter>(0.2),
+            leakage_path_width: Length::new::<millimeter>(1.0),
+            magnet_material: Some(Arc::new(Material::default())),
+            cache: None,
+            q_axis_fillet: Some(Length::new::<millimeter>(3.0)),
+        };
+
+        {
+            let core = create_slotted_core(None);
+            let contours = barrier.combine(core.as_core_ref()).expect("valid contours");
+            assert_eq!(contours.len(), 4);
+
+            let mut style = Style::default();
+            style.background_color = Color {
+                r: 0.0,
+                g: 0.0,
+                b: 0.0,
+                a: 0.0,
+            };
+
+            let view = Viewport::from_bounded_entities(contours.iter(), SideLength::Long(1000))
+                .expect("contours is not empty");
+            let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/contours_1.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    for c in contours.iter() {
+                        c.draw(&style, cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
         }
-        .try_into()
-        .unwrap();
-        let drawable = core.drawable();
-        let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-        let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_3.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        {
+            let core = create_slotted_core(Some(barrier));
+            let flux_barrier = (core.flux_barrier().unwrap() as &dyn Any)
+                .downcast_ref::<V2rFluxBarrier>()
+                .unwrap();
 
-        let magnets: Vec<PositionedMagnetShape> = core.interior_magnets(true).collect();
-        let view = Viewport::from_bounded_entities(
-            magnets.iter().map(|m| &(m.shape)),
-            SideLength::Long(1000),
-        )
-        .unwrap();
-        let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/magnets_3.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                for m in magnets.as_slice() {
-                    m.clone().into_drawable().draw(cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
+            // Geometry comparison
+            approxim::assert_abs_diff_eq!(core.pole_coverage(None), 10.0 / 14.0, epsilon = 0.0001);
+            approxim::assert_abs_diff_eq!(
+                flux_barrier
+                    .cache
+                    .as_ref()
+                    .unwrap()
+                    .leakage_segment
+                    .length(),
+                4e-3,
+                epsilon = 0.0001
+            );
 
-        let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-        let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_with_magnets_3.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)?;
-                for m in magnets.as_slice() {
-                    m.clone().into_drawable().draw(cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-}
+            let drawable = core.drawable();
+            let view =
+                Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
+            let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_1.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
 
-#[test]
-fn test_plain_core_90deg() {
-    let mut barrier = V2rFluxBarrier {
-        yoke_distance: Length::new::<millimeter>(6.0),
-        relief_path_air_gap_width: Length::new::<millimeter>(4.0),
-        relief_path_length: Length::new::<millimeter>(2.6),
-        relief_path_width: Length::new::<millimeter>(3.5),
-        opening_angle: FRAC_PI_2,
-        magnet_space_width: Length::new::<millimeter>(5.0),
-        magnet_space_height: Length::new::<millimeter>(25.0),
-        glue_gap: Length::new::<millimeter>(0.2),
-        leakage_path_width: Length::new::<millimeter>(1.0),
-        magnet_material: Some(Arc::new(Material::default())),
-        cache: None,
-        q_axis_fillet: None,
-    };
-
-    {
-        let air_gap = PlainAirGap::default();
-        let core: RotCore = RotCoreBuilder {
-            air_gap_radius: Length::new::<millimeter>(54.4),
-            yoke_radius: Length::new::<millimeter>(19.0),
-            axial_length: Length::new::<millimeter>(165.0),
-            axial_coil_overhang: Length::new::<millimeter>(0.0),
-            iron_fill_factor: 1.0,
-            material: Arc::new(Material::default()),
-            pole_pairs: 2.try_into().expect("not zero"),
-            skew_angle: 0.0,
-            air_gap: Box::new(air_gap),
-            flux_barrier: None,
-        }
-        .try_into()
-        .unwrap();
-
-        let contours = barrier.combine(core.as_core_ref()).expect("valid contours");
-        assert_eq!(contours.len(), 4);
-
-        let mut style = Style::default();
-        style.background_color = Color {
-            r: 0.0,
-            g: 0.0,
-            b: 0.0,
-            a: 0.0,
-        };
-
-        let view = Viewport::from_bounded_entities(contours.iter(), SideLength::Long(1000))
-            .expect("contours is not empty");
-        let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/contours_4.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                for c in contours.iter() {
-                    c.draw(&style, cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-    {
-        let air_gap = PlainAirGap::default();
-        let core: RotCore = RotCoreBuilder {
-            air_gap_radius: Length::new::<millimeter>(54.4),
-            yoke_radius: Length::new::<millimeter>(19.0),
-            axial_length: Length::new::<millimeter>(165.0),
-            axial_coil_overhang: Length::new::<millimeter>(0.0),
-            iron_fill_factor: 1.0,
-            material: Arc::new(Material::default()),
-            pole_pairs: 2.try_into().expect("not zero"),
-            skew_angle: 0.0,
-            air_gap: Box::new(air_gap),
-            flux_barrier: Some(Box::new(barrier)),
-        }
-        .try_into()
-        .unwrap();
-        let drawable = core.drawable();
-        let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-        let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_4.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-
-        let magnets: Vec<PositionedMagnetShape> = core.interior_magnets(true).collect();
-        let view = Viewport::from_bounded_entities(
-            magnets.iter().map(|m| &(m.shape)),
-            SideLength::Long(1000),
-        )
-        .unwrap();
-        let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/magnets_4.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                for m in magnets.as_slice() {
-                    m.clone().into_drawable().draw(cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-
-        let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-        let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_with_magnets_4.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)?;
-                for m in magnets.as_slice() {
-                    m.clone().into_drawable().draw(cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-}
-
-#[test]
-fn test_plain_core_90deg_no_relief() {
-    let mut barrier = V2rFluxBarrier {
-        yoke_distance: Length::new::<millimeter>(6.0),
-        relief_path_air_gap_width: Length::new::<millimeter>(4.0),
-        relief_path_length: Length::new::<millimeter>(2.6),
-        relief_path_width: Length::new::<millimeter>(0.0),
-        opening_angle: FRAC_PI_2,
-        magnet_space_width: Length::new::<millimeter>(5.0),
-        magnet_space_height: Length::new::<millimeter>(25.0),
-        glue_gap: Length::new::<millimeter>(0.2),
-        leakage_path_width: Length::new::<millimeter>(1.0),
-        magnet_material: Some(Arc::new(Material::default())),
-        cache: None,
-        q_axis_fillet: None,
-    };
-
-    {
-        let air_gap = PlainAirGap::default();
-        let core: RotCore = RotCoreBuilder {
-            air_gap_radius: Length::new::<millimeter>(54.4),
-            yoke_radius: Length::new::<millimeter>(19.0),
-            axial_length: Length::new::<millimeter>(165.0),
-            axial_coil_overhang: Length::new::<millimeter>(0.0),
-            iron_fill_factor: 1.0,
-            material: Arc::new(Material::default()),
-            pole_pairs: 2.try_into().expect("not zero"),
-            skew_angle: 0.0,
-            air_gap: Box::new(air_gap),
-            flux_barrier: None,
-        }
-        .try_into()
-        .unwrap();
-
-        let contours = barrier.combine(core.as_core_ref()).expect("valid contours");
-        assert_eq!(contours.len(), 4);
-
-        let mut style = Style::default();
-        style.background_color = Color {
-            r: 0.0,
-            g: 0.0,
-            b: 0.0,
-            a: 0.0,
-        };
-
-        let view = Viewport::from_bounded_entities(contours.iter(), SideLength::Long(1000))
-            .expect("contours is not empty");
-        let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/contours_5.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                for c in contours.iter() {
-                    c.draw(&style, cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-    {
-        let air_gap = PlainAirGap::default();
-        let core: RotCore = RotCoreBuilder {
-            air_gap_radius: Length::new::<millimeter>(54.4),
-            yoke_radius: Length::new::<millimeter>(19.0),
-            axial_length: Length::new::<millimeter>(165.0),
-            axial_coil_overhang: Length::new::<millimeter>(0.0),
-            iron_fill_factor: 1.0,
-            material: Arc::new(Material::default()),
-            pole_pairs: 2.try_into().expect("not zero"),
-            skew_angle: 0.0,
-            air_gap: Box::new(air_gap),
-            flux_barrier: Some(Box::new(barrier)),
-        }
-        .try_into()
-        .unwrap();
-
-        assert!(
-            core.assembly_check(
-                &CoilLayout::SingleFilled,
-                None,
-                DEFAULT_EPSILON,
-                DEFAULT_MAX_RELATIVE
+            let magnets: Vec<PositionedMagnetShape> = core.interior_magnets(true).collect();
+            let view = Viewport::from_bounded_entities(
+                magnets.iter().map(|m| &(m.shape)),
+                SideLength::Long(1000),
             )
-            .is_ok()
-        );
+            .unwrap();
+            let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/magnets_1.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    for m in magnets.as_slice() {
+                        m.clone().into_drawable().draw(cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
 
-        let drawable = core.drawable();
-        let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-        let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_5.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
+            let view =
+                Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
+            let path =
+                std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_with_magnets_1.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+                    for m in magnets.as_slice() {
+                        m.clone().into_drawable().draw(cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
 
-        let magnets: Vec<PositionedMagnetShape> = core.interior_magnets(true).collect();
-        let view = Viewport::from_bounded_entities(
-            magnets.iter().map(|m| &(m.shape)),
-            SideLength::Long(1000),
-        )
-        .unwrap();
-        let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/magnets_5.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                for m in magnets.as_slice() {
-                    m.clone().into_drawable().draw(cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-
-        let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-        let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_with_magnets_5.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)?;
-                for m in magnets.as_slice() {
-                    m.clone().into_drawable().draw(cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-}
-
-#[test]
-fn test_var_poles() {
-    let fb = V2rFluxBarrier {
-        yoke_distance: Length::new::<millimeter>(3.0),
-        relief_path_air_gap_width: Length::new::<millimeter>(2.0),
-        relief_path_length: Length::new::<millimeter>(4.0),
-        relief_path_width: Length::new::<millimeter>(2.0),
-        opening_angle: FRAC_PI_2,
-        magnet_space_width: Length::new::<millimeter>(6.0),
-        magnet_space_height: Length::new::<millimeter>(13.0),
-        glue_gap: Length::new::<millimeter>(0.2),
-        leakage_path_width: Length::new::<millimeter>(1.0),
-        magnet_material: Some(Arc::new(Material::default())),
-        q_axis_fillet: None,
-        cache: None,
-    };
-
-    for pole_pairs in 1..4 {
-        let rot_core: RotCore = RotCoreBuilder {
-            air_gap_radius: Length::new::<millimeter>(40.0),
-            yoke_radius: Length::new::<millimeter>(19.0),
-            axial_length: Length::new::<millimeter>(165.0),
-            axial_coil_overhang: Length::new::<millimeter>(0.0),
-            iron_fill_factor: 1.0,
-            material: Arc::new(Material::default()),
-            pole_pairs: pole_pairs.try_into().expect("not zero"),
-            skew_angle: 0.0,
-            air_gap: Box::new(PlainAirGap::default()),
-            flux_barrier: Some(Box::new(fb.clone())),
+            assert_eq!(
+                2,
+                core.interior_magnet_assemblies()
+                    .iter()
+                    .map(|m| m.num_magnets().get())
+                    .sum::<usize>()
+            );
         }
-        .try_into()
-        .expect("valid core");
-
-        let drawable = rot_core.drawable();
-
-        let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-        let path_string = format!(
-            "tests/img/v2r_flux_barrier_rot/{}_poles_core_with_magnets.png",
-            pole_pairs
-        );
-        let path = std::path::Path::new(&path_string);
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)?;
-                for m in rot_core.interior_magnets(true) {
-                    m.clone().into_drawable().draw(cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
     }
-}
 
-#[test]
-fn test_deserialize() {
-    let yaml = indoc::indoc! {"
+    #[test]
+    fn test_slotted_core_90deg() {
+        let mut barrier = V2rFluxBarrier {
+            yoke_distance: Length::new::<millimeter>(6.0),
+            relief_path_air_gap_width: Length::new::<millimeter>(4.0),
+            relief_path_length: Length::new::<millimeter>(2.6),
+            relief_path_width: Length::new::<millimeter>(3.5),
+            opening_angle: FRAC_PI_2,
+            magnet_space_width: Length::new::<millimeter>(5.0),
+            magnet_space_height: Length::new::<millimeter>(15.0),
+            glue_gap: Length::new::<millimeter>(0.2),
+            leakage_path_width: Length::new::<millimeter>(1.0),
+            magnet_material: Some(Arc::new(Material::default())),
+            cache: None,
+            q_axis_fillet: Some(Length::new::<millimeter>(3.0)),
+        };
+
+        {
+            let core = create_slotted_core(None);
+            let contours = barrier.combine(core.as_core_ref()).expect("valid contours");
+            assert_eq!(contours.len(), 4);
+
+            let mut style = Style::default();
+            style.background_color = Color {
+                r: 0.0,
+                g: 0.0,
+                b: 0.0,
+                a: 0.0,
+            };
+
+            let view = Viewport::from_bounded_entities(contours.iter(), SideLength::Long(1000))
+                .expect("contours is not empty");
+            let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/contours_2.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    for c in contours.iter() {
+                        c.draw(&style, cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+        {
+            let core = create_slotted_core(Some(barrier));
+            let flux_barrier = (core.flux_barrier().unwrap() as &dyn Any)
+                .downcast_ref::<V2rFluxBarrier>()
+                .unwrap();
+
+            // Geometry comparison
+            approxim::assert_abs_diff_eq!(core.pole_coverage(None), 6.0 / 14.0, epsilon = 0.0001);
+            approxim::assert_abs_diff_eq!(
+                flux_barrier
+                    .cache
+                    .as_ref()
+                    .unwrap()
+                    .leakage_segment
+                    .length(),
+                4e-3,
+                epsilon = 0.0001
+            );
+
+            let drawable = core.drawable();
+            let view =
+                Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
+            let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_2.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+
+            let magnets: Vec<PositionedMagnetShape> = core.interior_magnets(true).collect();
+            let view = Viewport::from_bounded_entities(
+                magnets.iter().map(|m| &(m.shape)),
+                SideLength::Long(1000),
+            )
+            .unwrap();
+            let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/magnets_2.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    for m in magnets.as_slice() {
+                        m.clone().into_drawable().draw(cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+
+            let view =
+                Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
+            let path =
+                std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_with_magnets_2.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+                    for m in magnets.as_slice() {
+                        m.clone().into_drawable().draw(cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+    }
+
+    #[test]
+    fn test_plain_core_180deg() {
+        let mut barrier = V2rFluxBarrier {
+            yoke_distance: Length::new::<millimeter>(18.0),
+            relief_path_air_gap_width: Length::new::<millimeter>(4.0),
+            relief_path_length: Length::new::<millimeter>(2.6),
+            relief_path_width: Length::new::<millimeter>(3.5),
+            opening_angle: PI,
+            magnet_space_width: Length::new::<millimeter>(8.0),
+            magnet_space_height: Length::new::<millimeter>(20.0),
+            glue_gap: Length::new::<millimeter>(0.2),
+            leakage_path_width: Length::new::<millimeter>(1.0),
+            magnet_material: Some(Arc::new(Material::default())),
+            cache: None,
+            q_axis_fillet: Some(Length::new::<millimeter>(3.0)),
+        };
+
+        {
+            let air_gap = PlainAirGap::default();
+            let core: RotCore = RotCoreBuilder {
+                air_gap_radius: Length::new::<millimeter>(54.4),
+                yoke_radius: Length::new::<millimeter>(19.0),
+                axial_length: Length::new::<millimeter>(165.0),
+                axial_coil_overhang: Length::new::<millimeter>(0.0),
+                iron_fill_factor: 1.0,
+                material: Arc::new(Material::default()),
+                pole_pairs: 2.try_into().expect("not zero"),
+                skew_angle: 0.0,
+                air_gap: Box::new(air_gap),
+                flux_barrier: None,
+            }
+            .try_into()
+            .unwrap();
+
+            let contours = barrier.combine(core.as_core_ref()).expect("valid contours");
+            assert_eq!(contours.len(), 4);
+
+            let mut style = Style::default();
+            style.background_color = Color {
+                r: 0.0,
+                g: 0.0,
+                b: 0.0,
+                a: 0.0,
+            };
+
+            let view = Viewport::from_bounded_entities(contours.iter(), SideLength::Long(1000))
+                .expect("contours is not empty");
+            let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/contours_3.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    for c in contours.iter() {
+                        c.draw(&style, cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+        {
+            let air_gap = PlainAirGap::default();
+            let core: RotCore = RotCoreBuilder {
+                air_gap_radius: Length::new::<millimeter>(54.4),
+                yoke_radius: Length::new::<millimeter>(19.0),
+                axial_length: Length::new::<millimeter>(165.0),
+                axial_coil_overhang: Length::new::<millimeter>(0.0),
+                iron_fill_factor: 1.0,
+                material: Arc::new(Material::default()),
+                pole_pairs: 2.try_into().expect("not zero"),
+                skew_angle: 0.0,
+                air_gap: Box::new(air_gap),
+                flux_barrier: Some(Box::new(barrier)),
+            }
+            .try_into()
+            .unwrap();
+            let drawable = core.drawable();
+            let view =
+                Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
+            let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_3.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+
+            let magnets: Vec<PositionedMagnetShape> = core.interior_magnets(true).collect();
+            let view = Viewport::from_bounded_entities(
+                magnets.iter().map(|m| &(m.shape)),
+                SideLength::Long(1000),
+            )
+            .unwrap();
+            let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/magnets_3.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    for m in magnets.as_slice() {
+                        m.clone().into_drawable().draw(cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+
+            let view =
+                Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
+            let path =
+                std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_with_magnets_3.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+                    for m in magnets.as_slice() {
+                        m.clone().into_drawable().draw(cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+    }
+
+    #[test]
+    fn test_plain_core_90deg() {
+        let mut barrier = V2rFluxBarrier {
+            yoke_distance: Length::new::<millimeter>(6.0),
+            relief_path_air_gap_width: Length::new::<millimeter>(4.0),
+            relief_path_length: Length::new::<millimeter>(2.6),
+            relief_path_width: Length::new::<millimeter>(3.5),
+            opening_angle: FRAC_PI_2,
+            magnet_space_width: Length::new::<millimeter>(5.0),
+            magnet_space_height: Length::new::<millimeter>(25.0),
+            glue_gap: Length::new::<millimeter>(0.2),
+            leakage_path_width: Length::new::<millimeter>(1.0),
+            magnet_material: Some(Arc::new(Material::default())),
+            cache: None,
+            q_axis_fillet: None,
+        };
+
+        {
+            let air_gap = PlainAirGap::default();
+            let core: RotCore = RotCoreBuilder {
+                air_gap_radius: Length::new::<millimeter>(54.4),
+                yoke_radius: Length::new::<millimeter>(19.0),
+                axial_length: Length::new::<millimeter>(165.0),
+                axial_coil_overhang: Length::new::<millimeter>(0.0),
+                iron_fill_factor: 1.0,
+                material: Arc::new(Material::default()),
+                pole_pairs: 2.try_into().expect("not zero"),
+                skew_angle: 0.0,
+                air_gap: Box::new(air_gap),
+                flux_barrier: None,
+            }
+            .try_into()
+            .unwrap();
+
+            let contours = barrier.combine(core.as_core_ref()).expect("valid contours");
+            assert_eq!(contours.len(), 4);
+
+            let mut style = Style::default();
+            style.background_color = Color {
+                r: 0.0,
+                g: 0.0,
+                b: 0.0,
+                a: 0.0,
+            };
+
+            let view = Viewport::from_bounded_entities(contours.iter(), SideLength::Long(1000))
+                .expect("contours is not empty");
+            let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/contours_4.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    for c in contours.iter() {
+                        c.draw(&style, cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+        {
+            let air_gap = PlainAirGap::default();
+            let core: RotCore = RotCoreBuilder {
+                air_gap_radius: Length::new::<millimeter>(54.4),
+                yoke_radius: Length::new::<millimeter>(19.0),
+                axial_length: Length::new::<millimeter>(165.0),
+                axial_coil_overhang: Length::new::<millimeter>(0.0),
+                iron_fill_factor: 1.0,
+                material: Arc::new(Material::default()),
+                pole_pairs: 2.try_into().expect("not zero"),
+                skew_angle: 0.0,
+                air_gap: Box::new(air_gap),
+                flux_barrier: Some(Box::new(barrier)),
+            }
+            .try_into()
+            .unwrap();
+            let drawable = core.drawable();
+            let view =
+                Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
+            let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_4.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+
+            let magnets: Vec<PositionedMagnetShape> = core.interior_magnets(true).collect();
+            let view = Viewport::from_bounded_entities(
+                magnets.iter().map(|m| &(m.shape)),
+                SideLength::Long(1000),
+            )
+            .unwrap();
+            let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/magnets_4.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    for m in magnets.as_slice() {
+                        m.clone().into_drawable().draw(cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+
+            let view =
+                Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
+            let path =
+                std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_with_magnets_4.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+                    for m in magnets.as_slice() {
+                        m.clone().into_drawable().draw(cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+    }
+
+    #[test]
+    fn test_plain_core_90deg_no_relief() {
+        let mut barrier = V2rFluxBarrier {
+            yoke_distance: Length::new::<millimeter>(6.0),
+            relief_path_air_gap_width: Length::new::<millimeter>(4.0),
+            relief_path_length: Length::new::<millimeter>(2.6),
+            relief_path_width: Length::new::<millimeter>(0.0),
+            opening_angle: FRAC_PI_2,
+            magnet_space_width: Length::new::<millimeter>(5.0),
+            magnet_space_height: Length::new::<millimeter>(25.0),
+            glue_gap: Length::new::<millimeter>(0.2),
+            leakage_path_width: Length::new::<millimeter>(1.0),
+            magnet_material: Some(Arc::new(Material::default())),
+            cache: None,
+            q_axis_fillet: None,
+        };
+
+        {
+            let air_gap = PlainAirGap::default();
+            let core: RotCore = RotCoreBuilder {
+                air_gap_radius: Length::new::<millimeter>(54.4),
+                yoke_radius: Length::new::<millimeter>(19.0),
+                axial_length: Length::new::<millimeter>(165.0),
+                axial_coil_overhang: Length::new::<millimeter>(0.0),
+                iron_fill_factor: 1.0,
+                material: Arc::new(Material::default()),
+                pole_pairs: 2.try_into().expect("not zero"),
+                skew_angle: 0.0,
+                air_gap: Box::new(air_gap),
+                flux_barrier: None,
+            }
+            .try_into()
+            .unwrap();
+
+            let contours = barrier.combine(core.as_core_ref()).expect("valid contours");
+            assert_eq!(contours.len(), 4);
+
+            let mut style = Style::default();
+            style.background_color = Color {
+                r: 0.0,
+                g: 0.0,
+                b: 0.0,
+                a: 0.0,
+            };
+
+            let view = Viewport::from_bounded_entities(contours.iter(), SideLength::Long(1000))
+                .expect("contours is not empty");
+            let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/contours_5.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    for c in contours.iter() {
+                        c.draw(&style, cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+        {
+            let air_gap = PlainAirGap::default();
+            let core: RotCore = RotCoreBuilder {
+                air_gap_radius: Length::new::<millimeter>(54.4),
+                yoke_radius: Length::new::<millimeter>(19.0),
+                axial_length: Length::new::<millimeter>(165.0),
+                axial_coil_overhang: Length::new::<millimeter>(0.0),
+                iron_fill_factor: 1.0,
+                material: Arc::new(Material::default()),
+                pole_pairs: 2.try_into().expect("not zero"),
+                skew_angle: 0.0,
+                air_gap: Box::new(air_gap),
+                flux_barrier: Some(Box::new(barrier)),
+            }
+            .try_into()
+            .unwrap();
+
+            assert!(
+                core.assembly_check(
+                    &CoilLayout::SingleFilled,
+                    None,
+                    DEFAULT_EPSILON,
+                    DEFAULT_MAX_RELATIVE
+                )
+                .is_ok()
+            );
+
+            let drawable = core.drawable();
+            let view =
+                Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
+            let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_5.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+
+            let magnets: Vec<PositionedMagnetShape> = core.interior_magnets(true).collect();
+            let view = Viewport::from_bounded_entities(
+                magnets.iter().map(|m| &(m.shape)),
+                SideLength::Long(1000),
+            )
+            .unwrap();
+            let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/magnets_5.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    for m in magnets.as_slice() {
+                        m.clone().into_drawable().draw(cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+
+            let view =
+                Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
+            let path =
+                std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_with_magnets_5.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+                    for m in magnets.as_slice() {
+                        m.clone().into_drawable().draw(cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+    }
+
+    #[test]
+    fn test_var_poles() {
+        let fb = V2rFluxBarrier {
+            yoke_distance: Length::new::<millimeter>(3.0),
+            relief_path_air_gap_width: Length::new::<millimeter>(2.0),
+            relief_path_length: Length::new::<millimeter>(4.0),
+            relief_path_width: Length::new::<millimeter>(2.0),
+            opening_angle: FRAC_PI_2,
+            magnet_space_width: Length::new::<millimeter>(6.0),
+            magnet_space_height: Length::new::<millimeter>(13.0),
+            glue_gap: Length::new::<millimeter>(0.2),
+            leakage_path_width: Length::new::<millimeter>(1.0),
+            magnet_material: Some(Arc::new(Material::default())),
+            q_axis_fillet: None,
+            cache: None,
+        };
+
+        for pole_pairs in 1..4 {
+            let rot_core: RotCore = RotCoreBuilder {
+                air_gap_radius: Length::new::<millimeter>(40.0),
+                yoke_radius: Length::new::<millimeter>(19.0),
+                axial_length: Length::new::<millimeter>(165.0),
+                axial_coil_overhang: Length::new::<millimeter>(0.0),
+                iron_fill_factor: 1.0,
+                material: Arc::new(Material::default()),
+                pole_pairs: pole_pairs.try_into().expect("not zero"),
+                skew_angle: 0.0,
+                air_gap: Box::new(PlainAirGap::default()),
+                flux_barrier: Some(Box::new(fb.clone())),
+            }
+            .try_into()
+            .expect("valid core");
+
+            let drawable = rot_core.drawable();
+
+            let view =
+                Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
+            let path_string = format!(
+                "tests/img/v2r_flux_barrier_rot/{}_poles_core_with_magnets.png",
+                pole_pairs
+            );
+            let path = std::path::Path::new(&path_string);
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+                    for m in rot_core.interior_magnets(true) {
+                        m.clone().into_drawable().draw(cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+    }
+
+    #[test]
+    fn test_deserialize() {
+        let yaml = indoc::indoc! {"
     ---
     air_gap_radius: 54.4 mm
     yoke_radius: 19 mm
@@ -787,17 +806,18 @@ fn test_deserialize() {
             leakage_path_width: 1 mm
             magnet_material:
     "};
-    let core: RotCore = serde_yaml::from_str(&yaml).unwrap();
+        let core: RotCore = serde_yaml::from_str(&yaml).unwrap();
 
-    let drawable = core.drawable();
-    let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
-    let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_1.png");
-    let callback = |path: &std::path::Path| {
-        return view.write_to_file(path, |cr| {
-            cr.set_source_rgb(1.0, 1.0, 1.0);
-            cr.paint()?;
-            drawable.draw(cr)
-        });
-    };
-    assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        let drawable = core.drawable();
+        let view = Viewport::from_bounding_box(&drawable.bounding_box(), SideLength::Long(1000));
+        let path = std::path::Path::new("tests/img/v2r_flux_barrier_rot/core_1.png");
+        let callback = |path: &std::path::Path| {
+            return view.write_to_file(path, |cr| {
+                cr.set_source_rgb(1.0, 1.0, 1.0);
+                cr.paint()?;
+                drawable.draw(cr)
+            });
+        };
+        assert!(compare_or_create(path, &callback, 0.98).is_ok());
+    }
 }

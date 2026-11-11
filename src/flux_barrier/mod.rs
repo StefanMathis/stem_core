@@ -487,7 +487,7 @@ pub(crate) fn closest_slot_bottom_middle_rot(
 
     let slots = core.slots();
     let slot_height = core.tooth_height().get::<meter>();
-    let mut closest_slot_bottom_middle_dist = std::f64::INFINITY;
+    let mut closest_slot_bottom_middle_dist = f64::INFINITY;
     let mut closest_slot_bottom_middle_idx = 0;
     let mut closest_slot_bottom_middle_pt = [0.0, 0.0]; // Dummy value, will be overwritten in the loop
     let slot_bottom_middle = [air_gap_radius + m * slot_height, 0.0];

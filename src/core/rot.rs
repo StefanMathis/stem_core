@@ -122,6 +122,8 @@ representation is first deserialized into a [`LinCoreBuilder`] which is then
 converted via [`TryFrom`].
 
 ```
+# #[cfg(feature = "serde")]
+# {
 use approxim;
 use stem_core::prelude::*;
 use serde_yaml;
@@ -148,6 +150,7 @@ air_gap:
 
 let core: RotCore = serde_yaml::from_str(&str).expect("valid dimensions");
 assert_eq!(core.air_gap_radius().get::<millimeter>(), 55.0);
+# }
 ```
  */
 #[derive(Debug, Clone)]

@@ -33,8 +33,39 @@ doc-images = ["dep:embed-doc-image"]
 indoc = "1.0"
 serde_yaml = "0.8"
 cairo_viewport = { version = "0.3", features = ["image-compare"]}
-stem_core = { path = ".", features = ["serde", "cairo"] }
 
 [package.metadata.docs.rs]
 features = ["serde", "cairo", "doc-images"]
 rustdoc-args = ["--cfg", "docsrs"]
+
+[[example]]
+name = "air_gap_plots"
+required-features = ["cairo"]
+
+[[example]]
+name = "flux_barrier_plots"
+required-features = ["cairo"]
+
+[[example]]
+name = "lin_and_rot_core_plots"
+required-features = ["cairo"]
+
+[[example]]
+name = "magnet_plots"
+required-features = ["cairo"]
+
+[[example]]
+name = "pole_coverage"
+required-features = ["cairo"]
+
+[[example]]
+name = "readme_plots"
+required-features = ["cairo"]
+
+[[example]]
+name = "set_flux_barrier"
+required-features = ["cairo"]
+
+[[example]]
+name = "winding_zone_plots"
+required-features = ["cairo"]

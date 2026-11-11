@@ -1,8 +1,5 @@
 use std::sync::Arc;
-
-use cairo_viewport::{Viewport, compare_or_create};
-use planar_geo::prelude::ToBoundingBox;
-use stem_core::{magnets::PositionedMagnetShape, prelude::*};
+use stem_core::prelude::*;
 
 #[test]
 fn test_properties() {
@@ -156,358 +153,368 @@ fn test_pole_coverage() {
     approxim::assert_abs_diff_eq!(core.pole_coverage(Some(&assembly)), 0.8, epsilon = 1e-6);
 }
 
-#[test]
-fn test_plot_core() {
-    let air_gap = PlainAirGap {
-        num_segments: 0,
-        air_gap_winding_height: Length::new::<millimeter>(10.0),
-        winding_coverage: 0.7,
-        starts_in_slot_middle: false,
-        slots: 12,
-    };
+#[cfg(feature = "cairo")]
+mod cairo_tests {
 
-    let core = LinCore::try_from(LinCoreBuilder {
-        height: Length::new::<millimeter>(25.0),
-        width: Length::new::<millimeter>(150.0),
-        axial_length: Length::new::<millimeter>(100.0),
-        axial_coil_overhang: Length::new::<millimeter>(0.0),
-        skew_angle: 0.0,
-        iron_fill_factor: 1.0,
-        material: Arc::new(Material::default()),
-        pole_pairs: 5.try_into().expect("not zero"),
-        air_gap: Box::new(air_gap),
-        flux_barrier: None,
-    })
-    .unwrap();
+    use super::*;
 
-    let drawable = core.drawable();
-    let view = Viewport::from_bounded_entity(&drawable, cairo_viewport::SideLength::Long(500));
-    let path = std::path::Path::new("tests/img/lin_plain/core.png");
+    use cairo_viewport::{Viewport, compare_or_create};
+    use planar_geo::prelude::ToBoundingBox;
+    use stem_core::magnets::PositionedMagnetShape;
 
-    let callback = |path: &std::path::Path| {
-        return view.write_to_file(path, |cr| {
-            cr.set_source_rgb(1.0, 1.0, 1.0);
-            cr.paint()?;
-            drawable.draw(cr)
-        });
-    };
-    assert!(compare_or_create(path, &callback, 0.99).is_ok());
-}
-
-#[test]
-fn test_plot_air_gap_winding() {
-    let air_gap = PlainAirGap {
-        num_segments: 0,
-        air_gap_winding_height: Length::new::<millimeter>(10.0),
-        winding_coverage: 0.7,
-        starts_in_slot_middle: false,
-        slots: 12,
-    };
-
-    let core = LinCore::try_from(LinCoreBuilder {
-        height: Length::new::<millimeter>(25.0),
-        width: Length::new::<millimeter>(150.0),
-        axial_length: Length::new::<millimeter>(100.0),
-        axial_coil_overhang: Length::new::<millimeter>(0.0),
-        skew_angle: 0.0,
-        iron_fill_factor: 1.0,
-        material: Arc::new(Material::default()),
-        pole_pairs: 5.try_into().expect("not zero"),
-        air_gap: Box::new(air_gap),
-        flux_barrier: None,
-    })
-    .unwrap();
-
-    let drawable = core.drawable();
-    let mut bb = drawable.bounding_box();
-    bb.try_set_ymin(bb.ymin() - 0.01);
-
-    let view = Viewport::from_bounding_box(&bb, cairo_viewport::SideLength::Long(500));
-
-    {
-        let path = std::path::Path::new("tests/img/lin_plain/wdg_double_vertical.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)?;
-
-                for d in core
-                    .winding_zones(&CoilLayout::DoubleVertical)
-                    .map(PositionedZoneContour::into_drawable)
-                {
-                    d.draw(cr)?;
-                }
-
-                return Ok(());
-            });
+    #[test]
+    fn test_plot_core() {
+        let air_gap = PlainAirGap {
+            num_segments: 0,
+            air_gap_winding_height: Length::new::<millimeter>(10.0),
+            winding_coverage: 0.7,
+            starts_in_slot_middle: false,
+            slots: 12,
         };
-        assert!(compare_or_create(path, &callback, 0.99).is_ok());
-    }
-    {
-        let path = std::path::Path::new("tests/img/lin_plain/wdg_double_horizontal.png");
+
+        let core = LinCore::try_from(LinCoreBuilder {
+            height: Length::new::<millimeter>(25.0),
+            width: Length::new::<millimeter>(150.0),
+            axial_length: Length::new::<millimeter>(100.0),
+            axial_coil_overhang: Length::new::<millimeter>(0.0),
+            skew_angle: 0.0,
+            iron_fill_factor: 1.0,
+            material: Arc::new(Material::default()),
+            pole_pairs: 5.try_into().expect("not zero"),
+            air_gap: Box::new(air_gap),
+            flux_barrier: None,
+        })
+        .unwrap();
+
+        let drawable = core.drawable();
+        let view = Viewport::from_bounded_entity(&drawable, cairo_viewport::SideLength::Long(500));
+        let path = std::path::Path::new("tests/img/lin_plain/core.png");
+
         let callback = |path: &std::path::Path| {
             return view.write_to_file(path, |cr| {
                 cr.set_source_rgb(1.0, 1.0, 1.0);
                 cr.paint()?;
-                drawable.draw(cr)?;
-
-                for d in core
-                    .winding_zones(&CoilLayout::DoubleHorizontal)
-                    .map(PositionedZoneContour::into_drawable)
-                {
-                    d.draw(cr)?;
-                }
-
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.99).is_ok());
-    }
-    {
-        let path = std::path::Path::new("tests/img/lin_plain/wdg_multi_vert.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)?;
-
-                for d in core
-                    .winding_zones(&CoilLayout::MultiVertical(3.try_into().unwrap()))
-                    .map(PositionedZoneContour::into_drawable)
-                {
-                    d.draw(cr)?;
-                }
-
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.99).is_ok());
-    }
-}
-
-#[test]
-fn test_plot_air_gap_winding_slot_middle() {
-    let air_gap = PlainAirGap {
-        num_segments: 0,
-        air_gap_winding_height: Length::new::<millimeter>(10.0),
-        winding_coverage: 0.9,
-        starts_in_slot_middle: true,
-        slots: 12,
-    };
-
-    let core = LinCore::try_from(LinCoreBuilder {
-        height: Length::new::<millimeter>(25.0),
-        width: Length::new::<millimeter>(150.0),
-        axial_length: Length::new::<millimeter>(100.0),
-        axial_coil_overhang: Length::new::<millimeter>(0.0),
-        skew_angle: 0.0,
-        iron_fill_factor: 1.0,
-        material: Arc::new(Material::default()),
-        pole_pairs: 5.try_into().expect("not zero"),
-        air_gap: Box::new(air_gap),
-        flux_barrier: None,
-    })
-    .unwrap();
-
-    let drawable = core.drawable();
-    let mut bb = drawable.bounding_box();
-    bb.try_set_ymin(bb.ymin() - 0.01);
-
-    let view = Viewport::from_bounding_box(&bb, cairo_viewport::SideLength::Long(500));
-
-    {
-        let path =
-            std::path::Path::new("tests/img/lin_plain/wdg_double_horizontal_slot_middle.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)?;
-
-                for d in core
-                    .winding_zones(&CoilLayout::DoubleHorizontal)
-                    .map(PositionedZoneContour::into_drawable)
-                {
-                    d.draw(cr)?;
-                }
-
-                return Ok(());
+                drawable.draw(cr)
             });
         };
         assert!(compare_or_create(path, &callback, 0.99).is_ok());
     }
 
-    {
-        let path = std::path::Path::new("tests/img/lin_plain/wdg_quadruple_slot_middle.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)?;
-
-                for d in core
-                    .winding_zones(&CoilLayout::Quadruple)
-                    .map(PositionedZoneContour::into_drawable)
-                {
-                    d.draw(cr)?;
-                }
-
-                return Ok(());
-            });
+    #[test]
+    fn test_plot_air_gap_winding() {
+        let air_gap = PlainAirGap {
+            num_segments: 0,
+            air_gap_winding_height: Length::new::<millimeter>(10.0),
+            winding_coverage: 0.7,
+            starts_in_slot_middle: false,
+            slots: 12,
         };
-        assert!(compare_or_create(path, &callback, 0.99).is_ok());
+
+        let core = LinCore::try_from(LinCoreBuilder {
+            height: Length::new::<millimeter>(25.0),
+            width: Length::new::<millimeter>(150.0),
+            axial_length: Length::new::<millimeter>(100.0),
+            axial_coil_overhang: Length::new::<millimeter>(0.0),
+            skew_angle: 0.0,
+            iron_fill_factor: 1.0,
+            material: Arc::new(Material::default()),
+            pole_pairs: 5.try_into().expect("not zero"),
+            air_gap: Box::new(air_gap),
+            flux_barrier: None,
+        })
+        .unwrap();
+
+        let drawable = core.drawable();
+        let mut bb = drawable.bounding_box();
+        bb.try_set_ymin(bb.ymin() - 0.01);
+
+        let view = Viewport::from_bounding_box(&bb, cairo_viewport::SideLength::Long(500));
+
+        {
+            let path = std::path::Path::new("tests/img/lin_plain/wdg_double_vertical.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+
+                    for d in core
+                        .winding_zones(&CoilLayout::DoubleVertical)
+                        .map(PositionedZoneContour::into_drawable)
+                    {
+                        d.draw(cr)?;
+                    }
+
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.99).is_ok());
+        }
+        {
+            let path = std::path::Path::new("tests/img/lin_plain/wdg_double_horizontal.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+
+                    for d in core
+                        .winding_zones(&CoilLayout::DoubleHorizontal)
+                        .map(PositionedZoneContour::into_drawable)
+                    {
+                        d.draw(cr)?;
+                    }
+
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.99).is_ok());
+        }
+        {
+            let path = std::path::Path::new("tests/img/lin_plain/wdg_multi_vert.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+
+                    for d in core
+                        .winding_zones(&CoilLayout::MultiVertical(3.try_into().unwrap()))
+                        .map(PositionedZoneContour::into_drawable)
+                    {
+                        d.draw(cr)?;
+                    }
+
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.99).is_ok());
+        }
     }
-}
 
-#[test]
-fn test_plot_air_gap_winding_zero_coverage() {
-    let air_gap = PlainAirGap {
-        num_segments: 0,
-        air_gap_winding_height: Length::new::<millimeter>(10.0),
-        winding_coverage: 0.0,
-        starts_in_slot_middle: true,
-        slots: 12,
-    };
-
-    let core = LinCore::try_from(LinCoreBuilder {
-        height: Length::new::<millimeter>(25.0),
-        width: Length::new::<millimeter>(150.0),
-        axial_length: Length::new::<millimeter>(100.0),
-        axial_coil_overhang: Length::new::<millimeter>(0.0),
-        skew_angle: 0.0,
-        iron_fill_factor: 1.0,
-        material: Arc::new(Material::default()),
-        pole_pairs: 5.try_into().expect("not zero"),
-        air_gap: Box::new(air_gap),
-        flux_barrier: None,
-    })
-    .unwrap();
-
-    let drawable = core.drawable();
-    let mut bb = drawable.bounding_box();
-    bb.try_set_ymin(bb.ymin() - 0.01);
-
-    let view = Viewport::from_bounding_box(&bb, cairo_viewport::SideLength::Long(500));
-
-    {
-        let path = std::path::Path::new("tests/img/lin_plain/wdg_zero_coverage.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)?;
-
-                for d in core
-                    .winding_zones(&CoilLayout::DoubleHorizontal)
-                    .map(PositionedZoneContour::into_drawable)
-                {
-                    d.draw(cr)?;
-                }
-
-                return Ok(());
-            });
+    #[test]
+    fn test_plot_air_gap_winding_slot_middle() {
+        let air_gap = PlainAirGap {
+            num_segments: 0,
+            air_gap_winding_height: Length::new::<millimeter>(10.0),
+            winding_coverage: 0.9,
+            starts_in_slot_middle: true,
+            slots: 12,
         };
-        assert!(compare_or_create(path, &callback, 0.99).is_ok());
+
+        let core = LinCore::try_from(LinCoreBuilder {
+            height: Length::new::<millimeter>(25.0),
+            width: Length::new::<millimeter>(150.0),
+            axial_length: Length::new::<millimeter>(100.0),
+            axial_coil_overhang: Length::new::<millimeter>(0.0),
+            skew_angle: 0.0,
+            iron_fill_factor: 1.0,
+            material: Arc::new(Material::default()),
+            pole_pairs: 5.try_into().expect("not zero"),
+            air_gap: Box::new(air_gap),
+            flux_barrier: None,
+        })
+        .unwrap();
+
+        let drawable = core.drawable();
+        let mut bb = drawable.bounding_box();
+        bb.try_set_ymin(bb.ymin() - 0.01);
+
+        let view = Viewport::from_bounding_box(&bb, cairo_viewport::SideLength::Long(500));
+
+        {
+            let path =
+                std::path::Path::new("tests/img/lin_plain/wdg_double_horizontal_slot_middle.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+
+                    for d in core
+                        .winding_zones(&CoilLayout::DoubleHorizontal)
+                        .map(PositionedZoneContour::into_drawable)
+                    {
+                        d.draw(cr)?;
+                    }
+
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.99).is_ok());
+        }
+
+        {
+            let path = std::path::Path::new("tests/img/lin_plain/wdg_quadruple_slot_middle.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+
+                    for d in core
+                        .winding_zones(&CoilLayout::Quadruple)
+                        .map(PositionedZoneContour::into_drawable)
+                    {
+                        d.draw(cr)?;
+                    }
+
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.99).is_ok());
+        }
     }
-}
 
-#[test]
-fn test_plot_air_gap_surface_magnets() {
-    let air_gap = PlainAirGap::default();
-
-    let core = LinCore::try_from(LinCoreBuilder {
-        height: Length::new::<millimeter>(25.0),
-        width: Length::new::<millimeter>(150.0),
-        axial_length: Length::new::<millimeter>(100.0),
-        axial_coil_overhang: Length::new::<millimeter>(0.0),
-        skew_angle: 0.0,
-        iron_fill_factor: 1.0,
-        material: Arc::new(Material::default()),
-        pole_pairs: 1.try_into().expect("not zero"),
-        air_gap: Box::new(air_gap),
-        flux_barrier: None,
-    })
-    .unwrap();
-
-    let magnet = BreadLoafMagnet::new(
-        Length::new::<millimeter>(165.0),
-        Length::new::<millimeter>(20.0),
-        Length::new::<millimeter>(10.0),
-        Length::new::<millimeter>(50.0),
-        Arc::new(Default::default()),
-    )
-    .unwrap();
-
-    let assembly =
-        MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap());
-
-    let drawable = core.drawable();
-    let mut bb = drawable.bounding_box();
-    bb.try_set_ymin(bb.ymin() - 0.02);
-
-    let view = Viewport::from_bounding_box(&bb, cairo_viewport::SideLength::Long(500));
-
-    {
-        let path = std::path::Path::new("tests/img/lin_plain/surface_magnets_unsplit.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)?;
-
-                for d in core
-                    .surface_magnets(&assembly, false)
-                    .map(PositionedMagnetShape::into_drawable)
-                {
-                    d.draw(cr)?;
-                }
-
-                return Ok(());
-            });
+    #[test]
+    fn test_plot_air_gap_winding_zero_coverage() {
+        let air_gap = PlainAirGap {
+            num_segments: 0,
+            air_gap_winding_height: Length::new::<millimeter>(10.0),
+            winding_coverage: 0.0,
+            starts_in_slot_middle: true,
+            slots: 12,
         };
-        assert!(compare_or_create(path, &callback, 0.99).is_ok());
+
+        let core = LinCore::try_from(LinCoreBuilder {
+            height: Length::new::<millimeter>(25.0),
+            width: Length::new::<millimeter>(150.0),
+            axial_length: Length::new::<millimeter>(100.0),
+            axial_coil_overhang: Length::new::<millimeter>(0.0),
+            skew_angle: 0.0,
+            iron_fill_factor: 1.0,
+            material: Arc::new(Material::default()),
+            pole_pairs: 5.try_into().expect("not zero"),
+            air_gap: Box::new(air_gap),
+            flux_barrier: None,
+        })
+        .unwrap();
+
+        let drawable = core.drawable();
+        let mut bb = drawable.bounding_box();
+        bb.try_set_ymin(bb.ymin() - 0.01);
+
+        let view = Viewport::from_bounding_box(&bb, cairo_viewport::SideLength::Long(500));
+
+        {
+            let path = std::path::Path::new("tests/img/lin_plain/wdg_zero_coverage.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+
+                    for d in core
+                        .winding_zones(&CoilLayout::DoubleHorizontal)
+                        .map(PositionedZoneContour::into_drawable)
+                    {
+                        d.draw(cr)?;
+                    }
+
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.99).is_ok());
+        }
     }
-    {
-        let path = std::path::Path::new("tests/img/lin_plain/surface_magnets_split.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)?;
 
-                for d in core
-                    .surface_magnets(&assembly, true)
-                    .map(PositionedMagnetShape::into_drawable)
-                {
-                    d.draw(cr)?;
-                }
+    #[test]
+    fn test_plot_air_gap_surface_magnets() {
+        let air_gap = PlainAirGap::default();
 
-                return Ok(());
-            });
+        let core = LinCore::try_from(LinCoreBuilder {
+            height: Length::new::<millimeter>(25.0),
+            width: Length::new::<millimeter>(150.0),
+            axial_length: Length::new::<millimeter>(100.0),
+            axial_coil_overhang: Length::new::<millimeter>(0.0),
+            skew_angle: 0.0,
+            iron_fill_factor: 1.0,
+            material: Arc::new(Material::default()),
+            pole_pairs: 1.try_into().expect("not zero"),
+            air_gap: Box::new(air_gap),
+            flux_barrier: None,
+        })
+        .unwrap();
+
+        let magnet = BreadLoafMagnet::new(
+            Length::new::<millimeter>(165.0),
+            Length::new::<millimeter>(20.0),
+            Length::new::<millimeter>(10.0),
+            Length::new::<millimeter>(50.0),
+            Arc::new(Default::default()),
+        )
+        .unwrap();
+
+        let assembly =
+            MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap());
+
+        let drawable = core.drawable();
+        let mut bb = drawable.bounding_box();
+        bb.try_set_ymin(bb.ymin() - 0.02);
+
+        let view = Viewport::from_bounding_box(&bb, cairo_viewport::SideLength::Long(500));
+
+        {
+            let path = std::path::Path::new("tests/img/lin_plain/surface_magnets_unsplit.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+
+                    for d in core
+                        .surface_magnets(&assembly, false)
+                        .map(PositionedMagnetShape::into_drawable)
+                    {
+                        d.draw(cr)?;
+                    }
+
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.99).is_ok());
+        }
+        {
+            let path = std::path::Path::new("tests/img/lin_plain/surface_magnets_split.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+
+                    for d in core
+                        .surface_magnets(&assembly, true)
+                        .map(PositionedMagnetShape::into_drawable)
+                    {
+                        d.draw(cr)?;
+                    }
+
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.99).is_ok());
+        }
+    }
+
+    #[test]
+    fn serialize_and_deserialize() {
+        let air_gap = PlainAirGap::default();
+        let builder = LinCoreBuilder {
+            height: Length::new::<millimeter>(20.0),
+            width: Length::new::<millimeter>(100.0),
+            axial_length: Length::new::<millimeter>(100.0),
+            axial_coil_overhang: Length::new::<millimeter>(0.0),
+            skew_angle: 0.0,
+            iron_fill_factor: 1.0,
+            material: Arc::new(Material::default()),
+            pole_pairs: 2.try_into().expect("not zero"),
+            air_gap: Box::new(air_gap),
+            flux_barrier: None,
         };
-        assert!(compare_or_create(path, &callback, 0.99).is_ok());
+
+        let core = LinCore::new(builder).expect("valid inputs");
+        let serialized = serde_yaml::to_string(&core).expect("can be serialized");
+        let de_core: LinCore = serde_yaml::from_str(&serialized).expect("can be deserialized");
+        assert_eq!(core.width(), de_core.width());
     }
-}
-
-#[test]
-fn serialize_and_deserialize() {
-    let air_gap = PlainAirGap::default();
-    let builder = LinCoreBuilder {
-        height: Length::new::<millimeter>(20.0),
-        width: Length::new::<millimeter>(100.0),
-        axial_length: Length::new::<millimeter>(100.0),
-        axial_coil_overhang: Length::new::<millimeter>(0.0),
-        skew_angle: 0.0,
-        iron_fill_factor: 1.0,
-        material: Arc::new(Material::default()),
-        pole_pairs: 2.try_into().expect("not zero"),
-        air_gap: Box::new(air_gap),
-        flux_barrier: None,
-    };
-
-    let core = LinCore::new(builder).expect("valid inputs");
-    let serialized = serde_yaml::to_string(&core).expect("can be serialized");
-    let de_core: LinCore = serde_yaml::from_str(&serialized).expect("can be deserialized");
-    assert_eq!(core.width(), de_core.width());
 }

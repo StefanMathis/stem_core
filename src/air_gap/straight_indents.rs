@@ -138,6 +138,8 @@ A [`StraightIndentsAirGap`] can be deserialized directly from its fields or
 alternatively from a [`PolygonAirGapBuilder`].
 
 ```
+# #[cfg(feature = "serde")]
+# {
 use stem_core::prelude::*;
 use serde_yaml;
 
@@ -157,6 +159,7 @@ pole_pairs: 3
 air_gap_radius: 100 mm
 "};
 assert!(serde_yaml::from_str::<StraightIndentsAirGap>(&str).is_ok());
+# }
 ```
  */
 #[derive(Debug, Clone)]

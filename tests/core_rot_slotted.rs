@@ -1,1156 +1,1172 @@
-use std::f64::consts::{PI, TAU};
-use std::num::NonZeroU16;
-use std::sync::Arc;
+#[cfg(feature = "cairo")]
+mod cairo_tests {
 
-use approxim::assert_abs_diff_eq;
-use cairo_viewport::bounding_box::ToBoundingBox;
-use cairo_viewport::{SideLength, Viewport, compare_or_create};
-use stem_core::magnets::PositionedMagnetShape;
-use stem_core::prelude::*;
-use stem_slot::planar_geo::draw::Drawable;
-use stem_slot::planar_geo::{DEFAULT_EPSILON, DEFAULT_MAX_RELATIVE};
-use uom::typenum::P2;
+    use std::f64::consts::{PI, TAU};
+    use std::num::NonZeroU16;
+    use std::sync::Arc;
 
-fn create_outer_core(
-    slots: NonZeroU16,
-    pole_pairs: NonZeroU16,
-    starts_in_slot_middle: bool,
-    open_slot: bool,
-) -> RotCore {
-    let mut yoke_radius = Length::new::<millimeter>(20.0);
-    let opening_width = if open_slot {
-        Length::new::<millimeter>(2.0)
-    } else {
-        Length::new::<millimeter>(0.0)
-    };
-    let opening_height = Length::new::<millimeter>(1.0);
+    use approxim::assert_abs_diff_eq;
+    use cairo_viewport::bounding_box::ToBoundingBox;
+    use cairo_viewport::{SideLength, Viewport, compare_or_create};
+    use stem_core::magnets::PositionedMagnetShape;
+    use stem_core::prelude::*;
+    use stem_slot::planar_geo::draw::Drawable;
+    use stem_slot::planar_geo::{DEFAULT_EPSILON, DEFAULT_MAX_RELATIVE};
+    use uom::typenum::P2;
 
-    // Ratio between the angle covered by a tooth and by a slot bottom
-    let rat = 3.0;
+    fn create_outer_core(
+        slots: NonZeroU16,
+        pole_pairs: NonZeroU16,
+        starts_in_slot_middle: bool,
+        open_slot: bool,
+    ) -> RotCore {
+        let mut yoke_radius = Length::new::<millimeter>(20.0);
+        let opening_width = if open_slot {
+            Length::new::<millimeter>(2.0)
+        } else {
+            Length::new::<millimeter>(0.0)
+        };
+        let opening_height = Length::new::<millimeter>(1.0);
 
-    // Angle covered by one tooth
-    let slot_angle = TAU / slots.get() as f64;
-    let alpha = slot_angle * 1.0 / (1.0 + rat);
-    let beta = slot_angle - alpha;
+        // Ratio between the angle covered by a tooth and by a slot bottom
+        let rat = 3.0;
 
-    // Slot bottom width
-    let bottom_width = 2.0 * yoke_radius * (beta / 2.0).sin();
-    let yoke_height = yoke_radius * (1.0 - (beta / 2.0).cos());
+        // Angle covered by one tooth
+        let slot_angle = TAU / slots.get() as f64;
+        let alpha = slot_angle * 1.0 / (1.0 + rat);
+        let beta = slot_angle - alpha;
 
-    // Scale the air gap radius by the number of slots up to 0.9.
-    // The scaling formula was created "by hand" to give a good visual
-    // representation, the values are chosen arbitrarily and have no deeper meaning.
-    let scale_air_gap = 0.1 + 0.8 * (1.0 - 1.0 / (slots.get() as f64).sqrt());
-    let air_gap_radius = yoke_radius * scale_air_gap;
+        // Slot bottom width
+        let bottom_width = 2.0 * yoke_radius * (beta / 2.0).sin();
+        let yoke_height = yoke_radius * (1.0 - (beta / 2.0).cos());
 
-    // Calculate the slot height
-    let height = yoke_radius
-        - yoke_height
-        - 0.5 * (4.0 * air_gap_radius.powi(P2::new()) - opening_width.powi(P2::new())).sqrt();
+        // Scale the air gap radius by the number of slots up to 0.9.
+        // The scaling formula was created "by hand" to give a good visual
+        // representation, the values are chosen arbitrarily and have no deeper meaning.
+        let scale_air_gap = 0.1 + 0.8 * (1.0 - 1.0 / (slots.get() as f64).sqrt());
+        let air_gap_radius = yoke_radius * scale_air_gap;
 
-    // Raise yoke_radius
-    yoke_radius = yoke_radius + Length::new::<millimeter>(5.0);
+        // Calculate the slot height
+        let height = yoke_radius
+            - yoke_height
+            - 0.5 * (4.0 * air_gap_radius.powi(P2::new()) - opening_width.powi(P2::new())).sqrt();
 
-    // Create slot and core object (they are just used for plotting purposes)
-    let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
-        bottom_width,
-        opening_width,
-        height,
-        opening_height,
-        slot_angle,
-        bottom_radius: Length::new::<millimeter>(2.0),
-        top_radius: Length::new::<millimeter>(2.0),
-        opening_radius: Length::new::<millimeter>(0.5),
-        consider_tooth_tip_leakage: false,
-    }
-    .try_into()
-    .unwrap();
+        // Raise yoke_radius
+        yoke_radius = yoke_radius + Length::new::<millimeter>(5.0);
 
-    return RotCoreBuilder {
-        air_gap_radius,
-        yoke_radius,
-        axial_length: Length::new::<millimeter>(1.0),
-        axial_coil_overhang: Length::new::<millimeter>(0.0),
-        iron_fill_factor: 1.0,
-        material: Arc::new(Material::default()),
-        pole_pairs,
-        skew_angle: 0.0,
-        air_gap: Box::new(SlottedAirGap::new(
-            slots,
-            starts_in_slot_middle,
-            CarterFactorModel::Bin12,
-            Arc::new(slot),
-        )),
-        flux_barrier: None,
-    }
-    .try_into()
-    .expect("valid magnetic core");
-}
-
-fn create_inner_core(
-    slots: NonZeroU16,
-    pole_pairs: NonZeroU16,
-    starts_in_slot_middle: bool,
-    open_slot: bool,
-) -> RotCore {
-    let yoke_radius = Length::new::<millimeter>(10.0);
-    let air_gap_radius = Length::new::<millimeter>(25.0);
-
-    let opening_width = if open_slot {
-        Length::new::<millimeter>(2.0)
-    } else {
-        Length::new::<millimeter>(0.0)
-    };
-    let opening_height = Length::new::<millimeter>(1.0);
-
-    // Angle covered by one tooth
-    let slot_angle = -TAU / slots.get() as f64;
-
-    let bottom_width = Length::new::<millimeter>(4.0) * 12.0 / slots.get() as f64;
-    let height = Length::new::<millimeter>(10.0);
-
-    // Create slot and core object (they are just used for plotting purposes)
-    let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
-        bottom_width,
-        opening_width,
-        height,
-        opening_height,
-        slot_angle,
-        bottom_radius: Length::new::<millimeter>(1.0),
-        top_radius: Length::new::<millimeter>(1.0),
-        opening_radius: Length::new::<millimeter>(0.5),
-        consider_tooth_tip_leakage: false,
-    }
-    .try_into()
-    .unwrap();
-
-    return RotCoreBuilder {
-        air_gap_radius,
-        yoke_radius,
-        axial_length: Length::new::<millimeter>(1.0),
-        axial_coil_overhang: Length::new::<millimeter>(0.0),
-        iron_fill_factor: 1.0,
-        material: Arc::new(Material::default()),
-        pole_pairs,
-        skew_angle: 0.0,
-        air_gap: Box::new(SlottedAirGap::new(
-            slots,
-            starts_in_slot_middle,
-            CarterFactorModel::Bin12,
-            Arc::new(slot),
-        )),
-        flux_barrier: None,
-    }
-    .try_into()
-    .expect("valid magnetic core");
-}
-
-fn create_outer_core_from_phd(model: CarterFactorModel) -> RotCore {
-    let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
-        bottom_width: Length::new::<millimeter>(9.21),
-        opening_width: Length::new::<millimeter>(2.0),
-        height: Length::new::<millimeter>(17.75),
-        opening_height: Length::new::<millimeter>(2.0),
-        slot_angle: PI / 18.0,
-        bottom_radius: Length::new::<millimeter>(2.0),
-        top_radius: Length::new::<millimeter>(2.0),
-        opening_radius: Length::new::<millimeter>(0.5),
-        consider_tooth_tip_leakage: false,
-    }
-    .try_into()
-    .unwrap();
-
-    return RotCoreBuilder {
-        air_gap_radius: Length::new::<millimeter>(55.0),
-        yoke_radius: Length::new::<millimeter>(85.0),
-        axial_length: Length::new::<millimeter>(165.0),
-        axial_coil_overhang: Length::new::<millimeter>(0.0),
-        iron_fill_factor: 1.0,
-        material: Arc::new(Material::default()),
-        pole_pairs: 2.try_into().expect("not zero"),
-        skew_angle: 0.0,
-        air_gap: Box::new(SlottedAirGap::new(
-            36.try_into().expect("not zero"),
-            false,
-            model,
-            Arc::new(slot.clone()),
-        )),
-        flux_barrier: None,
-    }
-    .try_into()
-    .expect("valid magnetic core");
-}
-
-#[test]
-fn test_assembly_check() {
-    {
-        let core = create_inner_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            false,
-            false,
-        );
-
-        let magnet = ArcSegmentMagnet::with_const_thickness(
-            Length::new::<millimeter>(165.0),
-            core.air_gap_radius(),
-            Length::new::<millimeter>(2.0),
-            10.0 / 180.0 * PI,
-            Arc::new(Default::default()),
-        )
+        // Create slot and core object (they are just used for plotting purposes)
+        let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
+            bottom_width,
+            opening_width,
+            height,
+            opening_height,
+            slot_angle,
+            bottom_radius: Length::new::<millimeter>(2.0),
+            top_radius: Length::new::<millimeter>(2.0),
+            opening_radius: Length::new::<millimeter>(0.5),
+            consider_tooth_tip_leakage: false,
+        }
+        .try_into()
         .unwrap();
-        let assembly = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
 
-        let core = create_inner_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            false,
-            true,
-        );
-        assert!(
-            core.assembly_check(
-                &CoilLayout::SingleFilled,
-                Some(&assembly),
-                DEFAULT_EPSILON,
-                DEFAULT_MAX_RELATIVE
-            )
-            .is_ok()
-        );
-
-        let core = create_inner_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            true,
-            true,
-        );
-        assert!(
-            core.assembly_check(
-                &CoilLayout::SingleFilled,
-                Some(&assembly),
-                DEFAULT_EPSILON,
-                DEFAULT_MAX_RELATIVE
-            )
-            .is_ok()
-        );
-
-        assert!(
-            core.assembly_check(
-                &CoilLayout::SingleFilled,
-                Some(&assembly),
-                DEFAULT_EPSILON,
-                DEFAULT_MAX_RELATIVE
-            )
-            .is_ok()
-        );
-
-        let core = create_inner_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            true,
-            false,
-        );
-        assert!(
-            core.assembly_check(
-                &CoilLayout::SingleFilled,
-                Some(&assembly),
-                DEFAULT_EPSILON,
-                DEFAULT_MAX_RELATIVE
-            )
-            .is_ok()
-        );
+        return RotCoreBuilder {
+            air_gap_radius,
+            yoke_radius,
+            axial_length: Length::new::<millimeter>(1.0),
+            axial_coil_overhang: Length::new::<millimeter>(0.0),
+            iron_fill_factor: 1.0,
+            material: Arc::new(Material::default()),
+            pole_pairs,
+            skew_angle: 0.0,
+            air_gap: Box::new(SlottedAirGap::new(
+                slots,
+                starts_in_slot_middle,
+                CarterFactorModel::Bin12,
+                Arc::new(slot),
+            )),
+            flux_barrier: None,
+        }
+        .try_into()
+        .expect("valid magnetic core");
     }
-    {
-        let core = create_outer_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            false,
-            false,
-        );
 
-        let magnet = ArcSegmentMagnet::with_const_thickness(
-            Length::new::<millimeter>(165.0),
-            -core.air_gap_radius(),
-            Length::new::<millimeter>(2.0),
-            10.0 / 180.0 * PI,
-            Arc::new(Default::default()),
-        )
+    fn create_inner_core(
+        slots: NonZeroU16,
+        pole_pairs: NonZeroU16,
+        starts_in_slot_middle: bool,
+        open_slot: bool,
+    ) -> RotCore {
+        let yoke_radius = Length::new::<millimeter>(10.0);
+        let air_gap_radius = Length::new::<millimeter>(25.0);
+
+        let opening_width = if open_slot {
+            Length::new::<millimeter>(2.0)
+        } else {
+            Length::new::<millimeter>(0.0)
+        };
+        let opening_height = Length::new::<millimeter>(1.0);
+
+        // Angle covered by one tooth
+        let slot_angle = -TAU / slots.get() as f64;
+
+        let bottom_width = Length::new::<millimeter>(4.0) * 12.0 / slots.get() as f64;
+        let height = Length::new::<millimeter>(10.0);
+
+        // Create slot and core object (they are just used for plotting purposes)
+        let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
+            bottom_width,
+            opening_width,
+            height,
+            opening_height,
+            slot_angle,
+            bottom_radius: Length::new::<millimeter>(1.0),
+            top_radius: Length::new::<millimeter>(1.0),
+            opening_radius: Length::new::<millimeter>(0.5),
+            consider_tooth_tip_leakage: false,
+        }
+        .try_into()
         .unwrap();
-        let assembly = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
 
-        assert!(
-            core.assembly_check(
-                &CoilLayout::SingleFilled,
-                Some(&assembly),
-                DEFAULT_EPSILON,
-                DEFAULT_MAX_RELATIVE
-            )
-            .is_ok()
-        );
-
-        let core = create_outer_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            true,
-            false,
-        );
-        assert!(
-            core.assembly_check(
-                &CoilLayout::SingleFilled,
-                Some(&assembly),
-                DEFAULT_EPSILON,
-                DEFAULT_MAX_RELATIVE
-            )
-            .is_ok()
-        );
-
-        let core = create_outer_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            false,
-            true,
-        );
-        assert!(
-            core.assembly_check(
-                &CoilLayout::SingleFilled,
-                Some(&assembly),
-                DEFAULT_EPSILON,
-                DEFAULT_MAX_RELATIVE
-            )
-            .is_ok()
-        );
-
-        let core = create_outer_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            true,
-            true,
-        );
-        assert!(
-            core.assembly_check(
-                &CoilLayout::SingleFilled,
-                Some(&assembly),
-                DEFAULT_EPSILON,
-                DEFAULT_MAX_RELATIVE
-            )
-            .is_ok()
-        );
+        return RotCoreBuilder {
+            air_gap_radius,
+            yoke_radius,
+            axial_length: Length::new::<millimeter>(1.0),
+            axial_coil_overhang: Length::new::<millimeter>(0.0),
+            iron_fill_factor: 1.0,
+            material: Arc::new(Material::default()),
+            pole_pairs,
+            skew_angle: 0.0,
+            air_gap: Box::new(SlottedAirGap::new(
+                slots,
+                starts_in_slot_middle,
+                CarterFactorModel::Bin12,
+                Arc::new(slot),
+            )),
+            flux_barrier: None,
+        }
+        .try_into()
+        .expect("valid magnetic core");
     }
-}
 
-#[test]
-fn test_plot_outer_core() {
-    {
-        let core = create_outer_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            false,
-            false,
-        );
+    fn create_outer_core_from_phd(model: CarterFactorModel) -> RotCore {
+        let slot: SemiTrapezoidSlot = SemiTrapezoidWithoutSlopesBuilder {
+            bottom_width: Length::new::<millimeter>(9.21),
+            opening_width: Length::new::<millimeter>(2.0),
+            height: Length::new::<millimeter>(17.75),
+            opening_height: Length::new::<millimeter>(2.0),
+            slot_angle: PI / 18.0,
+            bottom_radius: Length::new::<millimeter>(2.0),
+            top_radius: Length::new::<millimeter>(2.0),
+            opening_radius: Length::new::<millimeter>(0.5),
+            consider_tooth_tip_leakage: false,
+        }
+        .try_into()
+        .unwrap();
 
-        let drawable = core.drawable();
-        let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
-        let path = std::path::Path::new(
-            "tests/img/rot_slotted/outer_closed_starts_not_in_slot_middle.png",
-        );
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        return RotCoreBuilder {
+            air_gap_radius: Length::new::<millimeter>(55.0),
+            yoke_radius: Length::new::<millimeter>(85.0),
+            axial_length: Length::new::<millimeter>(165.0),
+            axial_coil_overhang: Length::new::<millimeter>(0.0),
+            iron_fill_factor: 1.0,
+            material: Arc::new(Material::default()),
+            pole_pairs: 2.try_into().expect("not zero"),
+            skew_angle: 0.0,
+            air_gap: Box::new(SlottedAirGap::new(
+                36.try_into().expect("not zero"),
+                false,
+                model,
+                Arc::new(slot.clone()),
+            )),
+            flux_barrier: None,
+        }
+        .try_into()
+        .expect("valid magnetic core");
     }
-    {
-        let core = create_outer_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            true,
-            false,
-        );
 
-        let drawable = core.drawable();
-        let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
-        let path =
-            std::path::Path::new("tests/img/rot_slotted/outer_closed_starts_in_slot_middle.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
+    #[test]
+    fn test_assembly_check() {
+        {
+            let core = create_inner_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                false,
+                false,
+            );
+
+            let magnet = ArcSegmentMagnet::with_const_thickness(
+                Length::new::<millimeter>(165.0),
+                core.air_gap_radius(),
+                Length::new::<millimeter>(2.0),
+                10.0 / 180.0 * PI,
+                Arc::new(Default::default()),
+            )
+            .unwrap();
+            let assembly =
+                MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
+
+            let core = create_inner_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                false,
+                true,
+            );
+            assert!(
+                core.assembly_check(
+                    &CoilLayout::SingleFilled,
+                    Some(&assembly),
+                    DEFAULT_EPSILON,
+                    DEFAULT_MAX_RELATIVE
+                )
+                .is_ok()
+            );
+
+            let core = create_inner_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                true,
+                true,
+            );
+            assert!(
+                core.assembly_check(
+                    &CoilLayout::SingleFilled,
+                    Some(&assembly),
+                    DEFAULT_EPSILON,
+                    DEFAULT_MAX_RELATIVE
+                )
+                .is_ok()
+            );
+
+            assert!(
+                core.assembly_check(
+                    &CoilLayout::SingleFilled,
+                    Some(&assembly),
+                    DEFAULT_EPSILON,
+                    DEFAULT_MAX_RELATIVE
+                )
+                .is_ok()
+            );
+
+            let core = create_inner_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                true,
+                false,
+            );
+            assert!(
+                core.assembly_check(
+                    &CoilLayout::SingleFilled,
+                    Some(&assembly),
+                    DEFAULT_EPSILON,
+                    DEFAULT_MAX_RELATIVE
+                )
+                .is_ok()
+            );
+        }
+        {
+            let core = create_outer_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                false,
+                false,
+            );
+
+            let magnet = ArcSegmentMagnet::with_const_thickness(
+                Length::new::<millimeter>(165.0),
+                -core.air_gap_radius(),
+                Length::new::<millimeter>(2.0),
+                10.0 / 180.0 * PI,
+                Arc::new(Default::default()),
+            )
+            .unwrap();
+            let assembly =
+                MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
+
+            assert!(
+                core.assembly_check(
+                    &CoilLayout::SingleFilled,
+                    Some(&assembly),
+                    DEFAULT_EPSILON,
+                    DEFAULT_MAX_RELATIVE
+                )
+                .is_ok()
+            );
+
+            let core = create_outer_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                true,
+                false,
+            );
+            assert!(
+                core.assembly_check(
+                    &CoilLayout::SingleFilled,
+                    Some(&assembly),
+                    DEFAULT_EPSILON,
+                    DEFAULT_MAX_RELATIVE
+                )
+                .is_ok()
+            );
+
+            let core = create_outer_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                false,
+                true,
+            );
+            assert!(
+                core.assembly_check(
+                    &CoilLayout::SingleFilled,
+                    Some(&assembly),
+                    DEFAULT_EPSILON,
+                    DEFAULT_MAX_RELATIVE
+                )
+                .is_ok()
+            );
+
+            let core = create_outer_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                true,
+                true,
+            );
+            assert!(
+                core.assembly_check(
+                    &CoilLayout::SingleFilled,
+                    Some(&assembly),
+                    DEFAULT_EPSILON,
+                    DEFAULT_MAX_RELATIVE
+                )
+                .is_ok()
+            );
+        }
     }
-    {
-        let core = create_outer_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            false,
-            true,
-        );
 
-        let drawable = core.drawable();
-        let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
-        let path =
-            std::path::Path::new("tests/img/rot_slotted/outer_open_starts_not_in_slot_middle.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
+    #[test]
+    fn test_plot_outer_core() {
+        {
+            let core = create_outer_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                false,
+                false,
+            );
+
+            let drawable = core.drawable();
+            let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
+            let path = std::path::Path::new(
+                "tests/img/rot_slotted/outer_closed_starts_not_in_slot_middle.png",
+            );
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+        {
+            let core = create_outer_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                true,
+                false,
+            );
+
+            let drawable = core.drawable();
+            let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
+            let path = std::path::Path::new(
+                "tests/img/rot_slotted/outer_closed_starts_in_slot_middle.png",
+            );
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+        {
+            let core = create_outer_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                false,
+                true,
+            );
+
+            let drawable = core.drawable();
+            let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
+            let path = std::path::Path::new(
+                "tests/img/rot_slotted/outer_open_starts_not_in_slot_middle.png",
+            );
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+        {
+            let core = create_outer_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                true,
+                true,
+            );
+
+            let drawable = core.drawable();
+            let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
+            let path =
+                std::path::Path::new("tests/img/rot_slotted/outer_open_starts_in_slot_middle.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+
+            approxim::assert_abs_diff_eq!(
+                core.slot_opening_factor(SpatialOrder::Mechanical(1)),
+                0.999069,
+                epsilon = 1e-6
+            );
+        }
     }
-    {
-        let core = create_outer_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            true,
-            true,
+
+    #[test]
+    fn test_plot_outer_assembly() {
+        {
+            let core = create_outer_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                false,
+                false,
+            );
+
+            let magnet = ArcSegmentMagnet::with_const_thickness(
+                Length::new::<millimeter>(165.0),
+                -core.air_gap_radius(),
+                Length::new::<millimeter>(2.0),
+                10.0 / 180.0 * PI,
+                Arc::new(Default::default()),
+            )
+            .unwrap();
+            let assembly =
+                MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
+
+            let drawable = core.drawable();
+
+            let magnets: Vec<Drawable> = core
+                .surface_magnets(&assembly, true)
+                .map::<Drawable, _>(From::from)
+                .collect();
+            let mag_ref = &magnets;
+
+            let winding_zones: Vec<Drawable> = core
+                .winding_zones(&CoilLayout::DoubleHorizontal)
+                .map(PositionedZoneContour::into_drawable)
+                .collect();
+            let winding_ref = &winding_zones;
+
+            let view = Viewport::from_bounded_entities(
+                mag_ref
+                    .iter()
+                    .map(|m| m.bounding_box())
+                    .chain(std::iter::once(drawable.bounding_box())),
+                SideLength::Long(500),
+            )
+            .unwrap();
+
+            let path = std::path::Path::new("tests/img/rot_slotted/outer_assembly_1.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+                    for m in mag_ref {
+                        m.draw(cr)?;
+                    }
+                    for w in winding_ref {
+                        w.draw(cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+        {
+            let core = create_outer_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                false,
+                true,
+            );
+
+            let magnet = ArcSegmentMagnet::with_const_thickness(
+                Length::new::<millimeter>(165.0),
+                -core.air_gap_radius(),
+                Length::new::<millimeter>(2.0),
+                10.0 / 180.0 * PI,
+                Arc::new(Default::default()),
+            )
+            .unwrap();
+            let assembly =
+                MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
+
+            let drawable = core.drawable();
+
+            let magnets: Vec<Drawable> = core
+                .surface_magnets(&assembly, true)
+                .map(PositionedMagnetShape::into_drawable)
+                .collect();
+            let mag_ref = &magnets;
+
+            let winding_zones: Vec<Drawable> = core
+                .winding_zones(&CoilLayout::DoubleHorizontal)
+                .map(PositionedZoneContour::into_drawable)
+                .collect();
+            let winding_ref = &winding_zones;
+
+            let view = Viewport::from_bounded_entities(
+                mag_ref
+                    .iter()
+                    .map(|m| m.bounding_box())
+                    .chain(std::iter::once(drawable.bounding_box())),
+                SideLength::Long(500),
+            )
+            .unwrap();
+
+            let path = std::path::Path::new("tests/img/rot_slotted/outer_assembly_2.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+                    for m in mag_ref {
+                        m.draw(cr)?;
+                    }
+                    for w in winding_ref {
+                        w.draw(cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+        {
+            let core = create_outer_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                false,
+                true,
+            );
+
+            let magnet = ArcSegmentMagnet::with_const_thickness(
+                Length::new::<millimeter>(165.0),
+                -core.air_gap_radius(),
+                Length::new::<millimeter>(2.0),
+                10.0 / 180.0 * PI,
+                Arc::new(Default::default()),
+            )
+            .unwrap();
+            let assembly =
+                MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
+
+            let drawable = core.drawable();
+
+            let magnets: Vec<Drawable> = core
+                .surface_magnets(&assembly, true)
+                .map(PositionedMagnetShape::into_drawable)
+                .collect();
+            let mag_ref = &magnets;
+
+            let winding_zones: Vec<Drawable> = core
+                .winding_zones(&CoilLayout::SingleFilled)
+                .map(PositionedZoneContour::into_drawable)
+                .collect();
+            let winding_ref = &winding_zones;
+
+            let view = Viewport::from_bounded_entities(
+                mag_ref
+                    .iter()
+                    .map(|m| m.bounding_box())
+                    .chain(std::iter::once(drawable.bounding_box())),
+                SideLength::Long(500),
+            )
+            .unwrap();
+
+            let path = std::path::Path::new("tests/img/rot_slotted/outer_assembly_3.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+                    for m in mag_ref {
+                        m.draw(cr)?;
+                    }
+                    for w in winding_ref {
+                        w.draw(cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+    }
+
+    #[test]
+    fn test_plot_inner_core() {
+        {
+            let core = create_inner_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                false,
+                false,
+            );
+
+            let drawable = core.drawable();
+            let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
+            let path = std::path::Path::new(
+                "tests/img/rot_slotted/inner_closed_starts_not_in_slot_middle.png",
+            );
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+        {
+            let core = create_inner_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                true,
+                false,
+            );
+
+            let drawable = core.drawable();
+            let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
+            let path = std::path::Path::new(
+                "tests/img/rot_slotted/inner_closed_starts_in_slot_middle.png",
+            );
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+        {
+            let core = create_inner_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                false,
+                true,
+            );
+
+            let drawable = core.drawable();
+            let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
+            let path = std::path::Path::new(
+                "tests/img/rot_slotted/inner_open_starts_not_in_slot_middle.png",
+            );
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+        {
+            let core = create_inner_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                true,
+                true,
+            );
+
+            let drawable = core.drawable();
+            let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
+            let path =
+                std::path::Path::new("tests/img/rot_slotted/inner_open_starts_in_slot_middle.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+    }
+
+    #[test]
+    fn test_plot_inner_assembly() {
+        {
+            let core = create_inner_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                false,
+                true,
+            );
+
+            let drawable = core.drawable();
+
+            let magnet = ArcSegmentMagnet::with_const_thickness(
+                Length::new::<millimeter>(165.0),
+                core.air_gap_radius(),
+                Length::new::<millimeter>(2.0),
+                10.0 / 180.0 * PI,
+                Arc::new(Default::default()),
+            )
+            .unwrap();
+            let assembly =
+                MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
+            let magnets: Vec<Drawable> = core
+                .surface_magnets(&assembly, true)
+                .map(PositionedMagnetShape::into_drawable)
+                .collect();
+            let mag_ref = &magnets;
+
+            let winding_zones: Vec<Drawable> = core
+                .winding_zones(&CoilLayout::DoubleHorizontal)
+                .map(PositionedZoneContour::into_drawable)
+                .collect();
+            let winding_ref = &winding_zones;
+
+            let view = Viewport::from_bounded_entities(
+                mag_ref
+                    .iter()
+                    .map(|m| m.bounding_box())
+                    .chain(std::iter::once(drawable.bounding_box())),
+                SideLength::Long(500),
+            )
+            .unwrap();
+
+            let path = std::path::Path::new("tests/img/rot_slotted/inner_assembly_1.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+                    for m in mag_ref {
+                        m.draw(cr)?;
+                    }
+                    for w in winding_ref {
+                        w.draw(cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+        {
+            let core = create_inner_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                false,
+                false,
+            );
+
+            let drawable = core.drawable();
+
+            let magnet = ArcSegmentMagnet::with_const_thickness(
+                Length::new::<millimeter>(165.0),
+                core.air_gap_radius(),
+                Length::new::<millimeter>(2.0),
+                10.0 / 180.0 * PI,
+                Arc::new(Default::default()),
+            )
+            .unwrap();
+            let assembly =
+                MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
+            let magnets: Vec<Drawable> = core
+                .surface_magnets(&assembly, true)
+                .map(PositionedMagnetShape::into_drawable)
+                .collect();
+            let mag_ref = &magnets;
+
+            let winding_zones: Vec<Drawable> = core
+                .winding_zones(&CoilLayout::DoubleHorizontal)
+                .map(PositionedZoneContour::into_drawable)
+                .collect();
+            let winding_ref = &winding_zones;
+
+            let view = Viewport::from_bounded_entities(
+                mag_ref
+                    .iter()
+                    .map(|m| m.bounding_box())
+                    .chain(std::iter::once(drawable.bounding_box())),
+                SideLength::Long(500),
+            )
+            .unwrap();
+
+            let path = std::path::Path::new("tests/img/rot_slotted/inner_assembly_2.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+                    for m in mag_ref {
+                        m.draw(cr)?;
+                    }
+                    for w in winding_ref {
+                        w.draw(cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+        {
+            let core = create_inner_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                false,
+                true,
+            );
+
+            let drawable = core.drawable();
+
+            let magnet = ArcSegmentMagnet::with_const_thickness(
+                Length::new::<millimeter>(165.0),
+                core.air_gap_radius(),
+                Length::new::<millimeter>(2.0),
+                10.0 / 180.0 * PI,
+                Arc::new(Default::default()),
+            )
+            .unwrap();
+            let assembly =
+                MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
+            let magnets: Vec<Drawable> = core
+                .surface_magnets(&assembly, true)
+                .map(PositionedMagnetShape::into_drawable)
+                .collect();
+            let mag_ref = &magnets;
+
+            let winding_zones: Vec<Drawable> = core
+                .winding_zones(&CoilLayout::SingleFilled)
+                .map(PositionedZoneContour::into_drawable)
+                .collect();
+            let winding_ref = &winding_zones;
+
+            let view = Viewport::from_bounded_entities(
+                mag_ref
+                    .iter()
+                    .map(|m| m.bounding_box())
+                    .chain(std::iter::once(drawable.bounding_box())),
+                SideLength::Long(500),
+            )
+            .unwrap();
+
+            let path = std::path::Path::new("tests/img/rot_slotted/inner_assembly_3.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+                    for m in mag_ref {
+                        m.draw(cr)?;
+                    }
+                    for w in winding_ref {
+                        w.draw(cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+    }
+
+    #[test]
+    fn test_odd_number_of_slots() {
+        let slot: SemiTrapezoidSlot = SemiTrapezoidWidthsAndHeightsBuilder {
+            bottom_width: Length::new::<millimeter>(6.76),
+            bottom_side_width: Length::new::<millimeter>(6.76),
+            top_side_width: Length::new::<millimeter>(8.0),
+            top_width: Length::new::<millimeter>(1.5),
+            opening_width: Length::new::<millimeter>(1.5),
+            bottom_height: Length::new::<millimeter>(0.0),
+            side_height: Length::new::<millimeter>(6.79 - 0.75 - 0.5),
+            top_height: Length::new::<millimeter>(0.5),
+            opening_height: Length::new::<millimeter>(0.75),
+            bottom_radius: Length::new::<millimeter>(0.0),
+            bottom_side_radius: Length::new::<millimeter>(0.0),
+            top_radius: Length::new::<millimeter>(0.0),
+            top_side_radius: Length::new::<millimeter>(0.0),
+            opening_radius: Length::new::<millimeter>(0.0),
+            consider_tooth_tip_leakage: true,
+        }
+        .try_into()
+        .expect("valid slot");
+
+        {
+            let air_gap = SlottedAirGap::new(
+                15.try_into().expect("not zero"),
+                true,
+                CarterFactorModel::Bin12,
+                Arc::new(slot.clone()),
+            );
+            let core: RotCore = RotCoreBuilder {
+                air_gap_radius: Length::new::<millimeter>(40.0),
+                yoke_radius: Length::new::<millimeter>(19.0),
+                axial_length: Length::new::<millimeter>(165.0),
+                axial_coil_overhang: Length::new::<millimeter>(0.0),
+                iron_fill_factor: 1.0,
+                material: Arc::new(Material::default()),
+                pole_pairs: 2.try_into().expect("not zero"),
+                skew_angle: 0.0,
+                air_gap: Box::new(air_gap),
+                flux_barrier: None,
+            }
+            .try_into()
+            .unwrap();
+
+            let drawable = core.drawable();
+            let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
+            let path = std::path::Path::new(
+                "tests/img/rot_slotted/core_odd_number_of_slots_starts_in_slot_middle.png",
+            );
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+        {
+            let air_gap = SlottedAirGap::new(
+                15.try_into().expect("not zero"),
+                false,
+                CarterFactorModel::Bin12,
+                Arc::new(slot),
+            );
+            let core: RotCore = RotCoreBuilder {
+                air_gap_radius: Length::new::<millimeter>(40.0),
+                yoke_radius: Length::new::<millimeter>(19.0),
+                axial_length: Length::new::<millimeter>(165.0),
+                axial_coil_overhang: Length::new::<millimeter>(0.0),
+                iron_fill_factor: 1.0,
+                material: Arc::new(Material::default()),
+                pole_pairs: 2.try_into().expect("not zero"),
+                skew_angle: 0.0,
+                air_gap: Box::new(air_gap),
+                flux_barrier: None,
+            }
+            .try_into()
+            .unwrap();
+
+            let drawable = core.drawable();
+            let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
+            let path = std::path::Path::new(
+                "tests/img/rot_slotted/core_odd_number_of_slots_starts_in_tooth_middle.png",
+            );
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+    }
+
+    #[test]
+    fn test_slotting_orders() {
+        {
+            let core = create_outer_core(
+                12.try_into().expect("not zero"),
+                4.try_into().expect("not zero"),
+                true,
+                true,
+            );
+            assert_eq!(
+                core.slotting_order(1.try_into().unwrap()),
+                SpatialOrder::Mechanical(12)
+            );
+            assert_eq!(
+                core.slotting_order(2.try_into().unwrap()),
+                SpatialOrder::Mechanical(24)
+            );
+            assert_eq!(
+                core.slotting_order(3.try_into().unwrap()),
+                SpatialOrder::Mechanical(36)
+            );
+            assert_eq!(
+                core.slotting_order(4.try_into().unwrap()),
+                SpatialOrder::Mechanical(48)
+            );
+        }
+
+        {
+            let core = create_outer_core(
+                12.try_into().expect("not zero"),
+                5.try_into().expect("not zero"),
+                true,
+                true,
+            );
+            assert_eq!(
+                core.slotting_order(1.try_into().unwrap()),
+                SpatialOrder::Mechanical(12)
+            );
+            assert_eq!(
+                core.slotting_order(2.try_into().unwrap()),
+                SpatialOrder::Mechanical(24)
+            );
+            assert_eq!(
+                core.slotting_order(3.try_into().unwrap()),
+                SpatialOrder::Mechanical(36)
+            );
+            assert_eq!(
+                core.slotting_order(4.try_into().unwrap()),
+                SpatialOrder::Mechanical(48)
+            );
+        }
+    }
+
+    #[test]
+    fn test_air_gap_curvature_factor() {
+        assert_abs_diff_eq!(
+            air_gap_curvature_factor(
+                NonZeroU16::new(2).expect("not zero"),
+                Length::new::<millimeter>(55.0),
+                Length::new::<millimeter>(55.0 - 0.6),
+                SpatialOrder::Electrical(1),
+            ),
+            0.994695,
+            epsilon = 0.001
+        );
+        assert_abs_diff_eq!(
+            air_gap_curvature_factor(
+                NonZeroU16::new(2).expect("not zero"),
+                Length::new::<millimeter>(55.0),
+                Length::new::<millimeter>(55.0 - 2.0),
+                SpatialOrder::Electrical(1),
+            ),
+            0.983501,
+            epsilon = 0.001
+        );
+        assert_abs_diff_eq!(
+            air_gap_curvature_factor(
+                NonZeroU16::new(2).expect("not zero"),
+                Length::new::<millimeter>(55.0),
+                Length::new::<millimeter>(55.0 - 0.6),
+                SpatialOrder::Electrical(7),
+            ),
+            1.002341,
+            epsilon = 0.001
+        );
+        assert_abs_diff_eq!(
+            air_gap_curvature_factor(
+                NonZeroU16::new(10).expect("not zero"),
+                Length::new::<millimeter>(55.0),
+                Length::new::<millimeter>(55.0 - 0.6),
+                SpatialOrder::Electrical(1),
+            ),
+            0.998521,
+            epsilon = 0.001
         );
 
-        let drawable = core.drawable();
-        let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
-        let path =
-            std::path::Path::new("tests/img/rot_slotted/outer_open_starts_in_slot_middle.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-
-        approxim::assert_abs_diff_eq!(
-            core.slot_opening_factor(SpatialOrder::Mechanical(1)),
-            0.999069,
+        assert_abs_diff_eq!(
+            air_gap_curvature_factor(
+                NonZeroU16::new(5).expect("not zero"),
+                Length::new::<millimeter>(37.5),
+                Length::new::<millimeter>(37.5 - 0.6),
+                SpatialOrder::Electrical(1),
+            ),
+            0.9941281,
             epsilon = 1e-6
         );
     }
-}
 
-#[test]
-fn test_plot_outer_assembly() {
-    {
-        let core = create_outer_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            false,
-            false,
+    #[test]
+    fn test_dimensions_and_mass() {
+        let core = create_outer_core_from_phd(CarterFactorModel::Bin12);
+
+        // Stack
+        approxim::assert_abs_diff_eq!(core.axial_length().get::<meter>(), 0.165, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(core.iron_length().get::<meter>(), 0.165, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(
+            core.air_gap_length().get::<meter>(),
+            core.air_gap_radius().get::<meter>() * TAU,
+            epsilon = 1e-6
         );
 
-        let magnet = ArcSegmentMagnet::with_const_thickness(
-            Length::new::<millimeter>(165.0),
-            -core.air_gap_radius(),
-            Length::new::<millimeter>(2.0),
-            10.0 / 180.0 * PI,
-            Arc::new(Default::default()),
-        )
-        .unwrap();
-        let assembly = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
-
-        let drawable = core.drawable();
-
-        let magnets: Vec<Drawable> = core
-            .surface_magnets(&assembly, true)
-            .map::<Drawable, _>(From::from)
-            .collect();
-        let mag_ref = &magnets;
-
-        let winding_zones: Vec<Drawable> = core
-            .winding_zones(&CoilLayout::DoubleHorizontal)
-            .map(PositionedZoneContour::into_drawable)
-            .collect();
-        let winding_ref = &winding_zones;
-
-        let view = Viewport::from_bounded_entities(
-            mag_ref
-                .iter()
-                .map(|m| m.bounding_box())
-                .chain(std::iter::once(drawable.bounding_box())),
-            SideLength::Long(500),
-        )
-        .unwrap();
-
-        let path = std::path::Path::new("tests/img/rot_slotted/outer_assembly_1.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)?;
-                for m in mag_ref {
-                    m.draw(cr)?;
-                }
-                for w in winding_ref {
-                    w.draw(cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-    {
-        let core = create_outer_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            false,
-            true,
+        // Offset
+        approxim::assert_abs_diff_eq!(
+            core.origin_offset_core_to_slot().get::<meter>(),
+            0.05499,
+            epsilon = 1e-3
         );
 
-        let magnet = ArcSegmentMagnet::with_const_thickness(
-            Length::new::<millimeter>(165.0),
-            -core.air_gap_radius(),
-            Length::new::<millimeter>(2.0),
-            10.0 / 180.0 * PI,
-            Arc::new(Default::default()),
-        )
-        .unwrap();
-        let assembly = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
-
-        let drawable = core.drawable();
-
-        let magnets: Vec<Drawable> = core
-            .surface_magnets(&assembly, true)
-            .map(PositionedMagnetShape::into_drawable)
-            .collect();
-        let mag_ref = &magnets;
-
-        let winding_zones: Vec<Drawable> = core
-            .winding_zones(&CoilLayout::DoubleHorizontal)
-            .map(PositionedZoneContour::into_drawable)
-            .collect();
-        let winding_ref = &winding_zones;
-
-        let view = Viewport::from_bounded_entities(
-            mag_ref
-                .iter()
-                .map(|m| m.bounding_box())
-                .chain(std::iter::once(drawable.bounding_box())),
-            SideLength::Long(500),
-        )
-        .unwrap();
-
-        let path = std::path::Path::new("tests/img/rot_slotted/outer_assembly_2.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)?;
-                for m in mag_ref {
-                    m.draw(cr)?;
-                }
-                for w in winding_ref {
-                    w.draw(cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-    {
-        let core = create_outer_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            false,
-            true,
+        // Check the tooth dimensions (values taken from [Mat19])
+        approxim::assert_abs_diff_eq!(core.tooth_height().get::<meter>(), 17.75e-3, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(
+            core.tooth_width_at(Length::new::<millimeter>(5.0))
+                .get::<meter>(),
+            0.003504,
+            epsilon = 1e-6
         );
 
-        let magnet = ArcSegmentMagnet::with_const_thickness(
-            Length::new::<millimeter>(165.0),
-            -core.air_gap_radius(),
-            Length::new::<millimeter>(2.0),
-            10.0 / 180.0 * PI,
-            Arc::new(Default::default()),
-        )
-        .unwrap();
-        let assembly = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
-
-        let drawable = core.drawable();
-
-        let magnets: Vec<Drawable> = core
-            .surface_magnets(&assembly, true)
-            .map(PositionedMagnetShape::into_drawable)
-            .collect();
-        let mag_ref = &magnets;
-
-        let winding_zones: Vec<Drawable> = core
-            .winding_zones(&CoilLayout::SingleFilled)
-            .map(PositionedZoneContour::into_drawable)
-            .collect();
-        let winding_ref = &winding_zones;
-
-        let view = Viewport::from_bounded_entities(
-            mag_ref
-                .iter()
-                .map(|m| m.bounding_box())
-                .chain(std::iter::once(drawable.bounding_box())),
-            SideLength::Long(500),
-        )
-        .unwrap();
-
-        let path = std::path::Path::new("tests/img/rot_slotted/outer_assembly_3.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)?;
-                for m in mag_ref {
-                    m.draw(cr)?;
-                }
-                for w in winding_ref {
-                    w.draw(cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-}
-
-#[test]
-fn test_plot_inner_core() {
-    {
-        let core = create_inner_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            false,
-            false,
+        // Check the mass of yoke and teeth
+        approxim::assert_abs_diff_eq!(
+            core.tooth_mass().eval(&[]).get::<kilogram>(),
+            0.012170,
+            epsilon = 1e-6
         );
-
-        let drawable = core.drawable();
-        let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
-        let path = std::path::Path::new(
-            "tests/img/rot_slotted/inner_closed_starts_not_in_slot_middle.png",
+        approxim::assert_abs_diff_eq!(
+            core.teeth_mass().eval(&[]).get::<kilogram>(),
+            core.tooth_mass().eval(&[]).get::<kilogram>() * core.slots() as f64,
+            epsilon = 1e-6
         );
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-    {
-        let core = create_inner_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            true,
-            false,
-        );
-
-        let drawable = core.drawable();
-        let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
-        let path =
-            std::path::Path::new("tests/img/rot_slotted/inner_closed_starts_in_slot_middle.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-    {
-        let core = create_inner_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            false,
-            true,
-        );
-
-        let drawable = core.drawable();
-        let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
-        let path =
-            std::path::Path::new("tests/img/rot_slotted/inner_open_starts_not_in_slot_middle.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-    {
-        let core = create_inner_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            true,
-            true,
-        );
-
-        let drawable = core.drawable();
-        let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
-        let path =
-            std::path::Path::new("tests/img/rot_slotted/inner_open_starts_in_slot_middle.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-}
-
-#[test]
-fn test_plot_inner_assembly() {
-    {
-        let core = create_inner_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            false,
-            true,
-        );
-
-        let drawable = core.drawable();
-
-        let magnet = ArcSegmentMagnet::with_const_thickness(
-            Length::new::<millimeter>(165.0),
-            core.air_gap_radius(),
-            Length::new::<millimeter>(2.0),
-            10.0 / 180.0 * PI,
-            Arc::new(Default::default()),
-        )
-        .unwrap();
-        let assembly = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
-        let magnets: Vec<Drawable> = core
-            .surface_magnets(&assembly, true)
-            .map(PositionedMagnetShape::into_drawable)
-            .collect();
-        let mag_ref = &magnets;
-
-        let winding_zones: Vec<Drawable> = core
-            .winding_zones(&CoilLayout::DoubleHorizontal)
-            .map(PositionedZoneContour::into_drawable)
-            .collect();
-        let winding_ref = &winding_zones;
-
-        let view = Viewport::from_bounded_entities(
-            mag_ref
-                .iter()
-                .map(|m| m.bounding_box())
-                .chain(std::iter::once(drawable.bounding_box())),
-            SideLength::Long(500),
-        )
-        .unwrap();
-
-        let path = std::path::Path::new("tests/img/rot_slotted/inner_assembly_1.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)?;
-                for m in mag_ref {
-                    m.draw(cr)?;
-                }
-                for w in winding_ref {
-                    w.draw(cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-    {
-        let core = create_inner_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            false,
-            false,
-        );
-
-        let drawable = core.drawable();
-
-        let magnet = ArcSegmentMagnet::with_const_thickness(
-            Length::new::<millimeter>(165.0),
-            core.air_gap_radius(),
-            Length::new::<millimeter>(2.0),
-            10.0 / 180.0 * PI,
-            Arc::new(Default::default()),
-        )
-        .unwrap();
-        let assembly = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
-        let magnets: Vec<Drawable> = core
-            .surface_magnets(&assembly, true)
-            .map(PositionedMagnetShape::into_drawable)
-            .collect();
-        let mag_ref = &magnets;
-
-        let winding_zones: Vec<Drawable> = core
-            .winding_zones(&CoilLayout::DoubleHorizontal)
-            .map(PositionedZoneContour::into_drawable)
-            .collect();
-        let winding_ref = &winding_zones;
-
-        let view = Viewport::from_bounded_entities(
-            mag_ref
-                .iter()
-                .map(|m| m.bounding_box())
-                .chain(std::iter::once(drawable.bounding_box())),
-            SideLength::Long(500),
-        )
-        .unwrap();
-
-        let path = std::path::Path::new("tests/img/rot_slotted/inner_assembly_2.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)?;
-                for m in mag_ref {
-                    m.draw(cr)?;
-                }
-                for w in winding_ref {
-                    w.draw(cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-    {
-        let core = create_inner_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            false,
-            true,
-        );
-
-        let drawable = core.drawable();
-
-        let magnet = ArcSegmentMagnet::with_const_thickness(
-            Length::new::<millimeter>(165.0),
-            core.air_gap_radius(),
-            Length::new::<millimeter>(2.0),
-            10.0 / 180.0 * PI,
-            Arc::new(Default::default()),
-        )
-        .unwrap();
-        let assembly = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 3.try_into().unwrap());
-        let magnets: Vec<Drawable> = core
-            .surface_magnets(&assembly, true)
-            .map(PositionedMagnetShape::into_drawable)
-            .collect();
-        let mag_ref = &magnets;
-
-        let winding_zones: Vec<Drawable> = core
-            .winding_zones(&CoilLayout::SingleFilled)
-            .map(PositionedZoneContour::into_drawable)
-            .collect();
-        let winding_ref = &winding_zones;
-
-        let view = Viewport::from_bounded_entities(
-            mag_ref
-                .iter()
-                .map(|m| m.bounding_box())
-                .chain(std::iter::once(drawable.bounding_box())),
-            SideLength::Long(500),
-        )
-        .unwrap();
-
-        let path = std::path::Path::new("tests/img/rot_slotted/inner_assembly_3.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)?;
-                for m in mag_ref {
-                    m.draw(cr)?;
-                }
-                for w in winding_ref {
-                    w.draw(cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-}
-
-#[test]
-fn test_odd_number_of_slots() {
-    let slot: SemiTrapezoidSlot = SemiTrapezoidWidthsAndHeightsBuilder {
-        bottom_width: Length::new::<millimeter>(6.76),
-        bottom_side_width: Length::new::<millimeter>(6.76),
-        top_side_width: Length::new::<millimeter>(8.0),
-        top_width: Length::new::<millimeter>(1.5),
-        opening_width: Length::new::<millimeter>(1.5),
-        bottom_height: Length::new::<millimeter>(0.0),
-        side_height: Length::new::<millimeter>(6.79 - 0.75 - 0.5),
-        top_height: Length::new::<millimeter>(0.5),
-        opening_height: Length::new::<millimeter>(0.75),
-        bottom_radius: Length::new::<millimeter>(0.0),
-        bottom_side_radius: Length::new::<millimeter>(0.0),
-        top_radius: Length::new::<millimeter>(0.0),
-        top_side_radius: Length::new::<millimeter>(0.0),
-        opening_radius: Length::new::<millimeter>(0.0),
-        consider_tooth_tip_leakage: true,
-    }
-    .try_into()
-    .expect("valid slot");
-
-    {
-        let air_gap = SlottedAirGap::new(
-            15.try_into().expect("not zero"),
-            true,
-            CarterFactorModel::Bin12,
-            Arc::new(slot.clone()),
-        );
-        let core: RotCore = RotCoreBuilder {
-            air_gap_radius: Length::new::<millimeter>(40.0),
-            yoke_radius: Length::new::<millimeter>(19.0),
-            axial_length: Length::new::<millimeter>(165.0),
-            axial_coil_overhang: Length::new::<millimeter>(0.0),
-            iron_fill_factor: 1.0,
-            material: Arc::new(Material::default()),
-            pole_pairs: 2.try_into().expect("not zero"),
-            skew_angle: 0.0,
-            air_gap: Box::new(air_gap),
-            flux_barrier: None,
-        }
-        .try_into()
-        .unwrap();
-
-        let drawable = core.drawable();
-        let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
-        let path = std::path::Path::new(
-            "tests/img/rot_slotted/core_odd_number_of_slots_starts_in_slot_middle.png",
-        );
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-    {
-        let air_gap = SlottedAirGap::new(
-            15.try_into().expect("not zero"),
-            false,
-            CarterFactorModel::Bin12,
-            Arc::new(slot),
-        );
-        let core: RotCore = RotCoreBuilder {
-            air_gap_radius: Length::new::<millimeter>(40.0),
-            yoke_radius: Length::new::<millimeter>(19.0),
-            axial_length: Length::new::<millimeter>(165.0),
-            axial_coil_overhang: Length::new::<millimeter>(0.0),
-            iron_fill_factor: 1.0,
-            material: Arc::new(Material::default()),
-            pole_pairs: 2.try_into().expect("not zero"),
-            skew_angle: 0.0,
-            air_gap: Box::new(air_gap),
-            flux_barrier: None,
-        }
-        .try_into()
-        .unwrap();
-
-        let drawable = core.drawable();
-        let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
-        let path = std::path::Path::new(
-            "tests/img/rot_slotted/core_odd_number_of_slots_starts_in_tooth_middle.png",
-        );
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-}
-
-#[test]
-fn test_slotting_orders() {
-    {
-        let core = create_outer_core(
-            12.try_into().expect("not zero"),
-            4.try_into().expect("not zero"),
-            true,
-            true,
-        );
-        assert_eq!(
-            core.slotting_order(1.try_into().unwrap()),
-            SpatialOrder::Mechanical(12)
-        );
-        assert_eq!(
-            core.slotting_order(2.try_into().unwrap()),
-            SpatialOrder::Mechanical(24)
-        );
-        assert_eq!(
-            core.slotting_order(3.try_into().unwrap()),
-            SpatialOrder::Mechanical(36)
-        );
-        assert_eq!(
-            core.slotting_order(4.try_into().unwrap()),
-            SpatialOrder::Mechanical(48)
+        approxim::assert_abs_diff_eq!(
+            core.yoke_mass().eval(&[]).get::<kilogram>(),
+            1.00177,
+            epsilon = 1e-5
         );
     }
 
-    {
-        let core = create_outer_core(
-            12.try_into().expect("not zero"),
-            5.try_into().expect("not zero"),
-            true,
-            true,
+    #[test]
+    fn test_carter_factor() {
+        let core = create_outer_core_from_phd(CarterFactorModel::Bin12);
+        approxim::assert_abs_diff_eq!(
+            core.carter_factor(Length::new::<millimeter>(1.0)),
+            1.061802,
+            epsilon = 0.001
         );
-        assert_eq!(
-            core.slotting_order(1.try_into().unwrap()),
-            SpatialOrder::Mechanical(12)
-        );
-        assert_eq!(
-            core.slotting_order(2.try_into().unwrap()),
-            SpatialOrder::Mechanical(24)
-        );
-        assert_eq!(
-            core.slotting_order(3.try_into().unwrap()),
-            SpatialOrder::Mechanical(36)
-        );
-        assert_eq!(
-            core.slotting_order(4.try_into().unwrap()),
-            SpatialOrder::Mechanical(48)
+
+        let core = create_outer_core_from_phd(CarterFactorModel::MVP08);
+        approxim::assert_abs_diff_eq!(
+            core.carter_factor(Length::new::<millimeter>(1.0)),
+            1.063295,
+            epsilon = 0.001
         );
     }
-}
 
-#[test]
-fn test_air_gap_curvature_factor() {
-    assert_abs_diff_eq!(
-        air_gap_curvature_factor(
-            NonZeroU16::new(2).expect("not zero"),
-            Length::new::<millimeter>(55.0),
-            Length::new::<millimeter>(55.0 - 0.6),
-            SpatialOrder::Electrical(1),
-        ),
-        0.994695,
-        epsilon = 0.001
-    );
-    assert_abs_diff_eq!(
-        air_gap_curvature_factor(
-            NonZeroU16::new(2).expect("not zero"),
-            Length::new::<millimeter>(55.0),
-            Length::new::<millimeter>(55.0 - 2.0),
-            SpatialOrder::Electrical(1),
-        ),
-        0.983501,
-        epsilon = 0.001
-    );
-    assert_abs_diff_eq!(
-        air_gap_curvature_factor(
-            NonZeroU16::new(2).expect("not zero"),
-            Length::new::<millimeter>(55.0),
-            Length::new::<millimeter>(55.0 - 0.6),
-            SpatialOrder::Electrical(7),
-        ),
-        1.002341,
-        epsilon = 0.001
-    );
-    assert_abs_diff_eq!(
-        air_gap_curvature_factor(
-            NonZeroU16::new(10).expect("not zero"),
-            Length::new::<millimeter>(55.0),
-            Length::new::<millimeter>(55.0 - 0.6),
-            SpatialOrder::Electrical(1),
-        ),
-        0.998521,
-        epsilon = 0.001
-    );
+    #[test]
+    fn test_current_displacement_coefficients() {
+        let core = create_outer_core_from_phd(CarterFactorModel::Bin12);
 
-    assert_abs_diff_eq!(
-        air_gap_curvature_factor(
-            NonZeroU16::new(5).expect("not zero"),
-            Length::new::<millimeter>(37.5),
-            Length::new::<millimeter>(37.5 - 0.6),
-            SpatialOrder::Electrical(1),
-        ),
-        0.9941281,
-        epsilon = 1e-6
-    );
-}
-
-#[test]
-fn test_dimensions_and_mass() {
-    let core = create_outer_core_from_phd(CarterFactorModel::Bin12);
-
-    // Stack
-    approxim::assert_abs_diff_eq!(core.axial_length().get::<meter>(), 0.165, epsilon = 1e-6);
-    approxim::assert_abs_diff_eq!(core.iron_length().get::<meter>(), 0.165, epsilon = 1e-6);
-    approxim::assert_abs_diff_eq!(
-        core.air_gap_length().get::<meter>(),
-        core.air_gap_radius().get::<meter>() * TAU,
-        epsilon = 1e-6
-    );
-
-    // Offset
-    approxim::assert_abs_diff_eq!(
-        core.origin_offset_core_to_slot().get::<meter>(),
-        0.05499,
-        epsilon = 1e-3
-    );
-
-    // Check the tooth dimensions (values taken from [Mat19])
-    approxim::assert_abs_diff_eq!(core.tooth_height().get::<meter>(), 17.75e-3, epsilon = 1e-6);
-    approxim::assert_abs_diff_eq!(
-        core.tooth_width_at(Length::new::<millimeter>(5.0))
-            .get::<meter>(),
-        0.003504,
-        epsilon = 1e-6
-    );
-
-    // Check the mass of yoke and teeth
-    approxim::assert_abs_diff_eq!(
-        core.tooth_mass().eval(&[]).get::<kilogram>(),
-        0.012170,
-        epsilon = 1e-6
-    );
-    approxim::assert_abs_diff_eq!(
-        core.teeth_mass().eval(&[]).get::<kilogram>(),
-        core.tooth_mass().eval(&[]).get::<kilogram>() * core.slots() as f64,
-        epsilon = 1e-6
-    );
-    approxim::assert_abs_diff_eq!(
-        core.yoke_mass().eval(&[]).get::<kilogram>(),
-        1.00177,
-        epsilon = 1e-5
-    );
-}
-
-#[test]
-fn test_carter_factor() {
-    let core = create_outer_core_from_phd(CarterFactorModel::Bin12);
-    approxim::assert_abs_diff_eq!(
-        core.carter_factor(Length::new::<millimeter>(1.0)),
-        1.061802,
-        epsilon = 0.001
-    );
-
-    let core = create_outer_core_from_phd(CarterFactorModel::MVP08);
-    approxim::assert_abs_diff_eq!(
-        core.carter_factor(Length::new::<millimeter>(1.0)),
-        1.063295,
-        epsilon = 0.001
-    );
-}
-
-#[test]
-fn test_current_displacement_coefficients() {
-    let core = create_outer_core_from_phd(CarterFactorModel::Bin12);
-
-    let coeffs = core.current_displacement_coefficients().eval(
-        Frequency::new::<uom::si::frequency::hertz>(200.0),
-        ElectricalConductivity::new::<siemens_per_meter>(57e6),
-        1.0,
-    );
-    approxim::assert_abs_diff_eq!(coeffs.resistance, 4.843104, epsilon = 1e-6);
-    approxim::assert_abs_diff_eq!(coeffs.inductance, 0.659253, epsilon = 1e-3);
+        let coeffs = core.current_displacement_coefficients().eval(
+            Frequency::new::<uom::si::frequency::hertz>(200.0),
+            ElectricalConductivity::new::<siemens_per_meter>(57e6),
+            1.0,
+        );
+        approxim::assert_abs_diff_eq!(coeffs.resistance, 4.843104, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(coeffs.inductance, 0.659253, epsilon = 1e-3);
+    }
 }

@@ -167,6 +167,8 @@ apply: [`PlainAirGap::air_gap_winding_height`] must not be smaller than zero
 and [`PlainAirGap::winding_coverage`] will be clamped to be between 0 and 1.
 
 ```
+# #[cfg(feature = "serde")]
+# {
 use stem_core::prelude::*;
 use serde_yaml;
 
@@ -180,12 +182,15 @@ slots: 12
 
 let ag: PlainAirGap = serde_yaml::from_str(&str).expect("valid dimensions");
 assert_eq!(ag.winding_coverage, 1.0);
+# }
 ```
 
 Any of these fields can be omitted, in which case the value from the
 [PlainAirGap::default] implementation takes its place.
 
 ```
+# #[cfg(feature = "serde")]
+# {
 use stem_core::prelude::*;
 use serde_yaml;
 
@@ -195,6 +200,7 @@ air_gap_winding_height: 10 mm
 
 let ag: PlainAirGap = serde_yaml::from_str(&str).expect("valid dimensions");
 assert_eq!(ag.winding_coverage, 0.0);
+# }
 ```
  */
 #[derive(Debug, Clone, Default)]

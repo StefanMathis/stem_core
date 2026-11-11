@@ -1,9 +1,6 @@
 use std::sync::Arc;
 
-use cairo_viewport::bounding_box::ToBoundingBox;
-use cairo_viewport::{SideLength, Viewport, compare_or_create};
 use stem_core::prelude::*;
-use stem_slot::planar_geo::draw::Drawable;
 use stem_slot::planar_geo::prelude::*;
 
 fn create_core(starts_in_slot_middle: bool, open_slot: bool) -> LinCore {
@@ -156,226 +153,238 @@ fn test_assembly_check() {
     );
 }
 
-#[test]
-fn test_plot_core() {
-    {
-        let core = create_core(false, true);
+#[cfg(feature = "cairo")]
+mod cairo_tests {
 
-        let drawable = core.drawable();
-        let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
-        let path = std::path::Path::new("tests/img/lin_slotted/open_starts_not_in_slot_middle.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
+    use super::*;
+
+    use cairo_viewport::bounding_box::ToBoundingBox;
+    use cairo_viewport::{SideLength, Viewport, compare_or_create};
+    use stem_slot::planar_geo::draw::Drawable;
+
+    #[test]
+    fn test_plot_core() {
+        {
+            let core = create_core(false, true);
+
+            let drawable = core.drawable();
+            let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
+            let path =
+                std::path::Path::new("tests/img/lin_slotted/open_starts_not_in_slot_middle.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+        {
+            let core = create_core(true, true);
+
+            let drawable = core.drawable();
+            let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
+            let path = std::path::Path::new("tests/img/lin_slotted/open_starts_in_slot_middle.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
     }
-    {
-        let core = create_core(true, true);
 
-        let drawable = core.drawable();
-        let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
-        let path = std::path::Path::new("tests/img/lin_slotted/open_starts_in_slot_middle.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-}
-
-#[test]
-fn test_plot_assembly() {
-    let magnet = BreadLoafMagnet::new(
-        Length::new::<millimeter>(165.0),
-        Length::new::<millimeter>(16.0),
-        Length::new::<millimeter>(4.0),
-        Length::new::<millimeter>(30.0),
-        Arc::new(Default::default()),
-    )
-    .unwrap();
-    let assembly = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 2.try_into().unwrap());
-
-    {
-        let core = create_core(false, true);
-
-        let drawable = core.drawable();
-        let magnets: Vec<Drawable> = core
-            .surface_magnets(&assembly, true)
-            .map(From::from)
-            .collect();
-        let mag_ref = &magnets;
-        let view = Viewport::from_bounded_entities(
-            mag_ref
-                .iter()
-                .map(|m| m.bounding_box())
-                .chain(std::iter::once(drawable.bounding_box())),
-            SideLength::Long(500),
+    #[test]
+    fn test_plot_assembly() {
+        let magnet = BreadLoafMagnet::new(
+            Length::new::<millimeter>(165.0),
+            Length::new::<millimeter>(16.0),
+            Length::new::<millimeter>(4.0),
+            Length::new::<millimeter>(30.0),
+            Arc::new(Default::default()),
         )
         .unwrap();
-        let zones: Vec<Drawable> = core
-            .winding_zones(&CoilLayout::Quadruple)
-            .map(PositionedZoneContour::into_drawable)
-            .collect();
+        let assembly = MagnetAssembly::new(magnet, 1.try_into().unwrap(), 2.try_into().unwrap());
 
-        let path = std::path::Path::new("tests/img/lin_slotted/assembly_1.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)?;
-                for m in mag_ref {
-                    m.draw(cr)?;
-                }
-                for z in &zones {
-                    z.draw(cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        {
+            let core = create_core(false, true);
+
+            let drawable = core.drawable();
+            let magnets: Vec<Drawable> = core
+                .surface_magnets(&assembly, true)
+                .map(From::from)
+                .collect();
+            let mag_ref = &magnets;
+            let view = Viewport::from_bounded_entities(
+                mag_ref
+                    .iter()
+                    .map(|m| m.bounding_box())
+                    .chain(std::iter::once(drawable.bounding_box())),
+                SideLength::Long(500),
+            )
+            .unwrap();
+            let zones: Vec<Drawable> = core
+                .winding_zones(&CoilLayout::Quadruple)
+                .map(PositionedZoneContour::into_drawable)
+                .collect();
+
+            let path = std::path::Path::new("tests/img/lin_slotted/assembly_1.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+                    for m in mag_ref {
+                        m.draw(cr)?;
+                    }
+                    for z in &zones {
+                        z.draw(cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+        {
+            let core = create_core(true, true);
+
+            let drawable = core.drawable();
+            let magnets: Vec<Drawable> = core
+                .surface_magnets(&assembly, true)
+                .map(From::from)
+                .collect();
+            let mag_ref = &magnets;
+            let view = Viewport::from_bounded_entities(
+                mag_ref
+                    .iter()
+                    .map(|m| m.bounding_box())
+                    .chain(std::iter::once(drawable.bounding_box())),
+                SideLength::Long(500),
+            )
+            .unwrap();
+            let zones: Vec<Drawable> = core
+                .winding_zones(&CoilLayout::DoubleHorizontal)
+                .map(PositionedZoneContour::into_drawable)
+                .collect();
+
+            let path = std::path::Path::new("tests/img/lin_slotted/assembly_2.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)?;
+                    for m in mag_ref {
+                        m.draw(cr)?;
+                    }
+                    for z in &zones {
+                        z.draw(cr)?;
+                    }
+                    return Ok(());
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+
+            approxim::assert_abs_diff_eq!(
+                core.slot_opening_factor(SpatialOrder::Mechanical(1)),
+                0.9997075,
+                epsilon = 1e-6
+            );
+        }
     }
-    {
-        let core = create_core(true, true);
 
-        let drawable = core.drawable();
-        let magnets: Vec<Drawable> = core
-            .surface_magnets(&assembly, true)
-            .map(From::from)
-            .collect();
-        let mag_ref = &magnets;
-        let view = Viewport::from_bounded_entities(
-            mag_ref
-                .iter()
-                .map(|m| m.bounding_box())
-                .chain(std::iter::once(drawable.bounding_box())),
-            SideLength::Long(500),
-        )
-        .unwrap();
-        let zones: Vec<Drawable> = core
-            .winding_zones(&CoilLayout::DoubleHorizontal)
-            .map(PositionedZoneContour::into_drawable)
-            .collect();
+    #[test]
+    fn test_closed_slots() {
+        {
+            let core = create_core(true, false);
 
-        let path = std::path::Path::new("tests/img/lin_slotted/assembly_2.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)?;
-                for m in mag_ref {
-                    m.draw(cr)?;
-                }
-                for z in &zones {
-                    z.draw(cr)?;
-                }
-                return Ok(());
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
+            let drawable = core.drawable();
 
+            let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
+            let path =
+                std::path::Path::new("tests/img/lin_slotted/closed_starts_in_slot_middle.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+        {
+            let core = create_core(false, false);
+
+            let drawable = core.drawable();
+
+            let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
+            let path =
+                std::path::Path::new("tests/img/lin_slotted/closed_starts_not_in_slot_middle.png");
+            let callback = |path: &std::path::Path| {
+                return view.write_to_file(path, |cr| {
+                    cr.set_source_rgb(1.0, 1.0, 1.0);
+                    cr.paint()?;
+                    drawable.draw(cr)
+                });
+            };
+            assert!(compare_or_create(path, &callback, 0.98).is_ok());
+        }
+    }
+
+    #[test]
+    fn test_current_displacement_coefficients() {
+        let core = create_core(false, false);
+        let coeffs = core.current_displacement_coefficients().eval(
+            Frequency::new::<uom::si::frequency::hertz>(50.0),
+            ElectricalConductivity::new::<siemens_per_meter>(57e6),
+            1.0,
+        );
+        approxim::assert_abs_diff_eq!(coeffs.resistance, 1.603643, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(coeffs.inductance, 0.855859, epsilon = 1e-3);
+
+        let coeffs = core.current_displacement_coefficients().eval(
+            Frequency::new::<uom::si::frequency::hertz>(200.0),
+            ElectricalConductivity::new::<siemens_per_meter>(57e6),
+            1.0,
+        );
+        approxim::assert_abs_diff_eq!(coeffs.resistance, 3.581551, epsilon = 1e-6);
+        approxim::assert_abs_diff_eq!(coeffs.inductance, 0.503458, epsilon = 1e-3);
+    }
+
+    #[test]
+    fn test_tooth_width_at() {
+        let core = create_core(false, true);
         approxim::assert_abs_diff_eq!(
-            core.slot_opening_factor(SpatialOrder::Mechanical(1)),
-            0.9997075,
+            core.tooth_width_at(Length::new::<millimeter>(0.0))
+                .get::<millimeter>(),
+            10.5,
+            epsilon = 1e-6
+        );
+        approxim::assert_abs_diff_eq!(
+            core.tooth_width_at(Length::new::<millimeter>(1.0))
+                .get::<millimeter>(),
+            6.563508,
+            epsilon = 1e-6
+        );
+        approxim::assert_abs_diff_eq!(
+            core.tooth_width_at(Length::new::<millimeter>(12.0))
+                .get::<millimeter>(),
+            4.5,
+            epsilon = 1e-6
+        );
+        approxim::assert_abs_diff_eq!(
+            core.tooth_width_at(Length::new::<millimeter>(18.0))
+                .get::<millimeter>(),
+            12.5,
+            epsilon = 1e-6
+        );
+        approxim::assert_abs_diff_eq!(
+            core.tooth_width_at(Length::new::<millimeter>(50.0))
+                .get::<millimeter>(),
+            12.5,
             epsilon = 1e-6
         );
     }
-}
-
-#[test]
-fn test_closed_slots() {
-    {
-        let core = create_core(true, false);
-
-        let drawable = core.drawable();
-
-        let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
-        let path = std::path::Path::new("tests/img/lin_slotted/closed_starts_in_slot_middle.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-    {
-        let core = create_core(false, false);
-
-        let drawable = core.drawable();
-
-        let view = Viewport::from_bounded_entity(&drawable, SideLength::Long(500));
-        let path =
-            std::path::Path::new("tests/img/lin_slotted/closed_starts_not_in_slot_middle.png");
-        let callback = |path: &std::path::Path| {
-            return view.write_to_file(path, |cr| {
-                cr.set_source_rgb(1.0, 1.0, 1.0);
-                cr.paint()?;
-                drawable.draw(cr)
-            });
-        };
-        assert!(compare_or_create(path, &callback, 0.98).is_ok());
-    }
-}
-
-#[test]
-fn test_current_displacement_coefficients() {
-    let core = create_core(false, false);
-    let coeffs = core.current_displacement_coefficients().eval(
-        Frequency::new::<uom::si::frequency::hertz>(50.0),
-        ElectricalConductivity::new::<siemens_per_meter>(57e6),
-        1.0,
-    );
-    approxim::assert_abs_diff_eq!(coeffs.resistance, 1.603643, epsilon = 1e-6);
-    approxim::assert_abs_diff_eq!(coeffs.inductance, 0.855859, epsilon = 1e-3);
-
-    let coeffs = core.current_displacement_coefficients().eval(
-        Frequency::new::<uom::si::frequency::hertz>(200.0),
-        ElectricalConductivity::new::<siemens_per_meter>(57e6),
-        1.0,
-    );
-    approxim::assert_abs_diff_eq!(coeffs.resistance, 3.581551, epsilon = 1e-6);
-    approxim::assert_abs_diff_eq!(coeffs.inductance, 0.503458, epsilon = 1e-3);
-}
-
-#[test]
-fn test_tooth_width_at() {
-    let core = create_core(false, true);
-    approxim::assert_abs_diff_eq!(
-        core.tooth_width_at(Length::new::<millimeter>(0.0))
-            .get::<millimeter>(),
-        10.5,
-        epsilon = 1e-6
-    );
-    approxim::assert_abs_diff_eq!(
-        core.tooth_width_at(Length::new::<millimeter>(1.0))
-            .get::<millimeter>(),
-        6.563508,
-        epsilon = 1e-6
-    );
-    approxim::assert_abs_diff_eq!(
-        core.tooth_width_at(Length::new::<millimeter>(12.0))
-            .get::<millimeter>(),
-        4.5,
-        epsilon = 1e-6
-    );
-    approxim::assert_abs_diff_eq!(
-        core.tooth_width_at(Length::new::<millimeter>(18.0))
-            .get::<millimeter>(),
-        12.5,
-        epsilon = 1e-6
-    );
-    approxim::assert_abs_diff_eq!(
-        core.tooth_width_at(Length::new::<millimeter>(50.0))
-            .get::<millimeter>(),
-        12.5,
-        epsilon = 1e-6
-    );
 }
