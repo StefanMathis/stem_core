@@ -32,7 +32,9 @@ doc-images = ["dep:embed-doc-image"]
 [dev-dependencies]
 indoc = "1.0"
 serde_yaml = "0.8"
-cairo_viewport = { version = "0.3", features = ["image-compare"]}
+
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+cairo_viewport = { version = "0.3", features = ["image-compare"] }
 
 [package.metadata.docs.rs]
 features = ["serde", "cairo", "doc-images"]
