@@ -27,6 +27,7 @@ modify the components. -->
 [rot_flux_barrier_comparison.svg]: https://raw.githubusercontent.com/StefanMathis/stem_core/refs/heads/main/docs/img/rot_flux_barrier_comparison.svg
 
 [![Documentation](https://docs.rs/stem_core/badge.svg)](https://docs.rs/stem_core)
+[![CI](https://github.com/StefanMathis/stem_core/actions/workflows/ci.yml/badge.svg)](https://github.com/StefanMathis/stem_core/actions/workflows/ci.yml)
 
 Magnetic core definition for stem – a Simulation Toolbox for Electric Motors. The
 [stem book](https://stefanmathis.github.io/stem_book/) provides a comprehensive
