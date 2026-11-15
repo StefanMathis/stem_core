@@ -116,9 +116,9 @@ assert!(RotCore::try_from(builder).is_err());
 
 # Serialization and deserialization
 
-The serialized representation of a [`LinCore`] is equivalent to that of
-[`LinCoreBuilder`]. When deserializing a [`LinCore`], the serialized
-representation is first deserialized into a [`LinCoreBuilder`] which is then
+The serialized representation of a [`RotCore`] is equivalent to that of
+[`RotCoreBuilder`]. When deserializing a [`RotCore`], the serialized
+representation is first deserialized into a [`RotCoreBuilder`] which is then
 converted via [`TryFrom`].
 
 ```

@@ -130,7 +130,7 @@ assert_abs_diff_eq!(core.mass_surface_magnets(&surface_magnets).eval(&[]).get::<
 
 If the `serde` feature is enabled, all types from this crate can be
 serialized and deserialized. During deserialization, the invariants are
-validated (to e.g., prevent a negative axial core length).
+validated (e.g., to prevent a negative axial core length).
 
 Units and quantities can be deserialized from strings representing SI units via
 the [dyn_quantity] crate. Similarly, it is possible to serialize quantities
