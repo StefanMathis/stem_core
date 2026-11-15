@@ -11,16 +11,16 @@ modify the components. -->
 [stem book]: https://stefanmathis.github.io/stem_book/
 [stem_magnet]: https://crates.io/crates/stem_magnet
 [stem_slot]: https://crates.io/crates/stem_slot
-[`LinCore`]: https://docs.rs/stem_core/0.2.0/stem_core/core/struct.LinCore.html
-[`RotCore`]: https://docs.rs/stem_core/0.2.0/stem_core/core/struct.RotCore.html
-[`AirGap`]: https://docs.rs/stem_core/0.2.0/stem_core/air_gap/trait.AirGap.html
-[`PlainAirGap`]: https://docs.rs/stem_core/0.2.0/stem_core/air_gap/plain/struct.PlainAirGap.html
-[`SlottedAirGap`]: https://docs.rs/stem_core/0.2.0/stem_core/air_gap/slotted/struct.SlottedAirGap.html
-[`StraightIndentsAirGap`]: https://docs.rs/stem_core/0.2.0/stem_core/air_gap/straight_indents/struct.StraightIndentsAirGap.html
-[`FluxBarrier`]: https://docs.rs/stem_core/0.2.0/stem_core/flux_barrier/trait.FluxBarrier.html
-[`Spoke1FluxBarrier`]: https://docs.rs/stem_core/0.2.0/stem_core/flux_barrier/spoke1/struct.Spoke1FluxBarrier.html
-[`V1rFluxBarrier`]: https://docs.rs/stem_core/0.2.0/stem_core/flux_barrier/v1r/struct.V1rFluxBarrier.html
-[`V2rFluxBarrier`]: https://docs.rs/stem_core/0.2.0/stem_core/flux_barrier/v2r/struct.V2rFluxBarrier.html
+[`LinCore`]: https://docs.rs/stem_core/0.2.1/stem_core/core/struct.LinCore.html
+[`RotCore`]: https://docs.rs/stem_core/0.2.1/stem_core/core/struct.RotCore.html
+[`AirGap`]: https://docs.rs/stem_core/0.2.1/stem_core/air_gap/trait.AirGap.html
+[`PlainAirGap`]: https://docs.rs/stem_core/0.2.1/stem_core/air_gap/plain/struct.PlainAirGap.html
+[`SlottedAirGap`]: https://docs.rs/stem_core/0.2.1/stem_core/air_gap/slotted/struct.SlottedAirGap.html
+[`StraightIndentsAirGap`]: https://docs.rs/stem_core/0.2.1/stem_core/air_gap/straight_indents/struct.StraightIndentsAirGap.html
+[`FluxBarrier`]: https://docs.rs/stem_core/0.2.1/stem_core/flux_barrier/trait.FluxBarrier.html
+[`Spoke1FluxBarrier`]: https://docs.rs/stem_core/0.2.1/stem_core/flux_barrier/spoke1/struct.Spoke1FluxBarrier.html
+[`V1rFluxBarrier`]: https://docs.rs/stem_core/0.2.1/stem_core/flux_barrier/v1r/struct.V1rFluxBarrier.html
+[`V2rFluxBarrier`]: https://docs.rs/stem_core/0.2.1/stem_core/flux_barrier/v2r/struct.V2rFluxBarrier.html
 
 [full_core_assembly.svg]: https://raw.githubusercontent.com/StefanMathis/stem_core/refs/heads/main/docs/img/full_core_assembly.svg
 [lin_air_gap_comparison.svg]: https://raw.githubusercontent.com/StefanMathis/stem_core/refs/heads/main/docs/img/lin_air_gap_comparison.svg
@@ -33,7 +33,7 @@ Magnetic core definition for stem – a Simulation Toolbox for Electric Motors. 
 [stem book](https://stefanmathis.github.io/stem_book/) provides a comprehensive
 guide to the framework, while this crate's documentation describes its API.
 
-The full API documentation is available at <https://docs.rs/stem_core/0.2.0/stem_core>.
+The full API documentation is available at <https://docs.rs/stem_core/0.2.1/stem_core>.
 
 > **Feedback welcome!**  
 > Found a bug, missing docs, or have a feature request?  
@@ -149,7 +149,7 @@ assert_abs_diff_eq!(core.skew_factor(SpatialOrder::Mechanical(7)), 0.9003, epsil
 assert_eq!(core.winding_zones(&CoilLayout::DoubleHorizontal).count(), 56);
 
 // Return the mass of all interior magnets shown in the image
-assert_abs_diff_eq!(core.mass_interior_magnets().eval(&[]).get::<kilogram>(), 0.182, epsilon=1e-3);
+assert_abs_diff_eq!(core.interior_magnets_mass().eval(&[]).get::<kilogram>(), 0.182, epsilon=1e-3);
 
 // Return the mass of all surface magnets shown in the image
 let magnet = ArcParallelMagnet::with_const_thickness(
@@ -160,7 +160,7 @@ let magnet = ArcParallelMagnet::with_const_thickness(
     Arc::new(Material::default()),
 ).expect("valid magnet");
 let surface_magnets = MagnetAssembly::new(magnet, 1.try_into().expect("not zero"), 2.try_into().expect("not zero"));
-assert_abs_diff_eq!(core.mass_surface_magnets(&surface_magnets).eval(&[]).get::<kilogram>(), 0.114, epsilon=1e-3);
+assert_abs_diff_eq!(core.surface_magnets_mass(&surface_magnets).eval(&[]).get::<kilogram>(), 0.114, epsilon=1e-3);
 ```
 
 # Serialization and deserialization

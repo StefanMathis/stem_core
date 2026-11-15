@@ -1,6 +1,6 @@
 [package]
 name = "stem_core"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 description = "Magnetic core definition for stem - a Simulation Toolbox for Electric Motors."
 readme = "README.md"
@@ -25,7 +25,7 @@ embed-doc-image = { version = "0.1.4", optional = true }
 
 [features]
 default = []
-serde = ["dep:serde_mosaic","dep:deserialize_untagged_verbose_error", "dep:serde", "dep:typetag", "stem_slot/serde"]
+serde = ["dep:serde_mosaic","dep:deserialize_untagged_verbose_error", "dep:serde", "dep:typetag", "stem_slot/serde", "stem_magnet/serde"]
 cairo = ["stem_slot/cairo", "stem_magnet/cairo"]
 doc-images = ["dep:embed-doc-image"]
 

@@ -1362,12 +1362,12 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// let surface_magnets = MagnetAssembly::new(magnet, 3.try_into().unwrap(), 2.try_into().unwrap());
     ///
     /// assert_eq!(
-    ///     core.mass_surface_magnets(&surface_magnets).eval(&[]),
+    ///     core.surface_magnets_mass(&surface_magnets).eval(&[]),
     ///     core.poles().get() as f64 * surface_magnets.mass().eval(&[])
     /// );
-    /// assert_abs_diff_eq!(core.mass_surface_magnets(&surface_magnets).eval(&[]).get::<kilogram>(), 0.478546, epsilon=1e-6);
+    /// assert_abs_diff_eq!(core.surface_magnets_mass(&surface_magnets).eval(&[]).get::<kilogram>(), 0.478546, epsilon=1e-6);
     /// ```
-    fn mass_surface_magnets(&self, magnet_assembly: &MagnetAssembly) -> VarQuantity<Mass> {
+    fn surface_magnets_mass(&self, magnet_assembly: &MagnetAssembly) -> VarQuantity<Mass> {
         return VarQuantity::from(f64::from(self.poles().get())) * magnet_assembly.mass();
     }
 
@@ -1418,9 +1418,9 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// .try_into()
     /// .unwrap();
     ///
-    /// assert_abs_diff_eq!(core.mass_interior_magnets().eval(&[]).get::<kilogram>(), 0.264, epsilon=1e-6);
+    /// assert_abs_diff_eq!(core.interior_magnets_mass().eval(&[]).get::<kilogram>(), 0.264, epsilon=1e-6);
     /// ```
-    fn mass_interior_magnets(&self) -> VarQuantity<Mass> {
+    fn interior_magnets_mass(&self) -> VarQuantity<Mass> {
         let mass_per_pole: VarQuantity<Mass> = self
             .interior_magnet_assemblies()
             .iter()

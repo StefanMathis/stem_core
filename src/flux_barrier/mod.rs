@@ -304,7 +304,7 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     /// `magnet_type` of a returned shape is 1, that shape belongs to the second
     /// magnet assembly in the slice. Returning a `magnet_type` which is out of
     /// bounds of the slice will result in a panic when calling some methods
-    /// like e.g., [`CoreExt::mass_interior_magnets`].
+    /// like e.g., [`CoreExt::interior_magnets_mass`].
     /// - If `split` is true, each magnet should be separated in its north and
     /// south shape using
     /// [`Magnet::north_south_shapes`](stem_magnet::magnet::Magnet::north_south_shapes).
@@ -349,7 +349,7 @@ pub trait FluxBarrier: DynClone + Any + Sync + Send + std::fmt::Debug + 'static 
     `PositionedMagnetShape::magnet_type` of a returned shape is 1, that shape
     belongs to the second magnet assembly in the slice. This can e.g., be used to
     calculate the total mass of all interior magnets (see source code of
-    [`CoreExt::mass_interior_magnets`]. When implementing [`FluxBarrier`] for
+    [`CoreExt::interior_magnets_mass`]. When implementing [`FluxBarrier`] for
     an external type, this relation needs to be uphold, because otherwise these
     calculations will return wrong results.
 
