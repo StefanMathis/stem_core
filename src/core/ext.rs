@@ -1077,6 +1077,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         doc = "**Doc images not enabled**. Compile docs with
         `cargo doc --features 'doc-images'` and Rust version >= 1.54."
     )]
+    ///
     /// _This image was produced with `examples/surface_magnets.rs`._
     ///
     /// # Examples
