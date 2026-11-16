@@ -175,7 +175,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// plane when looking at the cross section of the core.
     ///
     /// This method should NOT be used to determine the axial length of a coil,
-    /// use [`CoreExt::coil_axial_length`] instead.
+    /// use [`CoreExt::axial_coil_length`] instead.
     ///
     /// See the docstrings of [`LinCore`](crate::core::LinCore) and
     /// [`RotCore`](crate::core::RotCore) for a visualization.
