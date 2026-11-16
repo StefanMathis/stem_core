@@ -431,4 +431,12 @@ impl AirGap for PlainAirGap {
     fn slot(&self, _core: CoreRef<'_>) -> Option<&dyn stem_slot::slot::Slot> {
         return None;
     }
+
+    fn slot_middle_offset(&self, core: CoreRef<'_>) -> f64 {
+        if self.starts_in_slot_middle {
+            0.0
+        } else {
+            f64::from(core.pole_pairs().get()) * PI / f64::from(self.slots(core))
+        }
+    }
 }

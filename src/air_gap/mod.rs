@@ -527,6 +527,40 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     ) -> CurrentDisplacementCalculator {
         return CurrentDisplacementCalculator::from_slice_dims([].into_iter());
     }
+
+    /// Returns the offset of the first slot middle from the "start" of
+    /// the core in electrical radians.
+    ///
+    /// This method implements [`CoreExt::slot_middle_offset`], see its
+    /// documentation for details. The default implementation returns 0. If the
+    /// air gap is not windable and therefore has no slots, it is not necessary
+    /// to override this method.
+    ///
+    /// The image below shows a [`SlottedAirGap`] where the slot middle of the
+    /// first slot is once directly at the start of the core and once shifted by
+    /// `p * π / N` degrees in the electrical angle coordinate system. `p`
+    /// is the number of pole pairs and `N` is the number of slots.
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![Slot middle offset comparison][d_axis_to_first_slot_middle_offset]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image(
+            "d_axis_to_first_slot_middle_offset",
+            "docs/img/d_axis_to_first_slot_middle_offset.svg"
+        )
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    fn slot_middle_offset(&self, core: CoreRef<'_>) -> f64 {
+        let _ = core;
+        return 0.0;
+    }
 }
 
 dyn_clone::clone_trait_object!(AirGap);

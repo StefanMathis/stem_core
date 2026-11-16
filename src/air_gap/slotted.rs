@@ -582,4 +582,12 @@ impl AirGap for SlottedAirGap {
             spatial_order,
         );
     }
+
+    fn slot_middle_offset(&self, core: CoreRef<'_>) -> f64 {
+        if self.starts_in_slot_middle {
+            0.0
+        } else {
+            f64::from(core.pole_pairs().get()) * std::f64::consts::PI / f64::from(self.slots(core))
+        }
+    }
 }

@@ -32,6 +32,8 @@ use crate::{
 pub(crate) mod private {
     /// Sealed trait for [`CoreExt`]
     pub trait Sealed {}
+
+    impl<T: Sealed + ?Sized> Sealed for &T {}
 }
 
 /**
@@ -2187,7 +2189,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         return SpatialOrder::Mechanical(u32::from(self.slots()) * k.get());
     }
 
-    /// Returns the offset of the first positive d-axis against the "start" of
+    /// Returns the offset of the first positive d-axis from the "start" of
     /// the core in electrical radians.
     ///
     /// The "start" of a linear core is its left edge when looking at the cross
@@ -2197,7 +2199,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// barrier, this method forwards to [`FluxBarrier::d_axis_offset`] and
     /// normalizes the returned value to be between 0 and 2 π.
     ///
-    /// The following image shows why this factor is needed using the examples
+    /// The following image shows why this offset is needed using the examples
     /// of a [`Spoke1FluxBarrier`](crate::flux_barrier::Spoke1FluxBarrier) and a
     /// [`V1rFluxBarrier`](crate::flux_barrier::V1rFluxBarrier): The former has
     /// an offset of 0 (for a linear core), because the magnet sits directly in
@@ -2229,6 +2231,140 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
                 .rem_euclid(std::f64::consts::TAU),
             None => FRAC_PI_2,
         }
+    }
+
+    /// Returns the offset of the first slot middle from the "start" of
+    /// the core in electrical radians.
+    ///
+    /// The “start” of a linear core is its left edge when looking at the cross
+    /// section; for a rotary core it is the x-axis. This method forwards to
+    /// [`AirGap::slot_middle_offset`].
+    ///
+    /// This offset is needed to determine the position of a magnetic excitation
+    /// relative to the "start" of the core. Together with the
+    /// [`CoreExt::d_axis_offset`], this gives then the transformation angle for
+    /// the Park transformation into d-q-coordinates. See
+    /// [`CoreExt::first_slot_to_d_axis`].
+    ///
+    /// The image below shows a [`SlottedAirGap`] where the slot middle of the
+    /// first slot is once directly at the start of the core and once shifted by
+    /// `p * π / N` electrical degrees (`p` is the number of pole pairs and `N`
+    /// is the number of slots).
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![Slot middle offset comparison][d_axis_to_first_slot_middle_offset]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image(
+            "d_axis_to_first_slot_middle_offset",
+            "docs/img/d_axis_to_first_slot_middle_offset.svg"
+        )
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    fn slot_middle_offset(&self) -> f64 {
+        self.air_gap().slot_middle_offset(self.as_core_ref())
+    }
+
+    /// Returns the electrical angle from the middle of the first slot to the
+    /// first positive d-axis in electrical radians.
+    ///
+    /// This angle is [`CoreExt::d_axis_offset`] minus
+    /// [`CoreExt::slot_middle_offset`]. It is useful for transforming the
+    /// harmonics of the field excitation curve / magnetomotive force MMF into
+    /// dq-coordinates. Let's assume the coefficients of the field
+    /// excitation curve are given as a vector of complex values `C` where each
+    /// index denotes the corresponding mechanical spatial order. A
+    /// particular coefficient `c_k` is transformed into dq-coordinates as
+    /// follows:
+    ///
+    /// `c_k_dq = c_k * e^(j * k / p * θ)
+    ///
+    /// where `θ` is the `first_slot_to_d_axis` and `p` is the number of pole
+    /// pairs. `Re(c_k_dq)` is the d-component of the excitation for the k-th
+    /// mechanical spatial order, `Im(c_k_dq)` the q-component.
+    #[doc = ""]
+    #[cfg_attr(
+        feature = "doc-images",
+        doc = "![Slot middle offset comparison][d_axis_to_first_slot_middle_offset]"
+    )]
+    #[cfg_attr(
+        feature = "doc-images",
+        embed_doc_image::embed_doc_image(
+            "d_axis_to_first_slot_middle_offset",
+            "docs/img/d_axis_to_first_slot_middle_offset.svg"
+        )
+    )]
+    #[cfg_attr(
+        not(feature = "doc-images"),
+        doc = "**Doc images not enabled**. Compile docs with
+        `cargo doc --features 'doc-images'` and Rust version >= 1.54."
+    )]
+    fn first_slot_to_d_axis(&self) -> f64 {
+        self.d_axis_offset() - self.slot_middle_offset()
+    }
+}
+
+impl<T: CoreExt + ?Sized + private::Sealed> CoreExt for &T {
+    fn as_core_ref(&self) -> CoreRef<'_> {
+        (*self).as_core_ref()
+    }
+
+    fn air_gap(&self) -> &dyn AirGap {
+        (*self).air_gap()
+    }
+
+    fn flux_barrier(&self) -> Option<&dyn FluxBarrier> {
+        (*self).flux_barrier()
+    }
+
+    fn axial_length(&self) -> Length {
+        (*self).axial_length()
+    }
+
+    fn pole_pairs(&self) -> NonZeroU16 {
+        (*self).pole_pairs()
+    }
+
+    fn material(&self) -> &Arc<Material> {
+        (*self).material()
+    }
+
+    fn skew_angle(&self) -> f64 {
+        (*self).skew_angle()
+    }
+
+    fn air_gap_length(&self) -> Length {
+        (*self).air_gap_length()
+    }
+
+    fn lin_or_rot(&self) -> LinOrRot {
+        (*self).lin_or_rot()
+    }
+
+    fn axial_coil_overhang(&self) -> Length {
+        (*self).axial_coil_overhang()
+    }
+
+    fn shape(&self) -> &Shape {
+        (*self).shape()
+    }
+
+    fn tooth_mass(&self) -> VarQuantity<Mass> {
+        (*self).tooth_mass()
+    }
+
+    fn air_gap_curvature_factor(
+        &self,
+        effective_air_gap: Length,
+        spatial_order: SpatialOrder,
+    ) -> f64 {
+        (*self).air_gap_curvature_factor(effective_air_gap, spatial_order)
     }
 }
 
