@@ -2283,7 +2283,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     /// particular coefficient `c_k` is transformed into dq-coordinates as
     /// follows:
     ///
-    /// `c_k_dq = c_k * e^(j * k / p * θ)
+    /// `c_k_dq = c_k * e^(j * k / p * θ)`
     ///
     /// where `θ` is the `first_slot_to_d_axis` and `p` is the number of pole
     /// pairs. `Re(c_k_dq)` is the d-component of the excitation for the k-th
