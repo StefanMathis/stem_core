@@ -1,4 +1,4 @@
-use std::{f64::consts::PI, num::NonZeroUsize, sync::Arc};
+use std::{f64::consts::PI, sync::Arc};
 use stem_core::prelude::*;
 
 #[test]
@@ -92,6 +92,7 @@ fn test_magnets() {
 #[cfg(feature = "cairo")]
 mod cairo_tests {
     use super::*;
+    use std::num::NonZeroUsize;
 
     use approxim::assert_abs_diff_eq;
     use cairo_viewport::{Viewport, compare_or_create};
