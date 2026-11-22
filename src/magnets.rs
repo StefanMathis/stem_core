@@ -276,10 +276,10 @@ impl<const LIN: bool> MagnetsPeriodic<LIN> {
     ///
     /// // Dummy shapes
     /// let north_shape = Shape::from_outer(Contour::rectangle([0.0, 0.0], [1.0, 0.5])).expect("valid shape");
-    /// let north = PositionedMagnetShape {shape: north_shape, is_north: true, magnet_type: 0};
+    /// let north = PositionedMagnetShape {shape: north_shape, is_north: true, magnet_type: 0, pole: 0};
     ///
     /// let south_shape = Shape::from_outer(Contour::rectangle([0.0, 0.5], [1.0, 1.0])).expect("valid shape");
-    /// let south = PositionedMagnetShape {shape: south_shape, is_north: false, magnet_type: 0};
+    /// let south = PositionedMagnetShape {shape: south_shape, is_north: false, magnet_type: 0, pole: 0};
     ///
     /// let mut mags = MagnetsPeriodic::<true>::new(
     ///     Length::new::<millimeter>(100.0),
@@ -327,10 +327,10 @@ impl<const LIN: bool> MagnetsPeriodic<LIN> {
     ///
     /// // Dummy shapes
     /// let north_shape = Shape::from_outer(Contour::rectangle([0.0, 0.0], [1.0, 0.5])).expect("valid shape");
-    /// let north = PositionedMagnetShape {shape: north_shape, is_north: true, magnet_type: 0};
+    /// let north = PositionedMagnetShape {shape: north_shape, is_north: true, magnet_type: 0, pole: 0};
     ///
     /// let south_shape = Shape::from_outer(Contour::rectangle([0.0, 0.5], [1.0, 1.0])).expect("valid shape");
-    /// let south = PositionedMagnetShape {shape: south_shape, is_north: false, magnet_type: 0};
+    /// let south = PositionedMagnetShape {shape: south_shape, is_north: false, magnet_type: 0, pole: 0};
     ///
     /// let mut mags = MagnetsPeriodic::<true>::new(
     ///     Length::new::<millimeter>(100.0),
