@@ -487,7 +487,8 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///
     /// assert_abs_diff_eq!(core.pole_coverage(None), 4.0 / 7.0, epsilon = 1e-4);
     /// ```
-    fn pole_coverage(&self, _surface_magnet_assembly: Option<&MagnetAssembly>) -> f64 {
+    fn pole_coverage(&self, surface_magnet_assembly: Option<&MagnetAssembly>) -> f64 {
+        let _ = surface_magnet_assembly;
         // embed_doc_image does not support documenting trait methods without
         // a body, so a dummy implementation is provided (which is overridden
         // by the actual implementors).

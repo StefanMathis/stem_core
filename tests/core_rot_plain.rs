@@ -1,8 +1,9 @@
 #[cfg(feature = "cairo")]
 mod cairo_tests {
 
-    use std::{f64::consts::PI, sync::Arc};
+    use std::{f64::consts::PI, num::NonZeroUsize, sync::Arc};
 
+    use approxim::assert_abs_diff_eq;
     use cairo_viewport::{Viewport, compare_or_create};
     use planar_geo::prelude::ToBoundingBox;
     use stem_core::prelude::*;
@@ -69,14 +70,14 @@ mod cairo_tests {
             })
             .unwrap();
 
-            approxim::assert_abs_diff_eq!(
+            assert_abs_diff_eq!(
                 core.yoke_height().get::<millimeter>(),
                 30.0,
                 epsilon = 1e-10
             );
             assert_eq!(core.pole_pairs(), 5.try_into().expect("not zero"));
             assert_eq!(core.slots(), 12);
-            approxim::assert_abs_diff_eq!(
+            assert_abs_diff_eq!(
                 core.slot_opening_factor(SpatialOrder::Mechanical(1)),
                 0.9886159,
                 epsilon = 1e-6
@@ -132,45 +133,65 @@ mod cairo_tests {
 
     #[test]
     fn test_pole_coverage() {
-        let air_gap = PlainAirGap {
-            num_segments: 0,
-            air_gap_winding_height: Length::new::<millimeter>(10.0),
-            winding_coverage: 0.0,
-            starts_in_slot_middle: false,
-            slots: 12,
-        };
+        fn magnet(covered_angle: f64, tangential: NonZeroUsize) -> MagnetAssembly {
+            let magnet = ArcParallelMagnet::with_const_thickness(
+                Length::new::<millimeter>(48.0),
+                Length::new::<millimeter>(4.0),
+                SideHeightOrThickness::Thickness(Length::new::<millimeter>(0.5)),
+                AngleOrWidth::Angle(covered_angle * PI / 180.0),
+                Arc::new(Material::default()),
+            )
+            .unwrap();
+            return MagnetAssembly::new(magnet, NonZeroUsize::MIN, tangential);
+        }
 
-        let core = RotCore::try_from(RotCoreBuilder {
-            air_gap_radius: Length::new::<millimeter>(85.0),
-            yoke_radius: Length::new::<millimeter>(55.0),
-            axial_length: Length::new::<millimeter>(100.0),
+        let core: RotCore = RotCoreBuilder {
+            air_gap_radius: Length::new::<millimeter>(4.0),
+            yoke_radius: Length::new::<millimeter>(0.05),
+            axial_length: Length::new::<millimeter>(48.0),
             axial_coil_overhang: Length::new::<millimeter>(0.0),
-            skew_angle: 0.0,
-            iron_fill_factor: 1.0,
+            iron_fill_factor: 0.92,
             material: Arc::new(Material::default()),
-            pole_pairs: 2.try_into().expect("not zero"),
-            air_gap: Box::new(air_gap),
+            pole_pairs: 1.try_into().unwrap(),
+            skew_angle: 20.0 * PI / 180.0,
+            air_gap: Box::new(PlainAirGap {
+                air_gap_winding_height: Length::new::<millimeter>(0.0),
+                num_segments: 0,
+                winding_coverage: 0.0,
+                starts_in_slot_middle: true,
+                slots: 0,
+            }),
             flux_barrier: None,
-        })
+        }
+        .try_into()
         .unwrap();
 
-        let magnet = ArcParallelMagnet::with_const_thickness(
-            Length::new::<millimeter>(165.0),
-            core.air_gap_radius(),
-            SideHeightOrThickness::Thickness(Length::new::<millimeter>(10.0)),
-            AngleOrWidth::Angle(10.0 / 180.0 * PI),
-            Arc::new(Default::default()),
-        )
-        .unwrap();
-
-        let assembly =
-            MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap());
-
-        approxim::assert_abs_diff_eq!(
-            core.pole_coverage(Some(&assembly)),
-            1.0 / 3.0,
-            epsilon = 1e-6
-        );
+        {
+            {
+                assert_abs_diff_eq!(
+                    core.pole_coverage(Some(&magnet(180.0, 1.try_into().unwrap()))),
+                    1.0
+                );
+            }
+            {
+                assert_abs_diff_eq!(
+                    core.pole_coverage(Some(&magnet(90.0, 1.try_into().unwrap()))),
+                    0.5
+                );
+            }
+            {
+                assert_abs_diff_eq!(
+                    core.pole_coverage(Some(&magnet(18.0, 1.try_into().unwrap()))),
+                    0.1
+                );
+            }
+            {
+                assert_abs_diff_eq!(
+                    core.pole_coverage(Some(&magnet(90.0, 2.try_into().unwrap()))),
+                    1.0
+                );
+            }
+        }
     }
 
     #[test]
