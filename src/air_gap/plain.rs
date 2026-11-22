@@ -432,7 +432,7 @@ impl AirGap for PlainAirGap {
         return None;
     }
 
-    fn slot_middle_offset(&self, core: CoreRef<'_>) -> f64 {
+    fn first_slot_offset(&self, core: CoreRef<'_>) -> f64 {
         if self.starts_in_slot_middle {
             0.0
         } else {

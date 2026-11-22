@@ -2239,7 +2239,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
     ///
     /// The “start” of a linear core is its left edge when looking at the cross
     /// section; for a rotary core it is the x-axis. This method forwards to
-    /// [`AirGap::slot_middle_offset`].
+    /// [`AirGap::first_slot_offset`].
     ///
     /// This offset is needed to determine the position of a magnetic excitation
     /// relative to the "start" of the core. Together with the
@@ -2268,15 +2268,15 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         doc = "**Doc images not enabled**. Compile docs with
         `cargo doc --features 'doc-images'` and Rust version >= 1.54."
     )]
-    fn slot_middle_offset(&self) -> f64 {
-        self.air_gap().slot_middle_offset(self.as_core_ref())
+    fn first_slot_offset(&self) -> f64 {
+        self.air_gap().first_slot_offset(self.as_core_ref())
     }
 
     /// Returns the electrical angle from the middle of the first slot to the
     /// first positive d-axis in electrical radians.
     ///
     /// This angle is [`CoreExt::d_axis_offset`] minus
-    /// [`CoreExt::slot_middle_offset`]. It is useful for transforming the
+    /// [`CoreExt::first_slot_offset`]. It is useful for transforming the
     /// harmonics of the field excitation curve / magnetomotive force MMF into
     /// dq-coordinates. Let's assume the coefficients of the field
     /// excitation curve are given as a vector of complex values `C` where each
@@ -2307,7 +2307,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         `cargo doc --features 'doc-images'` and Rust version >= 1.54."
     )]
     fn first_slot_to_d_axis(&self) -> f64 {
-        self.d_axis_offset() - self.slot_middle_offset()
+        self.d_axis_offset() - self.first_slot_offset()
     }
 }
 

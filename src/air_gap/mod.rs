@@ -531,7 +531,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
     /// Returns the offset of the first slot middle from the "start" of
     /// the core in electrical radians.
     ///
-    /// This method implements [`CoreExt::slot_middle_offset`], see its
+    /// This method implements [`CoreExt::first_slot_offset`], see its
     /// documentation for details. The default implementation returns 0. If the
     /// air gap is not windable and therefore has no slots, it is not necessary
     /// to override this method.
@@ -557,7 +557,7 @@ pub trait AirGap: DynClone + Sync + Send + std::fmt::Debug + std::any::Any {
         doc = "**Doc images not enabled**. Compile docs with
         `cargo doc --features 'doc-images'` and Rust version >= 1.54."
     )]
-    fn slot_middle_offset(&self, core: CoreRef<'_>) -> f64 {
+    fn first_slot_offset(&self, core: CoreRef<'_>) -> f64 {
         let _ = core;
         return 0.0;
     }

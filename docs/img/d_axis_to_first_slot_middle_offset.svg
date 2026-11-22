@@ -1455,7 +1455,7 @@
       <g class="TextShape">
        <g id="id179">
         <rect class="BoundingBox" stroke="none" fill="none" x="1900" y="8313" width="3201" height="888"/>
-        <text class="SVGTextShape"><tspan class="TextParagraph"><tspan class="TextPosition" x="2360" y="8856"><tspan font-family="Liberation Sans, sans-serif" font-size="282px" font-weight="400" lengthAdjust="spacingAndGlyphs" textLength="2281" fill="rgb(0,169,51)" stroke="none" style="white-space: pre">slot_middle_offset</tspan></tspan></tspan></text>
+        <text class="SVGTextShape"><tspan class="TextParagraph"><tspan class="TextPosition" x="2360" y="8856"><tspan font-family="Liberation Sans, sans-serif" font-size="282px" font-weight="400" lengthAdjust="spacingAndGlyphs" textLength="2281" fill="rgb(0,169,51)" stroke="none" style="white-space: pre">first_slot_offset</tspan></tspan></tspan></text>
        </g>
       </g>
       <g class="com.sun.star.drawing.LineShape">
