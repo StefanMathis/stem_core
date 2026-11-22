@@ -91,6 +91,8 @@ pub struct PositionedMagnetShape {
     over the surface magnets, this value is simply 0.
     */
     pub magnet_type: usize,
+    /// The magnetic pole this magnet shape belongs to.
+    pub pole: usize,
 }
 
 impl PositionedMagnetShape {
@@ -389,6 +391,7 @@ impl<const LIN: bool> Iterator for MagnetsPeriodic<LIN> {
         if current_pole.is_odd() {
             shape.is_north = !shape.is_north;
         }
+        shape.pole = current_pole;
 
         return Some(shape);
     }
@@ -674,6 +677,7 @@ pub fn surface_magnet_assembly_shapes_lin(
                 shape: m.into_owned(),
                 is_north: i.is_even(),
                 magnet_type: 0,
+                pole: 0,
             })
             .collect()
     } else {
@@ -681,6 +685,7 @@ pub fn surface_magnet_assembly_shapes_lin(
             shape: magnet_assembly.magnet().shape().into_owned(),
             is_north: true,
             magnet_type: 0,
+            pole: 0,
         }]
     };
 
@@ -867,6 +872,7 @@ pub fn surface_magnet_assembly_shapes_rot(
                 shape: m.into_owned(),
                 is_north: i.is_even(),
                 magnet_type: 0,
+                pole: 0,
             })
             .collect()
     } else {
@@ -874,6 +880,7 @@ pub fn surface_magnet_assembly_shapes_rot(
             shape: magnet_assembly.magnet().shape().into_owned(),
             is_north: true,
             magnet_type: 0,
+            pole: 0,
         }]
     };
 

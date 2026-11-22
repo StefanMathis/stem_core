@@ -733,6 +733,7 @@ impl FluxBarrier for Spoke1FluxBarrier {
                     shape: m.into_owned(),
                     is_north: i.is_even(),
                     magnet_type: 0,
+                    pole: 0,
                 })
                 .collect()
         } else {
@@ -740,6 +741,7 @@ impl FluxBarrier for Spoke1FluxBarrier {
                 shape: magnet.shape().into_owned(),
                 is_north: true,
                 magnet_type: 0,
+                pole: 0,
             }]
         };
 

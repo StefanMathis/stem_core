@@ -1,12 +1,101 @@
+use std::{f64::consts::PI, num::NonZeroUsize, sync::Arc};
+use stem_core::prelude::*;
+
+#[test]
+fn test_magnets() {
+    let air_gap = PlainAirGap::default();
+
+    let core = RotCore::try_from(RotCoreBuilder {
+        air_gap_radius: Length::new::<millimeter>(85.0),
+        yoke_radius: Length::new::<millimeter>(55.0),
+        axial_length: Length::new::<millimeter>(100.0),
+        axial_coil_overhang: Length::new::<millimeter>(0.0),
+        skew_angle: 0.0,
+        iron_fill_factor: 1.0,
+        material: Arc::new(Material::default()),
+        pole_pairs: 2.try_into().expect("not zero"),
+        air_gap: Box::new(air_gap),
+        flux_barrier: None,
+    })
+    .unwrap();
+
+    let magnet = ArcParallelMagnet::with_const_thickness(
+        Length::new::<millimeter>(165.0),
+        core.air_gap_radius(),
+        SideHeightOrThickness::Thickness(Length::new::<millimeter>(10.0)),
+        AngleOrWidth::Angle(10.0 / 180.0 * PI),
+        Arc::new(Default::default()),
+    )
+    .unwrap();
+    let assembly =
+        MagnetAssembly::new(magnet.clone(), 1.try_into().unwrap(), 3.try_into().unwrap());
+
+    // Assert magnet properties
+    let magnets: Vec<_> = core.surface_magnets(&assembly, false).collect();
+    assert_eq!(magnets[0].is_north, true);
+    assert_eq!(magnets[0].pole, 0);
+    assert_eq!(magnets[1].is_north, true);
+    assert_eq!(magnets[1].pole, 0);
+    assert_eq!(magnets[2].is_north, true);
+    assert_eq!(magnets[2].pole, 0);
+
+    assert_eq!(magnets[3].is_north, false);
+    assert_eq!(magnets[3].pole, 1);
+    assert_eq!(magnets[4].is_north, false);
+    assert_eq!(magnets[4].pole, 1);
+    assert_eq!(magnets[5].is_north, false);
+    assert_eq!(magnets[5].pole, 1);
+
+    assert_eq!(magnets[6].is_north, true);
+    assert_eq!(magnets[6].pole, 2);
+    assert_eq!(magnets[7].is_north, true);
+    assert_eq!(magnets[7].pole, 2);
+    assert_eq!(magnets[8].is_north, true);
+    assert_eq!(magnets[8].pole, 2);
+
+    assert_eq!(magnets[9].is_north, false);
+    assert_eq!(magnets[9].pole, 3);
+    assert_eq!(magnets[10].is_north, false);
+    assert_eq!(magnets[10].pole, 3);
+    assert_eq!(magnets[11].is_north, false);
+    assert_eq!(magnets[11].pole, 3);
+
+    // Assert magnet properties (split magnets)
+    let magnets: Vec<_> = core.surface_magnets(&assembly, true).collect();
+    assert_eq!(magnets[0].is_north, true);
+    assert_eq!(magnets[0].pole, 0);
+    assert_eq!(magnets[1].is_north, false);
+    assert_eq!(magnets[1].pole, 0);
+    assert_eq!(magnets[2].is_north, true);
+    assert_eq!(magnets[2].pole, 0);
+    assert_eq!(magnets[3].is_north, false);
+    assert_eq!(magnets[3].pole, 0);
+    assert_eq!(magnets[4].is_north, true);
+    assert_eq!(magnets[4].pole, 0);
+    assert_eq!(magnets[5].is_north, false);
+    assert_eq!(magnets[5].pole, 0);
+
+    assert_eq!(magnets[6].is_north, false);
+    assert_eq!(magnets[6].pole, 1);
+    assert_eq!(magnets[7].is_north, true);
+    assert_eq!(magnets[7].pole, 1);
+    assert_eq!(magnets[8].is_north, false);
+    assert_eq!(magnets[8].pole, 1);
+    assert_eq!(magnets[9].is_north, true);
+    assert_eq!(magnets[9].pole, 1);
+    assert_eq!(magnets[10].is_north, false);
+    assert_eq!(magnets[10].pole, 1);
+    assert_eq!(magnets[11].is_north, true);
+    assert_eq!(magnets[11].pole, 1);
+}
+
 #[cfg(feature = "cairo")]
 mod cairo_tests {
-
-    use std::{f64::consts::PI, num::NonZeroUsize, sync::Arc};
+    use super::*;
 
     use approxim::assert_abs_diff_eq;
     use cairo_viewport::{Viewport, compare_or_create};
     use planar_geo::prelude::ToBoundingBox;
-    use stem_core::prelude::*;
     use stem_slot::planar_geo::draw::Drawable;
 
     #[test]

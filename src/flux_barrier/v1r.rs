@@ -725,6 +725,7 @@ impl FluxBarrier for V1rFluxBarrier {
                     shape: m.into_owned(),
                     is_north: i.is_odd(),
                     magnet_type: 0,
+                    pole: 0,
                 })
                 .collect()
         } else {
@@ -732,6 +733,7 @@ impl FluxBarrier for V1rFluxBarrier {
                 shape: magnet.shape().into_owned(),
                 is_north: true,
                 magnet_type: 0,
+                pole: 0,
             }]
         };
 
