@@ -174,8 +174,8 @@ method implementation looks like this:
 ```ignore
 fn pole_pairs(&self) -> u16 {
     match self {
-        Self::Lin(c) => c.pole_pairs(),
-        Self::Rot(c) => c.pole_pairs(),
+        Self::Lin(c) => (*c).pole_pairs(),
+        Self::Rot(c) => (*c).pole_pairs(),
     }
 }
 ```
@@ -232,8 +232,8 @@ impl Core {
         flux_barrier: Option<Box<dyn FluxBarrier>>,
     ) -> Result<(), IncompatibleFluxBarrier> {
         match self {
-            Self::Lin(c) => c.set_flux_barrier(flux_barrier),
-            Self::Rot(c) => c.set_flux_barrier(flux_barrier),
+            Self::Lin(c) => (*c).set_flux_barrier(flux_barrier),
+            Self::Rot(c) => (*c).set_flux_barrier(flux_barrier),
         }
     }
 }
@@ -243,106 +243,106 @@ impl ext::private::Sealed for Core {}
 impl CoreExt for Core {
     fn air_gap(&self) -> &dyn crate::air_gap::AirGap {
         match self {
-            Self::Lin(c) => c.air_gap(),
-            Self::Rot(c) => c.air_gap(),
+            Self::Lin(c) => (*c).air_gap(),
+            Self::Rot(c) => (*c).air_gap(),
         }
     }
 
     fn axial_length(&self) -> Length {
         match self {
-            Self::Lin(c) => c.axial_length(),
-            Self::Rot(c) => c.axial_length(),
+            Self::Lin(c) => (*c).axial_length(),
+            Self::Rot(c) => (*c).axial_length(),
         }
     }
 
     fn iron_fill_factor(&self) -> f64 {
         match self {
-            Self::Lin(c) => c.iron_fill_factor(),
-            Self::Rot(c) => c.iron_fill_factor(),
+            Self::Lin(c) => (*c).iron_fill_factor(),
+            Self::Rot(c) => (*c).iron_fill_factor(),
         }
     }
 
     fn pole_pairs(&self) -> NonZeroU16 {
         match self {
-            Self::Lin(c) => c.pole_pairs(),
-            Self::Rot(c) => c.pole_pairs(),
+            Self::Lin(c) => (*c).pole_pairs(),
+            Self::Rot(c) => (*c).pole_pairs(),
         }
     }
 
     fn material(&self) -> &Arc<Material> {
         match self {
-            Self::Lin(c) => c.material(),
-            Self::Rot(c) => c.material(),
+            Self::Lin(c) => (*c).material(),
+            Self::Rot(c) => (*c).material(),
         }
     }
 
     fn yoke_height(&self) -> Length {
         match self {
-            Self::Lin(c) => c.yoke_height(),
-            Self::Rot(c) => c.yoke_height(),
+            Self::Lin(c) => (*c).yoke_height(),
+            Self::Rot(c) => (*c).yoke_height(),
         }
     }
 
     fn skew_angle(&self) -> f64 {
         match self {
-            Self::Lin(c) => c.skew_angle(),
-            Self::Rot(c) => c.skew_angle(),
+            Self::Lin(c) => (*c).skew_angle(),
+            Self::Rot(c) => (*c).skew_angle(),
         }
     }
 
     fn air_gap_length(&self) -> Length {
         match self {
-            Self::Lin(c) => c.air_gap_length(),
-            Self::Rot(c) => c.air_gap_length(),
+            Self::Lin(c) => (*c).air_gap_length(),
+            Self::Rot(c) => (*c).air_gap_length(),
         }
     }
 
     fn lin_or_rot(&self) -> LinOrRot {
         match self {
-            Self::Lin(c) => c.lin_or_rot(),
-            Self::Rot(c) => c.lin_or_rot(),
+            Self::Lin(c) => (*c).lin_or_rot(),
+            Self::Rot(c) => (*c).lin_or_rot(),
         }
     }
 
     fn axial_coil_overhang(&self) -> Length {
         match self {
-            Self::Lin(c) => c.axial_coil_overhang(),
-            Self::Rot(c) => c.axial_coil_overhang(),
+            Self::Lin(c) => (*c).axial_coil_overhang(),
+            Self::Rot(c) => (*c).axial_coil_overhang(),
         }
     }
 
     fn flux_barrier(&self) -> Option<&dyn crate::flux_barrier::FluxBarrier> {
         match self {
-            Self::Lin(c) => c.flux_barrier(),
-            Self::Rot(c) => c.flux_barrier(),
+            Self::Lin(c) => (*c).flux_barrier(),
+            Self::Rot(c) => (*c).flux_barrier(),
         }
     }
 
     fn shape<'a>(&'a self) -> &'a Shape {
         match self {
-            Self::Lin(c) => c.shape(),
-            Self::Rot(c) => c.shape(),
+            Self::Lin(c) => (*c).shape(),
+            Self::Rot(c) => (*c).shape(),
         }
     }
 
     fn as_core_ref(&self) -> CoreRef<'_> {
         match self {
-            Self::Lin(c) => c.as_core_ref(),
-            Self::Rot(c) => c.as_core_ref(),
+            Self::Lin(c) => (*c).as_core_ref(),
+            Self::Rot(c) => (*c).as_core_ref(),
         }
     }
 
     fn pole_coverage(&self, surface_magnet_assembly: Option<&MagnetAssembly>) -> f64 {
         match self {
-            Self::Lin(c) => c.pole_coverage(surface_magnet_assembly),
-            Self::Rot(c) => c.pole_coverage(surface_magnet_assembly),
+            Self::Lin(c) => (*c).pole_coverage(surface_magnet_assembly),
+            Self::Rot(c) => (*c).pole_coverage(surface_magnet_assembly),
         }
     }
 
     fn tooth_mass(&self) -> VarQuantity<Mass> {
         match self {
-            Self::Lin(c) => c.tooth_mass(),
-            Self::Rot(c) => c.tooth_mass(),
+            Self::Lin(c) => (*c).tooth_mass(),
+            Self::Rot(c) => (*c).tooth_mass(),
         }
     }
 
@@ -352,8 +352,8 @@ impl CoreExt for Core {
         spatial_order: stem_slot::stem_types::SpatialOrder,
     ) -> f64 {
         match self {
-            Self::Lin(c) => c.air_gap_curvature_factor(effective_air_gap, spatial_order),
-            Self::Rot(c) => c.air_gap_curvature_factor(effective_air_gap, spatial_order),
+            Self::Lin(c) => (*c).air_gap_curvature_factor(effective_air_gap, spatial_order),
+            Self::Rot(c) => (*c).air_gap_curvature_factor(effective_air_gap, spatial_order),
         }
     }
 }
@@ -405,8 +405,8 @@ type-erased wrapper which "behaves like" a magnetic core by implementing
 ```ignore
 fn pole_pairs(&self) -> u16 {
     match self {
-        Self::Lin(c) => c.pole_pairs(),
-        Self::Rot(c) => c.pole_pairs(),
+        Self::Lin(c) => (*c).pole_pairs(),
+        Self::Rot(c) => (*c).pole_pairs(),
     }
 }
 ```
@@ -454,85 +454,85 @@ impl<'a> ext::private::Sealed for CoreRef<'a> {}
 impl<'a> CoreExt for CoreRef<'a> {
     fn air_gap(&self) -> &dyn crate::air_gap::AirGap {
         match self {
-            Self::Lin(c) => c.air_gap(),
-            Self::Rot(c) => c.air_gap(),
+            Self::Lin(c) => (*c).air_gap(),
+            Self::Rot(c) => (*c).air_gap(),
         }
     }
 
     fn axial_length(&self) -> Length {
         match self {
-            Self::Lin(c) => c.axial_length(),
-            Self::Rot(c) => c.axial_length(),
+            Self::Lin(c) => (*c).axial_length(),
+            Self::Rot(c) => (*c).axial_length(),
         }
     }
 
     fn iron_fill_factor(&self) -> f64 {
         match self {
-            Self::Lin(c) => c.iron_fill_factor(),
-            Self::Rot(c) => c.iron_fill_factor(),
+            Self::Lin(c) => (*c).iron_fill_factor(),
+            Self::Rot(c) => (*c).iron_fill_factor(),
         }
     }
 
     fn pole_pairs(&self) -> NonZeroU16 {
         match self {
-            Self::Lin(c) => c.pole_pairs(),
-            Self::Rot(c) => c.pole_pairs(),
+            Self::Lin(c) => (*c).pole_pairs(),
+            Self::Rot(c) => (*c).pole_pairs(),
         }
     }
 
     fn material(&self) -> &Arc<Material> {
         match self {
-            Self::Lin(c) => c.material(),
-            Self::Rot(c) => c.material(),
+            Self::Lin(c) => (*c).material(),
+            Self::Rot(c) => (*c).material(),
         }
     }
 
     fn yoke_height(&self) -> Length {
         match self {
-            Self::Lin(c) => c.yoke_height(),
-            Self::Rot(c) => c.yoke_height(),
+            Self::Lin(c) => (*c).yoke_height(),
+            Self::Rot(c) => (*c).yoke_height(),
         }
     }
 
     fn skew_angle(&self) -> f64 {
         match self {
-            Self::Lin(c) => c.skew_angle(),
-            Self::Rot(c) => c.skew_angle(),
+            Self::Lin(c) => (*c).skew_angle(),
+            Self::Rot(c) => (*c).skew_angle(),
         }
     }
 
     fn air_gap_length(&self) -> Length {
         match self {
-            Self::Lin(c) => c.air_gap_length(),
-            Self::Rot(c) => c.air_gap_length(),
+            Self::Lin(c) => (*c).air_gap_length(),
+            Self::Rot(c) => (*c).air_gap_length(),
         }
     }
 
     fn lin_or_rot(&self) -> LinOrRot {
         match self {
-            Self::Lin(c) => c.lin_or_rot(),
-            Self::Rot(c) => c.lin_or_rot(),
+            Self::Lin(c) => (*c).lin_or_rot(),
+            Self::Rot(c) => (*c).lin_or_rot(),
         }
     }
 
     fn axial_coil_overhang(&self) -> Length {
         match self {
-            Self::Lin(c) => c.axial_coil_overhang(),
-            Self::Rot(c) => c.axial_coil_overhang(),
+            Self::Lin(c) => (*c).axial_coil_overhang(),
+            Self::Rot(c) => (*c).axial_coil_overhang(),
         }
     }
 
     fn flux_barrier(&self) -> Option<&dyn crate::flux_barrier::FluxBarrier> {
         match self {
-            Self::Lin(c) => c.flux_barrier(),
-            Self::Rot(c) => c.flux_barrier(),
+            Self::Lin(c) => (*c).flux_barrier(),
+            Self::Rot(c) => (*c).flux_barrier(),
         }
     }
 
     fn shape(&self) -> &Shape {
         match self {
-            Self::Lin(c) => c.shape(),
-            Self::Rot(c) => c.shape(),
+            Self::Lin(c) => (*c).shape(),
+            Self::Rot(c) => (*c).shape(),
         }
     }
 
@@ -542,15 +542,15 @@ impl<'a> CoreExt for CoreRef<'a> {
 
     fn pole_coverage(&self, surface_magnet_assembly: Option<&MagnetAssembly>) -> f64 {
         match self {
-            Self::Lin(c) => c.pole_coverage(surface_magnet_assembly),
-            Self::Rot(c) => c.pole_coverage(surface_magnet_assembly),
+            Self::Lin(c) => (*c).pole_coverage(surface_magnet_assembly),
+            Self::Rot(c) => (*c).pole_coverage(surface_magnet_assembly),
         }
     }
 
     fn tooth_mass(&self) -> VarQuantity<Mass> {
         match self {
-            Self::Lin(c) => c.tooth_mass(),
-            Self::Rot(c) => c.tooth_mass(),
+            Self::Lin(c) => (*c).tooth_mass(),
+            Self::Rot(c) => (*c).tooth_mass(),
         }
     }
 
@@ -560,8 +560,8 @@ impl<'a> CoreExt for CoreRef<'a> {
         spatial_order: stem_slot::stem_types::SpatialOrder,
     ) -> f64 {
         match self {
-            Self::Lin(c) => c.air_gap_curvature_factor(effective_air_gap, spatial_order),
-            Self::Rot(c) => c.air_gap_curvature_factor(effective_air_gap, spatial_order),
+            Self::Lin(c) => (*c).air_gap_curvature_factor(effective_air_gap, spatial_order),
+            Self::Rot(c) => (*c).air_gap_curvature_factor(effective_air_gap, spatial_order),
         }
     }
 }

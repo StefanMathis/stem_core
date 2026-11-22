@@ -219,7 +219,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         // embed_doc_image does not support documenting trait methods without
         // a body, so a dummy implementation is provided (which is overridden
         // by the actual implementors).
-        return 0.0;
+        unreachable!("this should have been overridden");
     }
 
     /// Returns the yoke height of the core.
@@ -251,7 +251,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         // embed_doc_image does not support documenting trait methods without
         // a body, so a dummy implementation is provided (which is overridden
         // by the actual implementors).
-        return Length::new::<meter>(0.0);
+        unreachable!("this should have been overridden");
     }
 
     /// Returns the skew angle of the core.
@@ -492,7 +492,7 @@ pub trait CoreExt: Sync + Send + std::fmt::Debug + private::Sealed {
         // embed_doc_image does not support documenting trait methods without
         // a body, so a dummy implementation is provided (which is overridden
         // by the actual implementors).
-        return 0.5;
+        unreachable!("this should have been overridden");
     }
 
     /// Returns the mass of a single tooth.

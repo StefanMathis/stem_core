@@ -172,6 +172,12 @@ mod cairo_tests {
                     core.pole_coverage(Some(&magnet(180.0, 1.try_into().unwrap()))),
                     1.0
                 );
+
+                let core_ref = CoreRef::from(&core);
+                assert_abs_diff_eq!(
+                    core_ref.pole_coverage(Some(&magnet(180.0, 1.try_into().unwrap()))),
+                    1.0
+                );
             }
             {
                 assert_abs_diff_eq!(
@@ -186,6 +192,12 @@ mod cairo_tests {
                 );
             }
             {
+                assert_abs_diff_eq!(
+                    core.pole_coverage(Some(&magnet(90.0, 2.try_into().unwrap()))),
+                    1.0
+                );
+
+                let core = Core::from(core);
                 assert_abs_diff_eq!(
                     core.pole_coverage(Some(&magnet(90.0, 2.try_into().unwrap()))),
                     1.0
