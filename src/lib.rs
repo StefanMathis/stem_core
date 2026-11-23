@@ -48,11 +48,16 @@ pub use stem_slot;
 pub use stem_slot::planar_geo;
 pub use stem_slot::stem_types;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// An indicator of whether an entity is linear or rotary.
 ///
 /// This enum is created from functions such as
 /// [`CoreExt::lin_or_rot`](crate::core::CoreExt::lin_or_rot) and states if the
 /// entity (in this case a magnetic core) which created it is linear or rotary.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum LinOrRot {
     /// Linear entity.
     Lin,
@@ -84,6 +89,8 @@ pub mod prelude {
     addition, it reexports the prelude modules of the [`stem_slot`] and
     [`stem_magnet`] dependencies (and therefore also [`stem_material::prelude`]).
      */
+
+    pub use super::{GRAY, LinOrRot};
 
     pub use crate::magnets::*;
     pub use crate::winding_zones::*;
