@@ -90,7 +90,10 @@ pub mod prelude {
     [`stem_magnet`] dependencies (and therefore also [`stem_material::prelude`]).
      */
 
-    pub use super::{GRAY, LinOrRot};
+    #[cfg(feature = "cairo")]
+    pub use super::GRAY;
+
+    pub use super::LinOrRot;
 
     pub use crate::magnets::*;
     pub use crate::winding_zones::*;
